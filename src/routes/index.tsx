@@ -8,20 +8,36 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
+  ReferenceLine,
 } from "recharts";
-import { Activity, Play, Square, TrendingUp, TrendingDown, Wallet, Bot } from "lucide-react";
+import {
+  Activity,
+  Play,
+  Square,
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  Bot,
+  ShieldCheck,
+  AlertTriangle,
+  Timer,
+  Flame,
+} from "lucide-react";
 import {
   COINS,
   type CoinId,
+  type EquityPoint,
   type Position,
   type PricePoint,
   type Strategy,
   type Trade,
   avgSince,
+  fmtDuration,
   fmtPct,
   fmtUSD,
   pctChangeSince,
   rsi,
+  sharpe,
 } from "@/lib/trading";
 
 export const Route = createFileRoute("/")({
@@ -31,12 +47,12 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Paper trade BTC, ETH, SOL, and BNB with automated strategies. Virtual $10,000 USDT, no real money.",
+          "Paper trade BTC, ETH, SOL, BNB with auto-reinvest, stop-loss, take-profit and drawdown protection. Virtual $10,000 USDT.",
       },
       { property: "og:title", content: "Algo Paper Trader" },
       {
         property: "og:description",
-        content: "Automated crypto paper trading simulator with momentum, mean reversion, and RSI strategies.",
+        content: "Automated crypto paper trading with risk management, cooldowns and compound growth tracking.",
       },
     ],
   }),
@@ -47,27 +63,39 @@ const STARTING_BALANCE = 10_000;
 const PRICE_REFRESH_MS = 30_000;
 const BOT_TICK_MS = 60_000;
 const MAX_HISTORY = 200;
-const TRADE_SIZE_PCT = 0.2; // 20% of cash per buy
+const MAX_EQUITY = 500;
+
+// Risk management constants
+const TRADE_SIZE_PCT = 0.20;       // 20% of portfolio per trade
+const MAX_POSITION_PCT = 0.25;     // never more than 25% of portfolio in one trade
+const STOP_LOSS_PCT = -5;          // auto-sell at -5%
+const TAKE_PROFIT_PCT = 8;         // auto-sell at +8%
+const DAILY_LOSS_LIMIT_PCT = -15;  // halt for the rest of the day
+const MAX_DRAWDOWN_PCT = -25;      // pause 24h
+const DRAWDOWN_PAUSE_MS = 24 * 60 * 60 * 1000;
+
+// Losing streak cooldowns
+const COOLDOWN_2_MS = 15 * 60 * 1000;
+const COOLDOWN_3_MS = 60 * 60 * 1000;
+const STREAK_HARD_STOP = 5;
+
+type HaltReason = null | "manual_streak" | "daily_loss" | "drawdown" | "cooldown";
+
+function dayKey(ts: number) {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
 
 function App() {
   const [prices, setPrices] = useState<Record<CoinId, number>>({
-    bitcoin: 0,
-    ethereum: 0,
-    solana: 0,
-    binancecoin: 0,
+    bitcoin: 0, ethereum: 0, solana: 0, binancecoin: 0,
   });
   const [history, setHistory] = useState<Record<CoinId, PricePoint[]>>({
-    bitcoin: [],
-    ethereum: [],
-    solana: [],
-    binancecoin: [],
+    bitcoin: [], ethereum: [], solana: [], binancecoin: [],
   });
   const [cash, setCash] = useState(STARTING_BALANCE);
   const [positions, setPositions] = useState<Record<CoinId, Position | null>>({
-    bitcoin: null,
-    ethereum: null,
-    solana: null,
-    binancecoin: null,
+    bitcoin: null, ethereum: null, solana: null, binancecoin: null,
   });
   const [trades, setTrades] = useState<Trade[]>([]);
   const [strategy, setStrategy] = useState<Strategy>("momentum");
@@ -76,11 +104,35 @@ function App() {
   const [lastUpdate, setLastUpdate] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Keep latest state in refs for the bot tick
-  const stateRef = useRef({ prices, history, cash, positions, strategy });
+  // Risk / equity state
+  const [equity, setEquity] = useState<EquityPoint[]>([]);
+  const [peak, setPeak] = useState(STARTING_BALANCE);
+  const [dayAnchor, setDayAnchor] = useState<{ key: string; value: number }>({
+    key: dayKey(Date.now()),
+    value: STARTING_BALANCE,
+  });
+  const [losingStreak, setLosingStreak] = useState(0);
+  const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
+  const [haltReason, setHaltReason] = useState<HaltReason>(null);
+  const [now, setNow] = useState(Date.now());
+
+  // Tick every second for countdowns
   useEffect(() => {
-    stateRef.current = { prices, history, cash, positions, strategy };
-  }, [prices, history, cash, positions, strategy]);
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Keep latest state in refs
+  const stateRef = useRef({
+    prices, history, cash, positions, strategy,
+    peak, dayAnchor, losingStreak, cooldownUntil, haltReason,
+  });
+  useEffect(() => {
+    stateRef.current = {
+      prices, history, cash, positions, strategy,
+      peak, dayAnchor, losingStreak, cooldownUntil, haltReason,
+    };
+  });
 
   // Fetch prices
   const fetchPrices = useCallback(async () => {
@@ -90,20 +142,20 @@ function App() {
         `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`,
       );
       const data = (await res.json()) as Record<CoinId, { usd: number }>;
-      const now = Date.now();
+      const t = Date.now();
       const newPrices: Record<CoinId, number> = { ...stateRef.current.prices };
       const newHist = { ...stateRef.current.history };
       for (const c of COINS) {
         const p = data[c.id]?.usd;
         if (typeof p === "number") {
           newPrices[c.id] = p;
-          const h = [...(newHist[c.id] ?? []), { t: now, price: p }];
+          const h = [...(newHist[c.id] ?? []), { t, price: p }];
           newHist[c.id] = h.slice(-MAX_HISTORY);
         }
       }
       setPrices(newPrices);
       setHistory(newHist);
-      setLastUpdate(now);
+      setLastUpdate(t);
       setLoading(false);
     } catch (e) {
       console.error("price fetch failed", e);
@@ -116,24 +168,28 @@ function App() {
     return () => clearInterval(id);
   }, [fetchPrices]);
 
-  // Trading logic
+  // --- Trade execution
   const executeTrade = useCallback(
     (coin: CoinId, action: "BUY" | "SELL", price: number, reason: string) => {
       const s = stateRef.current;
       if (action === "BUY") {
-        if (s.positions[coin]) return; // one position per coin at a time
-        const spend = Math.min(s.cash, s.cash * TRADE_SIZE_PCT);
+        if (s.positions[coin]) return;
+        // Position sizing on portfolio value, capped by MAX_POSITION_PCT and cash
+        let posValue = 0;
+        for (const c of COINS) {
+          const p = s.positions[c.id];
+          if (p) posValue += p.amount * (s.prices[c.id] || 0);
+        }
+        const portfolio = s.cash + posValue;
+        const target = portfolio * TRADE_SIZE_PCT;
+        const cap = portfolio * MAX_POSITION_PCT;
+        const spend = Math.min(target, cap, s.cash);
         if (spend < 10) return;
         const amount = spend / price;
         const trade: Trade = {
           id: crypto.randomUUID(),
           ts: Date.now(),
-          coin,
-          action,
-          price,
-          amount,
-          usd: spend,
-          reason,
+          coin, action, price, amount, usd: spend, reason,
         };
         setCash((c) => c - spend);
         setPositions((p) => ({ ...p, [coin]: { coin, amount, avgEntry: price } }));
@@ -142,25 +198,127 @@ function App() {
         const pos = s.positions[coin];
         if (!pos) return;
         const proceeds = pos.amount * price;
+        const cost = pos.amount * pos.avgEntry;
+        const realizedPnl = proceeds - cost;
+        const realizedPct = (realizedPnl / cost) * 100;
         const trade: Trade = {
           id: crypto.randomUUID(),
           ts: Date.now(),
-          coin,
-          action,
-          price,
-          amount: pos.amount,
-          usd: proceeds,
-          reason,
+          coin, action, price,
+          amount: pos.amount, usd: proceeds, reason,
+          realizedPnl, realizedPct,
         };
         setCash((c) => c + proceeds);
         setPositions((p) => ({ ...p, [coin]: null }));
         setTrades((t) => [trade, ...t]);
+
+        // Losing streak + cooldown logic
+        if (realizedPnl < 0) {
+          setLosingStreak((prev) => {
+            const next = prev + 1;
+            if (next >= STREAK_HARD_STOP) {
+              setBotRunning(false);
+              setHaltReason("manual_streak");
+              setCooldownUntil(null);
+            } else if (next === 3) {
+              setCooldownUntil(Date.now() + COOLDOWN_3_MS);
+              setHaltReason("cooldown");
+            } else if (next === 2) {
+              setCooldownUntil(Date.now() + COOLDOWN_2_MS);
+              setHaltReason("cooldown");
+            }
+            return next;
+          });
+        } else {
+          setLosingStreak(0);
+        }
       }
     },
     [],
   );
 
+  // --- Portfolio value + equity tracking on each price update
+  const positionsValue = useMemo(() => {
+    let v = 0;
+    for (const c of COINS) {
+      const p = positions[c.id];
+      if (p) v += p.amount * (prices[c.id] || 0);
+    }
+    return v;
+  }, [positions, prices]);
+
+  const portfolioValue = cash + positionsValue;
+  const pnl = portfolioValue - STARTING_BALANCE;
+  const totalReturnPct = (pnl / STARTING_BALANCE) * 100;
+
+  useEffect(() => {
+    if (!lastUpdate) return;
+    setEquity((eq) => {
+      const next = [...eq, { t: lastUpdate, value: portfolioValue }];
+      return next.slice(-MAX_EQUITY);
+    });
+    setPeak((pk) => (portfolioValue > pk ? portfolioValue : pk));
+
+    // Day rollover
+    const key = dayKey(lastUpdate);
+    if (key !== stateRef.current.dayAnchor.key) {
+      setDayAnchor({ key, value: portfolioValue });
+      // New day resets daily-loss halt
+      if (stateRef.current.haltReason === "daily_loss") {
+        setHaltReason(null);
+      }
+    }
+  }, [lastUpdate, portfolioValue]);
+
+  // Clear cooldown when expired
+  useEffect(() => {
+    if (cooldownUntil && now >= cooldownUntil) {
+      setCooldownUntil(null);
+      if (haltReason === "cooldown" || haltReason === "drawdown") setHaltReason(null);
+    }
+  }, [now, cooldownUntil, haltReason]);
+
+  // Drawdown & daily-loss monitoring
+  useEffect(() => {
+    const ddPct = peak > 0 ? ((portfolioValue - peak) / peak) * 100 : 0;
+    const dayPct = dayAnchor.value > 0
+      ? ((portfolioValue - dayAnchor.value) / dayAnchor.value) * 100
+      : 0;
+
+    if (ddPct <= MAX_DRAWDOWN_PCT && haltReason !== "drawdown" && haltReason !== "manual_streak") {
+      setHaltReason("drawdown");
+      setCooldownUntil(Date.now() + DRAWDOWN_PAUSE_MS);
+    } else if (dayPct <= DAILY_LOSS_LIMIT_PCT && !haltReason) {
+      setHaltReason("daily_loss");
+    }
+  }, [portfolioValue, peak, dayAnchor, haltReason]);
+
+  // --- Risk gate: should the bot trade right now?
+  const tradingAllowed = useCallback(() => {
+    if (haltReason === "manual_streak") return false;
+    if (haltReason === "daily_loss") return false;
+    if (cooldownUntil && Date.now() < cooldownUntil) return false;
+    return true;
+  }, [haltReason, cooldownUntil]);
+
+  // --- Stop-loss / take-profit check (runs on every price update)
+  useEffect(() => {
+    for (const c of COINS) {
+      const pos = positions[c.id];
+      const px = prices[c.id];
+      if (!pos || !px) continue;
+      const pct = ((px - pos.avgEntry) / pos.avgEntry) * 100;
+      if (pct <= STOP_LOSS_PCT) {
+        executeTrade(c.id, "SELL", px, `Stop-loss ${pct.toFixed(2)}%`);
+      } else if (pct >= TAKE_PROFIT_PCT) {
+        executeTrade(c.id, "SELL", px, `Take-profit +${pct.toFixed(2)}%`);
+      }
+    }
+  }, [prices, positions, executeTrade]);
+
+  // --- Bot tick
   const botTick = useCallback(() => {
+    if (!tradingAllowed()) return;
     const { history: h, positions: pos, strategy: strat } = stateRef.current;
     for (const c of COINS) {
       const hist = h[c.id];
@@ -180,14 +338,14 @@ function App() {
         if (!hasPos && dev < -3) executeTrade(c.id, "BUY", last, `MR ${dev.toFixed(2)}% vs 1h avg`);
         else if (hasPos && dev >= 0) executeTrade(c.id, "SELL", last, `MR reverted to avg`);
       } else if (strat === "rsi") {
-        const prices = hist.map((p) => p.price);
-        const r = rsi(prices, 14);
+        const ps = hist.map((p) => p.price);
+        const r = rsi(ps, 14);
         if (r == null) continue;
         if (!hasPos && r < 30) executeTrade(c.id, "BUY", last, `RSI ${r.toFixed(1)} oversold`);
         else if (hasPos && r > 70) executeTrade(c.id, "SELL", last, `RSI ${r.toFixed(1)} overbought`);
       }
     }
-  }, [executeTrade]);
+  }, [executeTrade, tradingAllowed]);
 
   useEffect(() => {
     if (!botRunning) return;
@@ -195,19 +353,34 @@ function App() {
     return () => clearInterval(id);
   }, [botRunning, botTick]);
 
-  // Derived metrics
-  const positionsValue = useMemo(() => {
-    let v = 0;
-    for (const c of COINS) {
-      const p = positions[c.id];
-      if (p) v += p.amount * (prices[c.id] || 0);
-    }
-    return v;
-  }, [positions, prices]);
+  // --- Derived stats
+  const sellTrades = useMemo(() => trades.filter((t) => t.action === "SELL"), [trades]);
+  const wins = sellTrades.filter((t) => (t.realizedPnl ?? 0) > 0).length;
+  const winRate = sellTrades.length ? (wins / sellTrades.length) * 100 : null;
+  const sharpeRatio = useMemo(() => sharpe(equity), [equity]);
 
-  const portfolioValue = cash + positionsValue;
-  const pnl = portfolioValue - STARTING_BALANCE;
-  const totalReturnPct = (pnl / STARTING_BALANCE) * 100;
+  const drawdownPct = peak > 0 ? ((portfolioValue - peak) / peak) * 100 : 0;
+  const maxDrawdownPct = useMemo(() => {
+    let pk = STARTING_BALANCE, mdd = 0;
+    for (const p of equity) {
+      if (p.value > pk) pk = p.value;
+      const dd = ((p.value - pk) / pk) * 100;
+      if (dd < mdd) mdd = dd;
+    }
+    return mdd;
+  }, [equity]);
+
+  const dayPct = dayAnchor.value > 0
+    ? ((portfolioValue - dayAnchor.value) / dayAnchor.value) * 100
+    : 0;
+
+  const riskLevel: "green" | "yellow" | "red" =
+    haltReason ? "red"
+    : (losingStreak >= 1 || drawdownPct <= -10 || dayPct <= -7 || (cooldownUntil && now < cooldownUntil))
+      ? "yellow"
+      : "green";
+
+  const cooldownLeft = cooldownUntil ? Math.max(0, cooldownUntil - now) : 0;
 
   const chartData = useMemo(
     () =>
@@ -218,14 +391,45 @@ function App() {
     [history, selectedCoin],
   );
 
+  const equityChart = useMemo(
+    () => equity.map((p) => ({
+      time: new Date(p.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      value: p.value,
+    })),
+    [equity],
+  );
+
   const resetSim = () => {
     setBotRunning(false);
     setCash(STARTING_BALANCE);
     setPositions({ bitcoin: null, ethereum: null, solana: null, binancecoin: null });
     setTrades([]);
+    setEquity([]);
+    setPeak(STARTING_BALANCE);
+    setDayAnchor({ key: dayKey(Date.now()), value: STARTING_BALANCE });
+    setLosingStreak(0);
+    setCooldownUntil(null);
+    setHaltReason(null);
+  };
+
+  const startBot = () => {
+    // Manual start clears non-permanent halts; resets streak only on hard-stop restart
+    if (haltReason === "manual_streak") {
+      setLosingStreak(0);
+    }
+    setHaltReason(null);
+    setCooldownUntil(null);
+    setBotRunning(true);
   };
 
   const coinMeta = (id: CoinId) => COINS.find((c) => c.id === id)!;
+
+  const haltLabel =
+    haltReason === "manual_streak" ? `Hard-stopped after ${STREAK_HARD_STOP} losing trades`
+    : haltReason === "daily_loss"  ? `Daily loss limit hit (${dayPct.toFixed(2)}%)`
+    : haltReason === "drawdown"    ? `Drawdown ${drawdownPct.toFixed(2)}% — 24h pause`
+    : haltReason === "cooldown"    ? `Losing-streak cooldown active`
+    : null;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -238,7 +442,7 @@ function App() {
             </div>
             <div>
               <h1 className="text-sm font-semibold tracking-tight">Algo Paper Trader</h1>
-              <p className="text-[11px] text-muted-foreground">Virtual money · CoinGecko live data</p>
+              <p className="text-[11px] text-muted-foreground">Virtual money · risk-managed · CoinGecko live data</p>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -256,7 +460,7 @@ function App() {
               <option value="rsi">RSI</option>
             </select>
             <button
-              onClick={() => setBotRunning((r) => !r)}
+              onClick={() => botRunning ? setBotRunning(false) : startBot()}
               className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
                 botRunning
                   ? "bg-bear/15 text-bear hover:bg-bear/25"
@@ -276,12 +480,30 @@ function App() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6 space-y-6">
+        {/* Halt banner */}
+        {haltLabel && (
+          <div className="rounded-lg border border-bear/40 bg-bear/10 px-4 py-3 flex items-center gap-3">
+            <AlertTriangle className="size-4 text-bear shrink-0" />
+            <div className="text-sm">
+              <span className="font-medium text-bear">Bot paused.</span>{" "}
+              <span className="text-foreground/80">{haltLabel}</span>
+              {cooldownLeft > 0 && (
+                <span className="ml-2 text-muted-foreground">· resumes in <span className="tabular text-foreground">{fmtDuration(cooldownLeft)}</span></span>
+              )}
+              {haltReason === "manual_streak" && (
+                <span className="ml-2 text-muted-foreground">Press <span className="text-foreground">Start Bot</span> to resume.</span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Top metrics */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <MetricCard
             label="Portfolio Value"
             value={fmtUSD(portfolioValue)}
             icon={<Wallet className="size-4" />}
+            sub={`Peak ${fmtUSD(peak)}`}
           />
           <MetricCard
             label="Total Return"
@@ -291,17 +513,53 @@ function App() {
             icon={totalReturnPct >= 0 ? <TrendingUp className="size-4" /> : <TrendingDown className="size-4" />}
             big
           />
-          <MetricCard label="Cash (USDT)" value={fmtUSD(cash)} />
+          <MetricCard label="Cash (USDT)" value={fmtUSD(cash)} sub={`Invested ${fmtUSD(positionsValue)}`} />
           <MetricCard
             label="Bot Status"
-            value={botRunning ? "Running" : "Stopped"}
-            tone={botRunning ? "bull" : undefined}
+            value={botRunning && !haltReason ? "Running" : haltReason ? "Paused" : "Stopped"}
+            tone={botRunning && !haltReason ? "bull" : haltReason ? "bear" : undefined}
             icon={<Bot className="size-4" />}
             sub={`Tick every ${BOT_TICK_MS / 1000}s`}
           />
         </section>
 
-        {/* Prices + Chart */}
+        {/* Risk strip */}
+        <section className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          <RiskCard level={riskLevel} haltReason={haltReason} />
+          <MetricCard
+            label="Losing Streak"
+            value={`${losingStreak}`}
+            tone={losingStreak >= 2 ? "bear" : undefined}
+            icon={<Flame className="size-4" />}
+            sub={
+              losingStreak >= STREAK_HARD_STOP ? "Hard stop"
+              : losingStreak === 3 ? "1h cooldown"
+              : losingStreak === 2 ? "15m cooldown"
+              : "—"
+            }
+          />
+          <MetricCard
+            label="Cooldown"
+            value={cooldownLeft > 0 ? fmtDuration(cooldownLeft) : "—"}
+            tone={cooldownLeft > 0 ? "bear" : undefined}
+            icon={<Timer className="size-4" />}
+            sub={cooldownLeft > 0 ? "Bot paused" : "Clear"}
+          />
+          <MetricCard
+            label="Max Drawdown"
+            value={fmtPct(maxDrawdownPct)}
+            sub={`Current ${fmtPct(drawdownPct)}`}
+            tone={maxDrawdownPct <= -10 ? "bear" : undefined}
+          />
+          <MetricCard
+            label="Win Rate"
+            value={winRate == null ? "—" : `${winRate.toFixed(1)}%`}
+            sub={`${wins}/${sellTrades.length} · Sharpe ${sharpeRatio == null ? "—" : sharpeRatio.toFixed(2)}`}
+            tone={winRate != null && winRate >= 50 ? "bull" : undefined}
+          />
+        </section>
+
+        {/* Charts row */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 rounded-lg border border-border bg-card">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
@@ -383,10 +641,67 @@ function App() {
           </div>
         </section>
 
+        {/* Equity / compound growth chart */}
+        <section className="rounded-lg border border-border bg-card">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+            <div>
+              <h2 className="text-sm font-semibold">Portfolio Growth (Compounded)</h2>
+              <p className="text-xs text-muted-foreground">All profits auto-reinvested · position sized off live equity</p>
+            </div>
+            <div className="text-right text-xs text-muted-foreground">
+              Start <span className="text-foreground tabular">{fmtUSD(STARTING_BALANCE)}</span>
+            </div>
+          </div>
+          <div className="h-[220px] p-2">
+            {equityChart.length < 2 ? (
+              <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+                Tracking portfolio… need a few price ticks.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={equityChart} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
+                  <CartesianGrid stroke="var(--color-grid)" strokeDasharray="2 4" vertical={false} />
+                  <XAxis dataKey="time" tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} tickLine={false} axisLine={false} minTickGap={40} />
+                  <YAxis
+                    domain={["auto", "auto"]}
+                    tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={70}
+                    tickFormatter={(v: number) => `$${v.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--color-popover)",
+                      border: "1px solid var(--color-border)",
+                      borderRadius: 6,
+                      fontSize: 12,
+                    }}
+                    labelStyle={{ color: "var(--color-muted-foreground)" }}
+                    formatter={(v: number) => [fmtUSD(v), "Equity"]}
+                  />
+                  <ReferenceLine y={STARTING_BALANCE} stroke="var(--color-muted-foreground)" strokeDasharray="3 3" />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke={portfolioValue >= STARTING_BALANCE ? "var(--color-bull)" : "var(--color-bear)"}
+                    strokeWidth={2}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </section>
+
         {/* Positions */}
         <section className="rounded-lg border border-border bg-card">
-          <div className="px-4 py-3 border-b border-border">
+          <div className="px-4 py-3 border-b border-border flex items-center justify-between">
             <h2 className="text-sm font-semibold">Active Positions</h2>
+            <span className="text-[11px] text-muted-foreground">
+              SL {STOP_LOSS_PCT}% · TP +{TAKE_PROFIT_PCT}% · Max size {MAX_POSITION_PCT * 100}%
+            </span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -426,7 +741,7 @@ function App() {
                 {COINS.every((c) => !positions[c.id]) && (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
-                      No open positions. {botRunning ? "Bot is scanning the market…" : "Start the bot to begin trading."}
+                      No open positions. {botRunning && !haltReason ? "Bot is scanning the market…" : "Start the bot to begin trading."}
                     </td>
                   </tr>
                 )}
@@ -451,6 +766,7 @@ function App() {
                   <Th right>Price</Th>
                   <Th right>Amount</Th>
                   <Th right>USD</Th>
+                  <Th right>Realized</Th>
                   <Th>Signal</Th>
                 </tr>
               </thead>
@@ -473,12 +789,21 @@ function App() {
                     <Td right mono>{fmtUSD(t.price)}</Td>
                     <Td right mono>{t.amount.toFixed(6)}</Td>
                     <Td right mono>{fmtUSD(t.usd)}</Td>
+                    <Td right>
+                      {t.realizedPnl != null ? (
+                        <span className={`tabular ${t.realizedPnl >= 0 ? "text-bull" : "text-bear"}`}>
+                          {fmtUSD(t.realizedPnl)} ({fmtPct(t.realizedPct ?? 0)})
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </Td>
                     <Td className="text-xs text-muted-foreground">{t.reason}</Td>
                   </tr>
                 ))}
                 {trades.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
+                    <td colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
                       No trades yet.
                     </td>
                   </tr>
@@ -497,19 +822,10 @@ function App() {
 }
 
 function MetricCard({
-  label,
-  value,
-  sub,
-  tone,
-  icon,
-  big,
+  label, value, sub, tone, icon, big,
 }: {
-  label: string;
-  value: string;
-  sub?: string;
-  tone?: "bull" | "bear";
-  icon?: React.ReactNode;
-  big?: boolean;
+  label: string; value: string; sub?: string;
+  tone?: "bull" | "bear"; icon?: React.ReactNode; big?: boolean;
 }) {
   const toneClass = tone === "bull" ? "text-bull" : tone === "bear" ? "text-bear" : "";
   return (
@@ -522,6 +838,24 @@ function MetricCard({
         {value}
       </div>
       {sub && <div className={`mt-0.5 text-xs tabular ${toneClass || "text-muted-foreground"}`}>{sub}</div>}
+    </div>
+  );
+}
+
+function RiskCard({ level, haltReason }: { level: "green" | "yellow" | "red"; haltReason: HaltReason }) {
+  const cfg =
+    level === "green" ? { label: "GREEN", text: "text-bull", bg: "bg-bull/10", border: "border-bull/40", note: "All systems normal" }
+    : level === "yellow" ? { label: "YELLOW", text: "text-amber-400", bg: "bg-amber-400/10", border: "border-amber-400/40", note: "Elevated risk — caution" }
+    : { label: "RED", text: "text-bear", bg: "bg-bear/10", border: "border-bear/40", note: haltReason ? "Bot halted" : "Critical risk" };
+
+  return (
+    <div className={`rounded-lg border ${cfg.border} ${cfg.bg} p-4`}>
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span>Risk Status</span>
+        <ShieldCheck className={`size-4 ${cfg.text}`} />
+      </div>
+      <div className={`mt-2 text-xl font-semibold tabular ${cfg.text}`}>{cfg.label}</div>
+      <div className="mt-0.5 text-xs text-muted-foreground">{cfg.note}</div>
     </div>
   );
 }
@@ -543,15 +877,9 @@ function Th({ children, right }: { children: React.ReactNode; right?: boolean })
 }
 
 function Td({
-  children,
-  right,
-  mono,
-  className = "",
+  children, right, mono, className = "",
 }: {
-  children: React.ReactNode;
-  right?: boolean;
-  mono?: boolean;
-  className?: string;
+  children: React.ReactNode; right?: boolean; mono?: boolean; className?: string;
 }) {
   return (
     <td className={`px-4 py-2 ${right ? "text-right" : ""} ${mono ? "tabular" : ""} ${className}`}>
