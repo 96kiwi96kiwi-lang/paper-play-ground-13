@@ -16,7 +16,7 @@ export interface PricePoint {
 
 export interface Position {
   coin: CoinId;
-  amount: number; // coin units
+  amount: number;
   avgEntry: number;
 }
 
@@ -26,9 +26,16 @@ export interface Trade {
   coin: CoinId;
   action: "BUY" | "SELL";
   price: number;
-  amount: number; // coin units
+  amount: number;
   usd: number;
   reason: string;
+  realizedPnl?: number;
+  realizedPct?: number;
+}
+
+export interface EquityPoint {
+  t: number;
+  value: number;
 }
 
 export function fmtUSD(n: number) {
@@ -38,6 +45,17 @@ export function fmtUSD(n: number) {
 export function fmtPct(n: number) {
   const sign = n > 0 ? "+" : "";
   return `${sign}${n.toFixed(2)}%`;
+}
+
+export function fmtDuration(ms: number) {
+  if (ms <= 0) return "0s";
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h}h ${m}m ${sec}s`;
+  if (m > 0) return `${m}m ${sec}s`;
+  return `${sec}s`;
 }
 
 export function rsi(prices: number[], period = 14): number | null {
@@ -73,4 +91,21 @@ export function avgSince(history: PricePoint[], msAgo: number): number | null {
   const slice = history.filter((p) => p.t >= cutoff);
   if (slice.length === 0) return null;
   return slice.reduce((s, p) => s + p.price, 0) / slice.length;
+}
+
+// Annualized-ish Sharpe from an equity curve (basic version, risk-free=0).
+export function sharpe(equity: EquityPoint[]): number | null {
+  if (equity.length < 3) return null;
+  const rets: number[] = [];
+  for (let i = 1; i < equity.length; i++) {
+    const a = equity[i - 1].value;
+    const b = equity[i].value;
+    if (a > 0) rets.push((b - a) / a);
+  }
+  if (rets.length < 2) return null;
+  const mean = rets.reduce((s, x) => s + x, 0) / rets.length;
+  const variance = rets.reduce((s, x) => s + (x - mean) ** 2, 0) / rets.length;
+  const std = Math.sqrt(variance);
+  if (std === 0) return null;
+  return (mean / std) * Math.sqrt(rets.length);
 }
