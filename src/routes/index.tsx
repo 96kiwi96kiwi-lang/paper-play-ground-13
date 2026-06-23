@@ -648,6 +648,44 @@ function App() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6 space-y-6">
+        {/* Persistence info banner */}
+        <div className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-2.5 flex items-start gap-3">
+          <Info className="size-4 text-amber-400 shrink-0 mt-0.5" />
+          <div className="text-xs text-foreground/80">
+            <span className="font-medium text-amber-400">⚠️ Bot only runs while this tab is open in browser.</span>{" "}
+            For 24/7 trading, a server is needed. State auto-saves every 30s and restores on return.
+          </div>
+        </div>
+
+        {/* Session restored */}
+        {sessionRestored && (
+          <div className="rounded-lg border border-bull/40 bg-bull/10 px-4 py-2.5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-sm">
+              <ShieldCheck className="size-4 text-bull" />
+              <span className="text-bull font-medium">Session restored</span>
+              <span className="text-muted-foreground text-xs">
+                from {new Date(sessionRestored).toLocaleString()}
+              </span>
+            </div>
+            <button
+              onClick={dismissRestored}
+              className="text-[11px] text-muted-foreground hover:text-foreground"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {/* Resumed-on-return toast */}
+        {resumeNotice && (
+          <div className="rounded-lg border border-primary/40 bg-primary/10 px-4 py-2.5 flex items-center gap-2 text-sm">
+            <Bot className="size-4 text-primary" />
+            <span className="text-primary font-medium">Bot resumed automatically</span>
+            <span className="text-muted-foreground text-xs">— welcome back</span>
+          </div>
+        )}
+
+
         {/* Halt banner */}
         {haltLabel && (
           <div className="rounded-lg border border-bear/40 bg-bear/10 px-4 py-3 flex items-center gap-3">
