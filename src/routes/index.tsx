@@ -561,7 +561,12 @@ function App() {
     setLosingStreak(0);
     setCooldownUntil(null);
     setHaltReason(null);
+    setSessionRestored(null);
+    try { window.localStorage.removeItem(STORAGE_KEY); } catch { /* noop */ }
   };
+
+  const dismissRestored = () => setSessionRestored(null);
+
 
   const startBot = () => {
     // Manual start clears non-permanent halts; resets streak only on hard-stop restart
