@@ -22,6 +22,9 @@ import {
   AlertTriangle,
   Timer,
   Flame,
+  Info,
+  Lock,
+  LockOpen,
 } from "lucide-react";
 import {
   COINS,
@@ -81,40 +84,82 @@ const STREAK_HARD_STOP = 5;
 
 type HaltReason = null | "manual_streak" | "daily_loss" | "drawdown" | "cooldown";
 
+const STORAGE_KEY = "algo-paper-trader:v1";
+const SAVE_INTERVAL_MS = 30_000;
+
+type Persisted = {
+  cash: number;
+  positions: Record<CoinId, Position | null>;
+  trades: Trade[];
+  strategy: Strategy;
+  botRunning: boolean;
+  equity: EquityPoint[];
+  peak: number;
+  dayAnchor: { key: string; value: number };
+  losingStreak: number;
+  cooldownUntil: number | null;
+  haltReason: HaltReason;
+  savedAt: number;
+};
+
+function loadPersisted(): Persisted | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as Persisted;
+  } catch {
+    return null;
+  }
+}
+
 function dayKey(ts: number) {
   const d = new Date(ts);
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
 
 function App() {
+  // One-shot load from localStorage so initial state restores prior session
+  const persistedRef = useRef<Persisted | null>(null);
+  if (persistedRef.current === null && typeof window !== "undefined") {
+    persistedRef.current = loadPersisted();
+  }
+  const persisted = persistedRef.current;
+
   const [prices, setPrices] = useState<Record<CoinId, number>>({
     bitcoin: 0, ethereum: 0, solana: 0, binancecoin: 0,
   });
   const [history, setHistory] = useState<Record<CoinId, PricePoint[]>>({
     bitcoin: [], ethereum: [], solana: [], binancecoin: [],
   });
-  const [cash, setCash] = useState(STARTING_BALANCE);
-  const [positions, setPositions] = useState<Record<CoinId, Position | null>>({
-    bitcoin: null, ethereum: null, solana: null, binancecoin: null,
-  });
-  const [trades, setTrades] = useState<Trade[]>([]);
-  const [strategy, setStrategy] = useState<Strategy>("momentum");
-  const [botRunning, setBotRunning] = useState(false);
+  const [cash, setCash] = useState(persisted?.cash ?? STARTING_BALANCE);
+  const [positions, setPositions] = useState<Record<CoinId, Position | null>>(
+    persisted?.positions ?? { bitcoin: null, ethereum: null, solana: null, binancecoin: null },
+  );
+  const [trades, setTrades] = useState<Trade[]>(persisted?.trades ?? []);
+  const [strategy, setStrategy] = useState<Strategy>(persisted?.strategy ?? "momentum");
+  const [botRunning, setBotRunning] = useState(persisted?.botRunning ?? false);
   const [selectedCoin, setSelectedCoin] = useState<CoinId>("bitcoin");
   const [lastUpdate, setLastUpdate] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Risk / equity state
-  const [equity, setEquity] = useState<EquityPoint[]>([]);
-  const [peak, setPeak] = useState(STARTING_BALANCE);
-  const [dayAnchor, setDayAnchor] = useState<{ key: string; value: number }>({
-    key: dayKey(Date.now()),
-    value: STARTING_BALANCE,
-  });
-  const [losingStreak, setLosingStreak] = useState(0);
-  const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
-  const [haltReason, setHaltReason] = useState<HaltReason>(null);
+  const [equity, setEquity] = useState<EquityPoint[]>(persisted?.equity ?? []);
+  const [peak, setPeak] = useState(persisted?.peak ?? STARTING_BALANCE);
+  const [dayAnchor, setDayAnchor] = useState<{ key: string; value: number }>(
+    persisted?.dayAnchor ?? { key: dayKey(Date.now()), value: STARTING_BALANCE },
+  );
+  const [losingStreak, setLosingStreak] = useState(persisted?.losingStreak ?? 0);
+  const [cooldownUntil, setCooldownUntil] = useState<number | null>(persisted?.cooldownUntil ?? null);
+  const [haltReason, setHaltReason] = useState<HaltReason>(persisted?.haltReason ?? null);
   const [now, setNow] = useState(Date.now());
+
+  // Session-restore + resume notifications
+  const [sessionRestored, setSessionRestored] = useState<number | null>(
+    persisted ? persisted.savedAt : null,
+  );
+  const [resumeNotice, setResumeNotice] = useState(false);
+  const [wakeLockActive, setWakeLockActive] = useState(false);
 
   // Tick every second for countdowns
   useEffect(() => {
@@ -126,13 +171,119 @@ function App() {
   const stateRef = useRef({
     prices, history, cash, positions, strategy,
     peak, dayAnchor, losingStreak, cooldownUntil, haltReason,
+    trades, equity, botRunning,
   });
   useEffect(() => {
     stateRef.current = {
       prices, history, cash, positions, strategy,
       peak, dayAnchor, losingStreak, cooldownUntil, haltReason,
+      trades, equity, botRunning,
     };
   });
+
+  // --- localStorage persistence (every 30s + on tab hide)
+  const saveSnapshot = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const s = stateRef.current;
+    const snap: Persisted = {
+      cash: s.cash,
+      positions: s.positions,
+      trades: s.trades,
+      strategy: s.strategy,
+      botRunning: s.botRunning,
+      equity: s.equity,
+      peak: s.peak,
+      dayAnchor: s.dayAnchor,
+      losingStreak: s.losingStreak,
+      cooldownUntil: s.cooldownUntil,
+      haltReason: s.haltReason,
+      savedAt: Date.now(),
+    };
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snap));
+    } catch {
+      /* quota / private mode — ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(saveSnapshot, SAVE_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [saveSnapshot]);
+
+  // --- Visibility: save on hide, resume on return
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const onVis = () => {
+      if (document.visibilityState === "hidden") {
+        saveSnapshot();
+      } else if (document.visibilityState === "visible") {
+        // If bot was supposed to be running, surface a "resumed" notice
+        if (stateRef.current.botRunning) {
+          setResumeNotice(true);
+          window.setTimeout(() => setResumeNotice(false), 4000);
+        }
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [saveSnapshot]);
+
+  // --- Wake Lock: keep screen awake while bot runs
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  useEffect(() => {
+    const nav = typeof navigator !== "undefined" ? (navigator as Navigator & { wakeLock?: { request: (t: "screen") => Promise<WakeLockSentinel> } }) : null;
+    if (!nav?.wakeLock) return;
+
+    let cancelled = false;
+
+    const acquire = async () => {
+      if (!botRunning) return;
+      try {
+        const sentinel = await nav.wakeLock!.request("screen");
+        if (cancelled) {
+          sentinel.release().catch(() => {});
+          return;
+        }
+        wakeLockRef.current = sentinel;
+        setWakeLockActive(true);
+        sentinel.addEventListener("release", () => {
+          if (wakeLockRef.current === sentinel) {
+            wakeLockRef.current = null;
+            setWakeLockActive(false);
+          }
+        });
+      } catch {
+        setWakeLockActive(false);
+      }
+    };
+
+    const release = async () => {
+      const s = wakeLockRef.current;
+      wakeLockRef.current = null;
+      setWakeLockActive(false);
+      if (s) {
+        try { await s.release(); } catch { /* noop */ }
+      }
+    };
+
+    const onVis = () => {
+      if (document.visibilityState === "visible" && botRunning && !wakeLockRef.current) {
+        acquire();
+      }
+    };
+
+    if (botRunning) acquire();
+    else release();
+    document.addEventListener("visibilitychange", onVis);
+
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVis);
+      release();
+    };
+  }, [botRunning]);
+
 
   // Fetch prices
   const fetchPrices = useCallback(async () => {
@@ -410,7 +561,12 @@ function App() {
     setLosingStreak(0);
     setCooldownUntil(null);
     setHaltReason(null);
+    setSessionRestored(null);
+    try { window.localStorage.removeItem(STORAGE_KEY); } catch { /* noop */ }
   };
+
+  const dismissRestored = () => setSessionRestored(null);
+
 
   const startBot = () => {
     // Manual start clears non-permanent halts; resets streak only on hard-stop restart
@@ -450,11 +606,23 @@ function App() {
               <span className={`size-2 rounded-full ${lastUpdate ? "bg-bull animate-pulse" : "bg-muted-foreground"}`} />
               {lastUpdate ? `Live · ${new Date(lastUpdate).toLocaleTimeString()}` : "Connecting…"}
             </div>
+            <div
+              className={`hidden sm:inline-flex items-center gap-1.5 text-[11px] rounded-md px-2 py-1 border ${
+                wakeLockActive
+                  ? "border-bull/40 bg-bull/10 text-bull"
+                  : "border-border bg-muted/30 text-muted-foreground"
+              }`}
+              title="Wake Lock keeps the screen awake while the bot runs"
+            >
+              {wakeLockActive ? <Lock className="size-3" /> : <LockOpen className="size-3" />}
+              Screen lock: {wakeLockActive ? "Active" : "Inactive"}
+            </div>
             <select
               value={strategy}
               onChange={(e) => setStrategy(e.target.value as Strategy)}
               className="bg-input border border-border rounded-md px-2 py-1.5 text-xs tabular"
             >
+
               <option value="momentum">Momentum</option>
               <option value="mean_reversion">Mean Reversion</option>
               <option value="rsi">RSI</option>
@@ -480,6 +648,44 @@ function App() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6 space-y-6">
+        {/* Persistence info banner */}
+        <div className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-2.5 flex items-start gap-3">
+          <Info className="size-4 text-amber-400 shrink-0 mt-0.5" />
+          <div className="text-xs text-foreground/80">
+            <span className="font-medium text-amber-400">⚠️ Bot only runs while this tab is open in browser.</span>{" "}
+            For 24/7 trading, a server is needed. State auto-saves every 30s and restores on return.
+          </div>
+        </div>
+
+        {/* Session restored */}
+        {sessionRestored && (
+          <div className="rounded-lg border border-bull/40 bg-bull/10 px-4 py-2.5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-sm">
+              <ShieldCheck className="size-4 text-bull" />
+              <span className="text-bull font-medium">Session restored</span>
+              <span className="text-muted-foreground text-xs">
+                from {new Date(sessionRestored).toLocaleString()}
+              </span>
+            </div>
+            <button
+              onClick={dismissRestored}
+              className="text-[11px] text-muted-foreground hover:text-foreground"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {/* Resumed-on-return toast */}
+        {resumeNotice && (
+          <div className="rounded-lg border border-primary/40 bg-primary/10 px-4 py-2.5 flex items-center gap-2 text-sm">
+            <Bot className="size-4 text-primary" />
+            <span className="text-primary font-medium">Bot resumed automatically</span>
+            <span className="text-muted-foreground text-xs">— welcome back</span>
+          </div>
+        )}
+
+
         {/* Halt banner */}
         {haltLabel && (
           <div className="rounded-lg border border-bear/40 bg-bear/10 px-4 py-3 flex items-center gap-3">
