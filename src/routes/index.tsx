@@ -119,34 +119,47 @@ function dayKey(ts: number) {
 }
 
 function App() {
+  // One-shot load from localStorage so initial state restores prior session
+  const persistedRef = useRef<Persisted | null>(null);
+  if (persistedRef.current === null && typeof window !== "undefined") {
+    persistedRef.current = loadPersisted();
+  }
+  const persisted = persistedRef.current;
+
   const [prices, setPrices] = useState<Record<CoinId, number>>({
     bitcoin: 0, ethereum: 0, solana: 0, binancecoin: 0,
   });
   const [history, setHistory] = useState<Record<CoinId, PricePoint[]>>({
     bitcoin: [], ethereum: [], solana: [], binancecoin: [],
   });
-  const [cash, setCash] = useState(STARTING_BALANCE);
-  const [positions, setPositions] = useState<Record<CoinId, Position | null>>({
-    bitcoin: null, ethereum: null, solana: null, binancecoin: null,
-  });
-  const [trades, setTrades] = useState<Trade[]>([]);
-  const [strategy, setStrategy] = useState<Strategy>("momentum");
-  const [botRunning, setBotRunning] = useState(false);
+  const [cash, setCash] = useState(persisted?.cash ?? STARTING_BALANCE);
+  const [positions, setPositions] = useState<Record<CoinId, Position | null>>(
+    persisted?.positions ?? { bitcoin: null, ethereum: null, solana: null, binancecoin: null },
+  );
+  const [trades, setTrades] = useState<Trade[]>(persisted?.trades ?? []);
+  const [strategy, setStrategy] = useState<Strategy>(persisted?.strategy ?? "momentum");
+  const [botRunning, setBotRunning] = useState(persisted?.botRunning ?? false);
   const [selectedCoin, setSelectedCoin] = useState<CoinId>("bitcoin");
   const [lastUpdate, setLastUpdate] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Risk / equity state
-  const [equity, setEquity] = useState<EquityPoint[]>([]);
-  const [peak, setPeak] = useState(STARTING_BALANCE);
-  const [dayAnchor, setDayAnchor] = useState<{ key: string; value: number }>({
-    key: dayKey(Date.now()),
-    value: STARTING_BALANCE,
-  });
-  const [losingStreak, setLosingStreak] = useState(0);
-  const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
-  const [haltReason, setHaltReason] = useState<HaltReason>(null);
+  const [equity, setEquity] = useState<EquityPoint[]>(persisted?.equity ?? []);
+  const [peak, setPeak] = useState(persisted?.peak ?? STARTING_BALANCE);
+  const [dayAnchor, setDayAnchor] = useState<{ key: string; value: number }>(
+    persisted?.dayAnchor ?? { key: dayKey(Date.now()), value: STARTING_BALANCE },
+  );
+  const [losingStreak, setLosingStreak] = useState(persisted?.losingStreak ?? 0);
+  const [cooldownUntil, setCooldownUntil] = useState<number | null>(persisted?.cooldownUntil ?? null);
+  const [haltReason, setHaltReason] = useState<HaltReason>(persisted?.haltReason ?? null);
   const [now, setNow] = useState(Date.now());
+
+  // Session-restore + resume notifications
+  const [sessionRestored, setSessionRestored] = useState<number | null>(
+    persisted ? persisted.savedAt : null,
+  );
+  const [resumeNotice, setResumeNotice] = useState(false);
+  const [wakeLockActive, setWakeLockActive] = useState(false);
 
   // Tick every second for countdowns
   useEffect(() => {
@@ -158,13 +171,119 @@ function App() {
   const stateRef = useRef({
     prices, history, cash, positions, strategy,
     peak, dayAnchor, losingStreak, cooldownUntil, haltReason,
+    trades, equity, botRunning,
   });
   useEffect(() => {
     stateRef.current = {
       prices, history, cash, positions, strategy,
       peak, dayAnchor, losingStreak, cooldownUntil, haltReason,
+      trades, equity, botRunning,
     };
   });
+
+  // --- localStorage persistence (every 30s + on tab hide)
+  const saveSnapshot = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const s = stateRef.current;
+    const snap: Persisted = {
+      cash: s.cash,
+      positions: s.positions,
+      trades: s.trades,
+      strategy: s.strategy,
+      botRunning: s.botRunning,
+      equity: s.equity,
+      peak: s.peak,
+      dayAnchor: s.dayAnchor,
+      losingStreak: s.losingStreak,
+      cooldownUntil: s.cooldownUntil,
+      haltReason: s.haltReason,
+      savedAt: Date.now(),
+    };
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snap));
+    } catch {
+      /* quota / private mode — ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(saveSnapshot, SAVE_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [saveSnapshot]);
+
+  // --- Visibility: save on hide, resume on return
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const onVis = () => {
+      if (document.visibilityState === "hidden") {
+        saveSnapshot();
+      } else if (document.visibilityState === "visible") {
+        // If bot was supposed to be running, surface a "resumed" notice
+        if (stateRef.current.botRunning) {
+          setResumeNotice(true);
+          window.setTimeout(() => setResumeNotice(false), 4000);
+        }
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [saveSnapshot]);
+
+  // --- Wake Lock: keep screen awake while bot runs
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  useEffect(() => {
+    const nav = typeof navigator !== "undefined" ? (navigator as Navigator & { wakeLock?: { request: (t: "screen") => Promise<WakeLockSentinel> } }) : null;
+    if (!nav?.wakeLock) return;
+
+    let cancelled = false;
+
+    const acquire = async () => {
+      if (!botRunning) return;
+      try {
+        const sentinel = await nav.wakeLock!.request("screen");
+        if (cancelled) {
+          sentinel.release().catch(() => {});
+          return;
+        }
+        wakeLockRef.current = sentinel;
+        setWakeLockActive(true);
+        sentinel.addEventListener("release", () => {
+          if (wakeLockRef.current === sentinel) {
+            wakeLockRef.current = null;
+            setWakeLockActive(false);
+          }
+        });
+      } catch {
+        setWakeLockActive(false);
+      }
+    };
+
+    const release = async () => {
+      const s = wakeLockRef.current;
+      wakeLockRef.current = null;
+      setWakeLockActive(false);
+      if (s) {
+        try { await s.release(); } catch { /* noop */ }
+      }
+    };
+
+    const onVis = () => {
+      if (document.visibilityState === "visible" && botRunning && !wakeLockRef.current) {
+        acquire();
+      }
+    };
+
+    if (botRunning) acquire();
+    else release();
+    document.addEventListener("visibilitychange", onVis);
+
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVis);
+      release();
+    };
+  }, [botRunning]);
+
 
   // Fetch prices
   const fetchPrices = useCallback(async () => {
