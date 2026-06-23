@@ -606,11 +606,23 @@ function App() {
               <span className={`size-2 rounded-full ${lastUpdate ? "bg-bull animate-pulse" : "bg-muted-foreground"}`} />
               {lastUpdate ? `Live · ${new Date(lastUpdate).toLocaleTimeString()}` : "Connecting…"}
             </div>
+            <div
+              className={`hidden sm:inline-flex items-center gap-1.5 text-[11px] rounded-md px-2 py-1 border ${
+                wakeLockActive
+                  ? "border-bull/40 bg-bull/10 text-bull"
+                  : "border-border bg-muted/30 text-muted-foreground"
+              }`}
+              title="Wake Lock keeps the screen awake while the bot runs"
+            >
+              {wakeLockActive ? <Lock className="size-3" /> : <LockOpen className="size-3" />}
+              Screen lock: {wakeLockActive ? "Active" : "Inactive"}
+            </div>
             <select
               value={strategy}
               onChange={(e) => setStrategy(e.target.value as Strategy)}
               className="bg-input border border-border rounded-md px-2 py-1.5 text-xs tabular"
             >
+
               <option value="momentum">Momentum</option>
               <option value="mean_reversion">Mean Reversion</option>
               <option value="rsi">RSI</option>
