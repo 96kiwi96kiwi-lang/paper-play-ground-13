@@ -22,6 +22,9 @@ import {
   AlertTriangle,
   Timer,
   Flame,
+  Info,
+  Lock,
+  LockOpen,
 } from "lucide-react";
 import {
   COINS,
