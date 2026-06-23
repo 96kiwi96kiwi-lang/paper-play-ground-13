@@ -84,6 +84,35 @@ const STREAK_HARD_STOP = 5;
 
 type HaltReason = null | "manual_streak" | "daily_loss" | "drawdown" | "cooldown";
 
+const STORAGE_KEY = "algo-paper-trader:v1";
+const SAVE_INTERVAL_MS = 30_000;
+
+type Persisted = {
+  cash: number;
+  positions: Record<CoinId, Position | null>;
+  trades: Trade[];
+  strategy: Strategy;
+  botRunning: boolean;
+  equity: EquityPoint[];
+  peak: number;
+  dayAnchor: { key: string; value: number };
+  losingStreak: number;
+  cooldownUntil: number | null;
+  haltReason: HaltReason;
+  savedAt: number;
+};
+
+function loadPersisted(): Persisted | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as Persisted;
+  } catch {
+    return null;
+  }
+}
+
 function dayKey(ts: number) {
   const d = new Date(ts);
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
