@@ -4,24 +4,37 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 
 > **Default mode is always PAPER.** Live trading requires explicit configuration and confirmation.
 
-## Current status (Hour 1–2 pushed)
+## Current status
 
-- ✅ Original paper trading UI & strategies kept
-- ✅ Risk management (stop-loss, take-profit, daily loss, drawdown, losing streak)
-- ✅ New KuCoin adapter (`src/lib/exchange/kucoin.ts`)
-- ✅ Paper exchange adapter
-- ✅ Strategy engine (Momentum, Mean Reversion, RSI, Grid)
-- ✅ Central risk engine
-- ✅ Configuration system (`src/config/trading.ts`)
-- ✅ `.env.example` for API keys
-- ⏳ Live order execution + UI switch (next hours)
+| Phase | Status |
+|-------|--------|
+| Hour 1 – Config + KuCoin adapter | ✅ Done & on GitHub |
+| Hour 2 – Strategies + Risk + Paper exchange | ✅ Done & on GitHub |
+| Hour 3 – Server API + Bot engine | ✅ Done (this push) |
+| Hour 4 – Order management wiring | Next |
+| Hour 5 – Risk polish | Pending |
+| Hour 6 – UI Paper/Live switch | Pending |
+| Hour 7 – Grid improvements | Pending |
+| Hour 8 – Docs + checklist | Pending |
+
+## Architecture
+
+```
+UI (React dashboard – kept)
+        ↓
+   Bot engine (strategy + risk)
+        ↓
+ExchangeAdapter
+   ① PaperExchange   (CoinGecko + virtual money)
+   ② KuCoin (CCXT)   (real orders – live only)
+```
 
 ## Features
 
 ### Paper mode (safe – default)
 - Virtual $10 000 USDT
 - Prices from CoinGecko
-- Strategies: Momentum, Mean Reversion, RSI, Grid
+- Strategies: Momentum, Mean Reversion, RSI, **Grid**
 - Full risk engine
 - LocalStorage persistence
 
@@ -61,9 +74,4 @@ npm run dev
 ## Warning
 
 Trading real cryptocurrency involves substantial risk of loss.  
-This software is provided as-is. Use at your own risk. Never share API keys that have Withdraw permission.
-
-## Development
-
-Built with TanStack Start + React + Tailwind + Recharts.  
-Originally generated with Lovable, now extended for real exchange support.
+Use at your own risk. Never share API keys that have Withdraw permission.
