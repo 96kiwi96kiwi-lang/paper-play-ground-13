@@ -7,6 +7,7 @@
  */
 
 import { TRADING_CONFIG } from "@/config/trading";
+import { notifyHardStop } from "@/lib/hard-stop-hook";
 
 export type HardStopReason =
   | "daily_loss_limit"
@@ -101,6 +102,20 @@ export function classifyPriceGap(
   return { gap: Math.abs(pct) >= PRICE_GAP_LIMIT, pct };
 }
 
+function halt(state: RiskState, reason: string, code: HardStopReason, symbol?: string): RiskState {
+  state.haltReason = reason;
+  logDecision({
+    allowed: false,
+    hardStop: true,
+    reason,
+    code,
+    symbol,
+    snapshot: snap(state),
+  });
+  notifyHardStop({ reason, code });
+  return state;
+}
+
 /**
  * Mutate state: if a hard-stop condition is true, set haltReason so every
  * later evaluateRisk() refuses until an operator clears the halt.
@@ -111,67 +126,39 @@ export function applyHardStops(state: RiskState, currentPrice?: { symbol: string
   if (state.haltReason) return state;
 
   if (state.dailyPnlPct <= risk.dailyLossLimitPct) {
-    state.haltReason = `HARD-STOP daily loss limit (${state.dailyPnlPct.toFixed(2)}% ≤ ${risk.dailyLossLimitPct}%)`;
-    logDecision({
-      allowed: false,
-      hardStop: true,
-      reason: state.haltReason,
-      code: "daily_loss_limit",
-      snapshot: snap(state),
-    });
-    return state;
+    return halt(
+      state,
+      `HARD-STOP daily loss limit (${state.dailyPnlPct.toFixed(2)}% ≤ ${risk.dailyLossLimitPct}%)`,
+      "daily_loss_limit",
+    );
   }
 
   if (state.drawdownPct <= risk.maxDrawdownPct) {
-    state.haltReason = `HARD-STOP max drawdown (${state.drawdownPct.toFixed(2)}% ≤ ${risk.maxDrawdownPct}%)`;
-    logDecision({
-      allowed: false,
-      hardStop: true,
-      reason: state.haltReason,
-      code: "max_drawdown",
-      snapshot: snap(state),
-    });
-    return state;
+    return halt(
+      state,
+      `HARD-STOP max drawdown (${state.drawdownPct.toFixed(2)}% ≤ ${risk.maxDrawdownPct}%)`,
+      "max_drawdown",
+    );
   }
 
   if (state.losingStreak >= risk.losingStreakHardStop) {
-    state.haltReason = `HARD-STOP losing streak ${state.losingStreak}`;
-    logDecision({
-      allowed: false,
-      hardStop: true,
-      reason: state.haltReason,
-      code: "losing_streak",
-      snapshot: snap(state),
-    });
-    return state;
+    return halt(state, `HARD-STOP losing streak ${state.losingStreak}`, "losing_streak");
   }
 
   if ((state.networkErrorStreak ?? 0) >= NETWORK_ERROR_HARD_STOP) {
-    state.haltReason = `HARD-STOP network error streak ${state.networkErrorStreak}`;
-    logDecision({
-      allowed: false,
-      hardStop: true,
-      reason: state.haltReason,
-      code: "network_errors",
-      snapshot: snap(state),
-    });
-    return state;
+    return halt(state, `HARD-STOP network error streak ${state.networkErrorStreak}`, "network_errors");
   }
 
   if (currentPrice) {
     const prev = state.lastPrices?.[currentPrice.symbol];
     const { gap, pct } = classifyPriceGap(prev, currentPrice.price);
     if (gap) {
-      state.haltReason = `HARD-STOP price gap on ${currentPrice.symbol} (${(pct * 100).toFixed(2)}%)`;
-      logDecision({
-        allowed: false,
-        hardStop: true,
-        reason: state.haltReason,
-        code: "price_gap",
-        symbol: currentPrice.symbol,
-        snapshot: snap(state),
-      });
-      return state;
+      return halt(
+        state,
+        `HARD-STOP price gap on ${currentPrice.symbol} (${(pct * 100).toFixed(2)}%)`,
+        "price_gap",
+        currentPrice.symbol,
+      );
     }
   }
 
@@ -243,7 +230,6 @@ export function evaluateRisk(
     return finish({ allowed: false, reason: `Cooldown ${remaining}s remaining` });
   }
 
-  // These three are also applied as haltReason above; keep explicit messages.
   if (state.dailyPnlPct <= risk.dailyLossLimitPct) {
     return finish({
       allowed: false,
