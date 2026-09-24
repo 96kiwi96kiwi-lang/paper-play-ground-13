@@ -2,6 +2,7 @@
  * KuCoin exchange adapter (server-side only)
  * -----------------------------------------
  * Uses CCXT. Never import this file from client components.
+ * Live enablement is gated by src/lib/server/trading-mode.ts (assertLiveAllowed).
  */
 
 import ccxt from "ccxt";
@@ -106,16 +107,12 @@ export async function fetchTickers(): Promise<Record<string, Ticker>> {
   return result;
 }
 
-/** Place a market order (spot) */
+/** Place a market order (spot). Caller must have asserted live mode. */
 export async function placeMarketOrder(
   symbol: string,
   side: "buy" | "sell",
   amount: number,
 ): Promise<OrderResult> {
-  if (TRADING_CONFIG.mode !== "live") {
-    throw new Error("Live trading is disabled. Set mode to 'live' only after explicit confirmation.");
-  }
-
   const ex = getExchange();
   const order = await ex.createOrder(symbol, "market", side, amount);
 
@@ -134,17 +131,13 @@ export async function placeMarketOrder(
   };
 }
 
-/** Place a limit order */
+/** Place a limit order. Caller must have asserted live mode. */
 export async function placeLimitOrder(
   symbol: string,
   side: "buy" | "sell",
   amount: number,
   price: number,
 ): Promise<OrderResult> {
-  if (TRADING_CONFIG.mode !== "live") {
-    throw new Error("Live trading is disabled.");
-  }
-
   const ex = getExchange();
   const order = await ex.createOrder(symbol, "limit", side, amount, price);
 
