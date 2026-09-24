@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { ModeSwitch } from "@/components/mode-switch";
 
 function NotFoundComponent() {
   return (
@@ -77,18 +78,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Crypto Trader Sim is a browser-based paper trading simulator for cryptocurrencies." },
+      { title: "Algo Paper Trader" },
+      { name: "description", content: "Crypto paper trader with optional KuCoin live mode. Default is paper." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Crypto Trader Sim is a browser-based paper trading simulator for cryptocurrencies." },
+      { property: "og:title", content: "Algo Paper Trader" },
+      { property: "og:description", content: "Paper by default. Live is opt-in only." },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "Lovable App" },
-      { name: "twitter:description", content: "Crypto Trader Sim is a browser-based paper trading simulator for cryptocurrencies." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a911bd4f-6d3c-4841-b658-edf7ac66d991/id-preview-3c4cb6b8--6690ad01-981f-46bd-8668-25663b1facf0.lovable.app-1782155481187.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a911bd4f-6d3c-4841-b658-edf7ac66d991/id-preview-3c4cb6b8--6690ad01-981f-46bd-8668-25663b1facf0.lovable.app-1782155481187.png" },
     ],
     links: [
       {
@@ -122,7 +117,9 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+      <div className="sticky top-0 z-40">
+        <ModeSwitch />
+      </div>
       <Outlet />
     </QueryClientProvider>
   );
