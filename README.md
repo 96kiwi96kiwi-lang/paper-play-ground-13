@@ -10,10 +10,10 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 |-------|--------|
 | Hour 1 – Config + KuCoin adapter | ✅ Done & on GitHub |
 | Hour 2 – Strategies + Risk + Paper exchange | ✅ Done & on GitHub |
-| Hour 3 – Server API + Bot engine | ✅ Done (this push) |
-| Hour 4 – Order management wiring | Next |
-| Hour 5 – Risk polish | Pending |
-| Hour 6 – UI Paper/Live switch | Pending |
+| Hour 3 – Server API + Bot engine | ✅ Done |
+| Hour 4 – Order management wiring | ✅ Done |
+| Hour 5 – Risk polish | ✅ Done (this push) |
+| Hour 6 – UI Paper/Live switch | Next |
 | Hour 7 – Grid improvements | Pending |
 | Hour 8 – Docs + checklist | Pending |
 
@@ -23,6 +23,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 UI (React dashboard – kept)
         ↓
    Bot engine (strategy + risk)
+        ↓
+   OrderManager (idempotent clientOrderId)
         ↓
 ExchangeAdapter
    ① PaperExchange   (CoinGecko + virtual money)
@@ -35,7 +37,7 @@ ExchangeAdapter
 - Virtual $10 000 USDT
 - Prices from CoinGecko
 - Strategies: Momentum, Mean Reversion, RSI, **Grid**
-- Full risk engine
+- Full risk engine with hard-stops
 - LocalStorage persistence
 
 ### Live mode (KuCoin Spot)
@@ -43,6 +45,9 @@ ExchangeAdapter
 - Same strategies + risk rules
 - API keys only on server side
 - Trade permission only (never Withdraw)
+
+### Risk hard-stops (Hour 5)
+Daily loss limit, max drawdown, and losing streak **halt the bot** (`haltReason` stays set until an operator clears it). Price gaps ≥ 3.5% and a streak of 5 network errors also hard-stop. Partial fills update portfolio by filled qty only. Decisions are logged with ALLOW / BLOCK / HARD-STOP.
 
 ## Quick start (Paper)
 
@@ -61,7 +66,7 @@ npm run dev
 ## Risk rules (shared)
 
 | Rule                    | Value   |
-|-------------------------|---------|
+|-------------------------|---------| 
 | Trade size              | 15 %    |
 | Max position per coin   | 20 %    |
 | Stop-loss               | –4 %    |
@@ -70,6 +75,8 @@ npm run dev
 | Max drawdown            | –18 %   |
 | Max open positions      | 3       |
 | Losing streak hard stop | 4       |
+| Price gap hard stop     | 3.5 %   |
+| Network error streak    | 5       |
 
 ## Warning
 

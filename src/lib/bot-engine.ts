@@ -5,7 +5,13 @@
 
 import type { StrategyId } from "@/config/trading";
 import { runStrategy, type StrategyContext } from "@/lib/strategies";
-import { evaluateRisk, type RiskState } from "@/lib/risk";
+import {
+  applyHardStops,
+  evaluateRisk,
+  recordNetworkOutcome,
+  recordPartialFill,
+  type RiskState,
+} from "@/lib/risk";
 import type { PricePoint } from "@/lib/trading";
 import type { Side } from "@/lib/exchange/types";
 import type { OrderManager, SubmitResult } from "@/lib/orders/order-manager";
@@ -28,6 +34,7 @@ export interface BotTickResult {
   riskReason: string;
   suggestedSizeUsd?: number;
   shouldExecute: boolean;
+  hardStopped: boolean;
 }
 
 /**
@@ -36,6 +43,22 @@ export interface BotTickResult {
  * or use executeBotTick() to go through OrderManager.
  */
 export function botTick(input: BotTickInput): BotTickResult {
+  applyHardStops(input.riskState, {
+    symbol: input.symbol,
+    price: input.currentPrice,
+  });
+
+  if (input.riskState.haltReason) {
+    return {
+      action: "hold",
+      reason: `Bot hard-stopped: ${input.riskState.haltReason}`,
+      riskAllowed: false,
+      riskReason: input.riskState.haltReason,
+      shouldExecute: false,
+      hardStopped: true,
+    };
+  }
+
   const ctx: StrategyContext = {
     symbol: input.symbol,
     history: input.history,
@@ -54,6 +77,7 @@ export function botTick(input: BotTickInput): BotTickResult {
       riskAllowed: true,
       riskReason: "No trade signal",
       shouldExecute: false,
+      hardStopped: false,
     };
   }
 
@@ -66,7 +90,8 @@ export function botTick(input: BotTickInput): BotTickResult {
     riskAllowed: risk.allowed,
     riskReason: risk.reason,
     suggestedSizeUsd: risk.suggestedSizeUsd,
-    shouldExecute: risk.allowed,
+    shouldExecute: risk.allowed && !risk.hardStop,
+    hardStopped: Boolean(risk.hardStop || input.riskState.haltReason),
   };
 }
 
@@ -86,18 +111,33 @@ export async function executeBotTick(
   const sizeUsd = tick.suggestedSizeUsd ?? 0;
   const amount = input.currentPrice > 0 ? sizeUsd / input.currentPrice : 0;
 
-  const submit = await manager.submit(
-    {
-      symbol: input.symbol,
-      side: tick.action,
-      amount,
-      type: "market",
-      reason: tick.reason,
-    },
-    input.riskState,
-  );
+  try {
+    const submit = await manager.submit(
+      {
+        symbol: input.symbol,
+        side: tick.action,
+        amount,
+        type: "market",
+        reason: tick.reason,
+      },
+      input.riskState,
+    );
 
-  return { tick, submit };
+    recordNetworkOutcome(input.riskState, null);
+
+    if (submit.order) {
+      const filled = submit.order.filled ?? 0;
+      const remaining = submit.order.remaining ?? Math.max(0, submit.order.amount - filled);
+      if (filled > 0 && remaining > 0) {
+        recordPartialFill(filled, submit.order.amount);
+      }
+    }
+
+    return { tick, submit };
+  } catch (err) {
+    recordNetworkOutcome(input.riskState, err);
+    throw err;
+  }
 }
 
 /** Helper: map CoinGecko id → KuCoin symbol */
