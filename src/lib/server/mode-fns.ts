@@ -6,6 +6,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getModeStatus, setRuntimeMode, type ModeStatus } from "./trading-mode";
 import { getHealth } from "./trading-api";
+import { registerHardStopMonitoring } from "./register-monitoring";
+
+registerHardStopMonitoring();
 
 export const fetchModeStatus = createServerFn({ method: "GET" }).handler(async (): Promise<ModeStatus> => {
   return getModeStatus();

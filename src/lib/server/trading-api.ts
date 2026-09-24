@@ -130,6 +130,12 @@ export async function cancelLiveOrder(orderId: string, symbol: string) {
   return kucoin.cancelOrder(orderId, symbol);
 }
 
+/** Cancel every visible open order – live only */
+export async function cancelAllLiveOrders() {
+  assertLiveAllowed();
+  return kucoin.cancelAllOpenOrders();
+}
+
 /** Open orders – live only */
 export async function getOpenOrders(symbol?: string) {
   if (getMode() !== "live") {

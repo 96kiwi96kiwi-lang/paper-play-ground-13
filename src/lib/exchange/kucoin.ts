@@ -168,6 +168,37 @@ export async function fetchOpenOrders(symbol?: string) {
   return ex.fetchOpenOrders(symbol);
 }
 
+export type CancelAllResult = {
+  attempted: number;
+  canceled: number;
+  errors: string[];
+};
+
+/**
+ * Cancel every open spot order we can see. Trade permission only.
+ * Used after a hard-stop so leftover grid/limit orders do not keep working.
+ */
+export async function cancelAllOpenOrders(): Promise<CancelAllResult> {
+  const ex = getExchange();
+  const open = await ex.fetchOpenOrders();
+  const result: CancelAllResult = { attempted: open.length, canceled: 0, errors: [] };
+
+  for (const order of open) {
+    const id = order.id != null ? String(order.id) : "";
+    const symbol = order.symbol ?? "";
+    if (!id) continue;
+    try {
+      await ex.cancelOrder(id, symbol || undefined);
+      result.canceled += 1;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      result.errors.push(`${id} ${symbol}: ${msg}`);
+    }
+  }
+
+  return result;
+}
+
 /** Simple health check */
 export async function healthCheck(): Promise<{ ok: boolean; message: string }> {
   try {
