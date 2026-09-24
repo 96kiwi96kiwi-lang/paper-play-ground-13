@@ -68,10 +68,26 @@ function evaluate(parsed: Omit<KeyPermissionAudit, "ok" | "message">): KeyPermis
   };
 }
 
+function extractPermission(raw: unknown): string | null {
+  if (!raw || typeof raw !== "object") return null;
+  const obj = raw as Record<string, unknown>;
+  const data = (obj.data ?? obj) as Record<string, unknown>;
+  const candidates = [data.permission, data.permissions, data.perm, obj.permission];
+  for (const c of candidates) {
+    if (typeof c === "string" && c.trim()) return c;
+    if (Array.isArray(c)) return c.map(String).join(",");
+  }
+  if (Array.isArray(data)) {
+    const first = data[0] as Record<string, unknown> | undefined;
+    if (first && typeof first.permission === "string") return first.permission;
+  }
+  return null;
+}
+
 /**
  * Best-effort read of the current key's permission string via CCXT implicit API.
- * If KuCoin does not return a permission field, we fail closed for live enablement
- * unless KUCOIN_ALLOW_UNVERIFIED_KEY=1 is set (still never allows an explicit Withdraw flag).
+ * Fail closed for live enablement unless KUCOIN_ALLOW_UNVERIFIED_KEY=1.
+ * An explicit Withdraw flag is never allowed.
  */
 export async function inspectKucoinKeyPermissions(): Promise<KeyPermissionAudit> {
   const apiKey = process.env.KUCOIN_API_KEY ?? "";
@@ -90,15 +106,15 @@ export async function inspectKucoinKeyPermissions(): Promise<KeyPermissionAudit>
     options: { defaultType: "spot" },
   });
 
-  const candidates: Array<() => Promise<unknown>> = [
-    () => (ex as unknown as { privateGetUserApiKey: () => Promise<unknown> }).privateGetUserApiKey(),
-    () => (ex as unknown as { privateGetApiKey: () => Promise<unknown> }).privateGetApiKey(),
-  ];
+  const implicit = ex as unknown as Record<string, unknown>;
+  const methodNames = ["privateGetUserApiKey", "privateGetApiKey"];
 
-  let lastError = "";
-  for (const fn of candidates) {
+  let lastError = "no implicit permission endpoint available";
+  for (const name of methodNames) {
+    const fn = implicit[name];
+    if (typeof fn !== "function") continue;
     try {
-      const raw = await fn();
+      const raw = await (fn as () => Promise<unknown>).call(ex);
       const permission = extractPermission(raw);
       if (permission) {
         return evaluate(parsePermissionString(permission));
@@ -115,5 +131,13 @@ export async function inspectKucoinKeyPermissions(): Promise<KeyPermissionAudit>
       ...EMPTY,
       ok: true,
       trade: true,
-      message:
-        "Could not inspect key permissions (
+      message: `Could not inspect key permissions (${lastError}). KUCOIN_ALLOW_UNVERIFIED_KEY=1 — live allowed without audit.`,
+    };
+  }
+
+  return {
+    ...EMPTY,
+    ok: false,
+    message: `Could not verify key permissions (${lastError}). Live blocked. Set KUCOIN_ALLOW_UNVERIFIED_KEY=1 only after you confirmed Withdraw is off on KuCoin.`,
+  };
+}
