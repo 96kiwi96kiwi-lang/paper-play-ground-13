@@ -33,6 +33,16 @@ export const TRADING_CONFIG = {
     losingStreakHardStop: 4,
   },
 
+  // Grid strategy (Hour 7)
+  grid: {
+    levels: 8,
+    spacingPct: 0.8, // percent between adjacent levels
+    takerFeePct: 0.1, // KuCoin spot taker ~0.1%
+    minNetEdgeMultiplier: 2.2, // spacing must cover >2x round-trip fee
+    rebalanceThresholdPct: 6, // recenter when price walks this far off mid
+    recenterLookback: 40,
+  },
+
   // Bot timing
   priceRefreshMs: 20_000,
   botTickMs: 45_000,
