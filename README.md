@@ -2,7 +2,9 @@
 
 Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 
-> **Default mode is always PAPER.** Live trading requires explicit configuration and confirmation.
+> **Default mode is always PAPER.** Live trading requires server-side API keys and explicit confirmation. After every process restart the bot boots in paper again.
+
+**Risk warning:** Live crypto trading can lose all capital in the account. This software does not guarantee profits. Never attach a key that can Withdraw. Use only money you can afford to lose. See [SAFETY.md](./SAFETY.md).
 
 ## Current status
 
@@ -14,13 +16,13 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hour 4 – Order management wiring | ✅ Done |
 | Hour 5 – Risk polish | ✅ Done |
 | Hour 6 – UI Paper/Live switch | ✅ Done |
-| Hour 7 – Grid improvements | ✅ Done (this push) |
-| Hour 8 – Docs + checklist | Next |
+| Hour 7 – Grid improvements | ✅ Done |
+| Hour 8 – Docs + persist + alerts | ✅ Done (this push) |
 
 ## Architecture
 
 ```
-UI (React dashboard – kept)
+UI (React dashboard)
         ↓
    Bot engine (strategy + risk)
         ↓
@@ -28,53 +30,47 @@ UI (React dashboard – kept)
         ↓
 ExchangeAdapter
    ① PaperExchange   (CoinGecko + virtual money)
-   ② KuCoin (CCXT)   (real orders – live only)
+   ② KuCoin (CCXT)   (real orders – live only, keys stay on server)
+
+Persist: data/bot-state.json (risk snapshot + last hard-stop)
+Alerts:  console + optional HARD_STOP_WEBHOOK_URL
 ```
 
-## Features
+## Paper mode — quick start
 
-### Paper mode (safe – default)
-- Virtual $10 000 USDT
-- Prices from CoinGecko
-- Strategies: Momentum, Mean Reversion, RSI, **Grid**
-- Full risk engine with hard-stops
-- LocalStorage persistence
+1. `npm install`
+2. Copy `.env.example` → `.env` if you want (keys not required for paper).
+3. `npm run dev`
+4. Leave the dashboard in Paper. Virtual balance starts at $10 000 USDT.
+5. Prices come from CoinGecko. No exchange orders are sent.
 
-### Live mode (KuCoin Spot)
-- Real orders via CCXT
-- Same strategies + risk rules
-- API keys only on server side
-- Trade permission only (never Withdraw)
-- Dashboard toggle requires typing `ENABLE LIVE` and server credentials
-- Red LIVE MODE banner when active
+Dashboard LocalStorage is UI convenience only. Risk / halt snapshots are also written under `data/bot-state.json` on the server so a restart does not wipe the last halt reason.
 
-### Risk hard-stops (Hour 5)
-Daily loss limit, max drawdown, and losing streak **halt the bot** (`haltReason` stays set until an operator clears it). Price gaps ≥ 3.5% and a streak of 5 network errors also hard-stop. Partial fills update portfolio by filled qty only. Decisions are logged with ALLOW / BLOCK / HARD-STOP.
+## Live mode — steps
 
-### Grid (Hour 7)
-- Even percent spacing around a mid price (`TRADING_CONFIG.grid`)
-- Spacing is floored at `takerFeePct * 2 * minNetEdgeMultiplier` so levels stay fee-aware
-- Sells that would not cover round-trip fees are skipped
-- Book recenters when price drifts ≥ `rebalanceThresholdPct` from mid
+1. Finish the checklist in [SAFETY.md](./SAFETY.md).
+2. On KuCoin, create an API key with **Trade only**. Disable Withdraw. Prefer IP allowlists.
+3. Put `KUCOIN_API_KEY`, `KUCOIN_SECRET`, and `KUCOIN_PASSWORD` in server `.env` (never in client code).
+4. Restart the server so env vars load. Confirm health shows `hasCredentials: true` and does **not** echo secrets.
+5. In the dashboard, open the Paper/Live switch, type `ENABLE LIVE`, confirm.
+6. Expect a red **LIVE MODE** banner. Watch the first session live.
+7. To leave live: switch back to Paper or stop the process. A restart always returns to paper.
 
-## Quick start (Paper)
+API keys are never sent to the frontend. Live placement goes through `assertLiveAllowed()` on the server.
 
-```bash
-npm install
-npm run dev
-```
+## Hard-stop monitoring
 
-## Enabling Live mode (advanced)
+Daily loss, max drawdown, losing streak, price gap (≥ 3.5%), and network-error streak (5) set `haltReason` and refuse new orders until an operator clears the halt.
 
-1. Create KuCoin API key with **Trade** permission only (disable Withdraw).
-2. Copy `.env.example` → `.env` and fill the keys on the **server** only.
-3. Use the dashboard Paper/Live switch and type `ENABLE LIVE`.
-4. Never put API keys in frontend code or localStorage.
+On first halt:
+- `[ALERT][HARD-STOP]` is written to server logs
+- `data/bot-state.json` records `lastHardStop`
+- If `HARD_STOP_WEBHOOK_URL` is set, a JSON POST is attempted
 
-## Risk rules (shared)
+## Risk rules (shared paper + live)
 
 | Rule                    | Value   |
-|-------------------------|---------|
+|-------------------------|---------| 
 | Trade size              | 15 %    |
 | Max position per coin   | 20 %    |
 | Stop-loss               | –4 %    |
@@ -86,7 +82,14 @@ npm run dev
 | Price gap hard stop     | 3.5 %   |
 | Network error streak    | 5       |
 
+## Grid (Hour 7)
+
+- Even percent spacing around a mid price (`TRADING_CONFIG.grid`)
+- Spacing is floored at `takerFeePct * 2 * minNetEdgeMultiplier` so levels stay fee-aware
+- Sells that would not cover round-trip fees are skipped
+- Book recenters when price drifts ≥ `rebalanceThresholdPct` from mid
+
 ## Warning
 
-Trading real cryptocurrency involves substantial risk of loss.  
+Trading real cryptocurrency involves substantial risk of loss.
 Use at your own risk. Never share API keys that have Withdraw permission.
