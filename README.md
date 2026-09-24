@@ -8,14 +8,14 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 
 | Phase | Status |
 |-------|--------|
-| Hour 1 – Config + KuCoin adapter | ✅ Done & on GitHub |
-| Hour 2 – Strategies + Risk + Paper exchange | ✅ Done & on GitHub |
+| Hour 1 – Config + KuCoin adapter | ✅ Done |
+| Hour 2 – Strategies + Risk + Paper exchange | ✅ Done |
 | Hour 3 – Server API + Bot engine | ✅ Done |
 | Hour 4 – Order management wiring | ✅ Done |
-| Hour 5 – Risk polish | ✅ Done (this push) |
-| Hour 6 – UI Paper/Live switch | Next |
-| Hour 7 – Grid improvements | Pending |
-| Hour 8 – Docs + checklist | Pending |
+| Hour 5 – Risk polish | ✅ Done |
+| Hour 6 – UI Paper/Live switch | ✅ Done |
+| Hour 7 – Grid improvements | ✅ Done (this push) |
+| Hour 8 – Docs + checklist | Next |
 
 ## Architecture
 
@@ -45,9 +45,17 @@ ExchangeAdapter
 - Same strategies + risk rules
 - API keys only on server side
 - Trade permission only (never Withdraw)
+- Dashboard toggle requires typing `ENABLE LIVE` and server credentials
+- Red LIVE MODE banner when active
 
 ### Risk hard-stops (Hour 5)
 Daily loss limit, max drawdown, and losing streak **halt the bot** (`haltReason` stays set until an operator clears it). Price gaps ≥ 3.5% and a streak of 5 network errors also hard-stop. Partial fills update portfolio by filled qty only. Decisions are logged with ALLOW / BLOCK / HARD-STOP.
+
+### Grid (Hour 7)
+- Even percent spacing around a mid price (`TRADING_CONFIG.grid`)
+- Spacing is floored at `takerFeePct * 2 * minNetEdgeMultiplier` so levels stay fee-aware
+- Sells that would not cover round-trip fees are skipped
+- Book recenters when price drifts ≥ `rebalanceThresholdPct` from mid
 
 ## Quick start (Paper)
 
@@ -59,14 +67,14 @@ npm run dev
 ## Enabling Live mode (advanced)
 
 1. Create KuCoin API key with **Trade** permission only (disable Withdraw).
-2. Copy `.env.example` → `.env` and fill the keys.
-3. Set `mode: "live"` in `src/config/trading.ts` only after you understand the risks.
-4. Restart the server.
+2. Copy `.env.example` → `.env` and fill the keys on the **server** only.
+3. Use the dashboard Paper/Live switch and type `ENABLE LIVE`.
+4. Never put API keys in frontend code or localStorage.
 
 ## Risk rules (shared)
 
 | Rule                    | Value   |
-|-------------------------|---------| 
+|-------------------------|---------|
 | Trade size              | 15 %    |
 | Max position per coin   | 20 %    |
 | Stop-loss               | –4 %    |
