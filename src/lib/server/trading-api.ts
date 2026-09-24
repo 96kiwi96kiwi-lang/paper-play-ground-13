@@ -7,8 +7,9 @@
 
 import { TRADING_CONFIG } from "@/config/trading";
 import * as kucoin from "@/lib/exchange/kucoin";
+import { assertLiveAllowed, getRuntimeMode, type TradingRuntimeMode } from "./trading-mode";
 
-export type Mode = "paper" | "live";
+export type Mode = TradingRuntimeMode;
 
 export interface HealthResponse {
   ok: boolean;
@@ -31,9 +32,9 @@ export interface TickersResponse {
   source: "paper" | "kucoin";
 }
 
-/** Current configured mode */
+/** Current configured mode (runtime, default paper) */
 export function getMode(): Mode {
-  return TRADING_CONFIG.mode;
+  return getRuntimeMode();
 }
 
 /** Health check – safe for both modes */
@@ -49,7 +50,6 @@ export async function getHealth(): Promise<HealthResponse> {
     };
   }
 
-  // Live mode
   const health = await kucoin.healthCheck();
   return {
     ok: health.ok,
@@ -120,17 +120,13 @@ export async function placeLiveMarketOrder(
   side: "buy" | "sell",
   amount: number,
 ) {
-  if (getMode() !== "live") {
-    throw new Error("Live trading is disabled. Current mode is paper.");
-  }
+  assertLiveAllowed();
   return kucoin.placeMarketOrder(symbol, side, amount);
 }
 
 /** Cancel order – live only */
 export async function cancelLiveOrder(orderId: string, symbol: string) {
-  if (getMode() !== "live") {
-    throw new Error("Live trading is disabled.");
-  }
+  assertLiveAllowed();
   return kucoin.cancelOrder(orderId, symbol);
 }
 
