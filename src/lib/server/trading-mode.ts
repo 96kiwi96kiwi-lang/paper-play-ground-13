@@ -7,6 +7,7 @@
  */
 
 import * as kucoin from "@/lib/exchange/kucoin";
+import { saveBotState } from "./persist";
 
 export type TradingRuntimeMode = "paper" | "live";
 
@@ -48,6 +49,7 @@ export function setRuntimeMode(
   if (next === "paper") {
     runtimeMode = "paper";
     liveConfirmedAt = null;
+    saveBotState({ mode: "paper", liveConfirmedAt: null });
     return getModeStatus();
   }
 
@@ -62,6 +64,8 @@ export function setRuntimeMode(
 
   runtimeMode = "live";
   liveConfirmedAt = Date.now();
+  saveBotState({ mode: "live", liveConfirmedAt });
+  console.warn("[mode] LIVE MODE enabled at", new Date(liveConfirmedAt).toISOString());
   return getModeStatus();
 }
 
