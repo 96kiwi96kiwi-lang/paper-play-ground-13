@@ -10,6 +10,8 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] Keys live in `.env` / hosting secrets — never in the repo, frontend, or LocalStorage
 - [ ] `.env` is gitignored; only `.env.example` is committed
 - [ ] You can rotate/revoke the key immediately if it leaks
+- [ ] Enabling LIVE runs a server-side permission audit; Withdraw on the key blocks live
+- [ ] If audit cannot read permissions, live stays blocked unless you set `KUCOIN_ALLOW_UNVERIFIED_KEY=1` after a manual check
 
 ## Confirmation path
 

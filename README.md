@@ -2,7 +2,7 @@
 
 Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 
-> **Default mode is always PAPER.** Live trading requires server-side API keys and explicit confirmation. After every process restart the bot boots in paper again.
+> **Default mode is always PAPER.** Live trading requires server-side API keys, a Trade-only permission audit, and explicit confirmation. After every process restart the bot boots in paper again.
 
 **Risk warning:** Live crypto trading can lose all capital in the account. This software does not guarantee profits. Never attach a key that can Withdraw. Use only money you can afford to lose. See [SAFETY.md](./SAFETY.md).
 
@@ -18,7 +18,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hour 6 – UI Paper/Live switch | ✅ Done |
 | Hour 7 – Grid improvements | ✅ Done |
 | Hour 8 – Docs + persist + alerts | ✅ Done |
-| Hardening – paper portfolio file persist | ✅ Done (this push) |
+| Hardening – paper portfolio file persist | ✅ Done |
+| Hardening – Trade-only key audit (no Withdraw) | ✅ Done (this push) |
 
 ## Architecture
 
@@ -35,6 +36,7 @@ ExchangeAdapter
 
 Persist: data/bot-state.json (risk snapshot + last hard-stop + paper portfolio)
 Alerts:  console + optional HARD_STOP_WEBHOOK_URL
+Live gate: inspectKucoinKeyPermissions() — Withdraw on the key blocks LIVE
 ```
 
 ## Paper mode — quick start
@@ -54,10 +56,13 @@ Dashboard LocalStorage is UI convenience only. Risk / halt snapshots and the pap
 3. Put `KUCOIN_API_KEY`, `KUCOIN_SECRET`, and `KUCOIN_PASSWORD` in server `.env` (never in client code).
 4. Restart the server so env vars load. Confirm health shows `hasCredentials: true` and does **not** echo secrets.
 5. In the dashboard, open the Paper/Live switch, type `ENABLE LIVE`, confirm.
-6. Expect a red **LIVE MODE** banner. Watch the first session live.
-7. To leave live: switch back to Paper or stop the process. A restart always returns to paper.
+6. The server audits key permissions. If Withdraw is present, or the audit cannot run, live stays paper.
+7. Expect a red **LIVE MODE** banner. Watch the first session live.
+8. To leave live: switch back to Paper or stop the process. A restart always returns to paper.
 
 API keys are never sent to the frontend. Live placement goes through `assertLiveAllowed()` on the server.
+
+If the permission endpoint is unavailable after you have manually verified Trade-only, you may set `KUCOIN_ALLOW_UNVERIFIED_KEY=1`. Do not use that flag with a Withdraw-capable key.
 
 ## Hard-stop monitoring
 
@@ -72,7 +77,7 @@ On first halt:
 ## Risk rules (shared paper + live)
 
 | Rule                    | Value   |
-|-------------------------|---------|
+|-------------------------|---------| 
 | Trade size              | 15 %    |
 | Max position per coin   | 20 %    |
 | Stop-loss               | –4 %    |

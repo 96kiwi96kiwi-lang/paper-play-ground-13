@@ -108,7 +108,12 @@ export function ModeSwitch() {
           LIVE
         </button>
       </div>
-      {error && <span className="text-[10px] text-red-400 max-w-[14rem] truncate">{error}</span>}
+      {error && <span className="text-[10px] text-red-400 max-w-[18rem] truncate">{error}</span>}
+      {status?.keyAuditMessage && mode === "paper" && (
+        <span className="text-[10px] text-muted-foreground max-w-[18rem] truncate" title={status.keyAuditMessage}>
+          {status.keyAuditMessage}
+        </span>
+      )}
 
       {confirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
@@ -119,7 +124,8 @@ export function ModeSwitch() {
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
               Live mode sends real spot orders to KuCoin. Default remains paper. Keys stay on the
-              server and are never sent to this page. Trade permission only — never Withdraw.
+              server and are never sent to this page. The server will refuse LIVE if the key has
+              Withdraw permission or Trade is missing.
             </p>
             {!liveReady && (
               <p className="text-xs text-amber-400">
