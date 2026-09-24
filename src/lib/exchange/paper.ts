@@ -19,6 +19,7 @@ export class PaperExchange implements ExchangeAdapter {
   private positions: Record<string, { amount: number; avgEntry: number }> = {};
   private orders: UnifiedOrder[] = [];
   private orderIdCounter = 1;
+  private clientOrderIndex = new Map<string, string>();
 
   constructor(startingBalance = 10_000) {
     this.cash = startingBalance;
@@ -53,10 +54,23 @@ export class PaperExchange implements ExchangeAdapter {
     symbol: string,
     side: Side,
     amount: number,
+    clientOrderId?: string,
   ): Promise<UnifiedOrder> {
+    if (clientOrderId) {
+      const existingId = this.clientOrderIndex.get(clientOrderId);
+      if (existingId) {
+        const existing = this.orders.find((o) => o.id === existingId);
+        if (existing) return existing;
+      }
+    }
+
     const ticker = this.latestTickers[symbol];
     if (!ticker || ticker.last <= 0) {
-      throw new Error(`No price available for ${symbol}`);
+      return this.rejectOrder(symbol, side, "market", amount, undefined, clientOrderId, `No price available for ${symbol}`);
+    }
+
+    if (amount <= 0) {
+      return this.rejectOrder(symbol, side, "market", amount, ticker.last, clientOrderId, "Amount must be positive");
     }
 
     const price = ticker.last;
@@ -64,7 +78,7 @@ export class PaperExchange implements ExchangeAdapter {
 
     if (side === "buy") {
       if (cost > this.cash) {
-        throw new Error("Insufficient paper balance");
+        return this.rejectOrder(symbol, side, "market", amount, price, clientOrderId, "Insufficient paper balance");
       }
       this.cash -= cost;
       const existing = this.positions[symbol];
@@ -81,7 +95,7 @@ export class PaperExchange implements ExchangeAdapter {
     } else {
       const pos = this.positions[symbol];
       if (!pos || pos.amount < amount) {
-        throw new Error("Insufficient position to sell");
+        return this.rejectOrder(symbol, side, "market", amount, price, clientOrderId, "Insufficient position to sell");
       }
       this.cash += cost;
       pos.amount -= amount;
@@ -92,6 +106,7 @@ export class PaperExchange implements ExchangeAdapter {
 
     const order: UnifiedOrder = {
       id: `paper-${this.orderIdCounter++}`,
+      clientOrderId,
       symbol,
       side,
       type: "market",
@@ -99,10 +114,12 @@ export class PaperExchange implements ExchangeAdapter {
       price,
       status: "closed",
       filled: amount,
+      remaining: 0,
       cost,
       timestamp: Date.now(),
     };
     this.orders.unshift(order);
+    if (clientOrderId) this.clientOrderIndex.set(clientOrderId, order.id);
     return order;
   }
 
@@ -111,8 +128,9 @@ export class PaperExchange implements ExchangeAdapter {
     side: Side,
     amount: number,
     price: number,
+    clientOrderId?: string,
   ): Promise<UnifiedOrder> {
-    // For paper simplicity we treat limit as immediate market at given price
+    // Paper treats limit as immediate fill at the given price (simulates crossing).
     const ticker = this.latestTickers[symbol] ?? {
       symbol,
       last: price,
@@ -121,7 +139,7 @@ export class PaperExchange implements ExchangeAdapter {
       timestamp: Date.now(),
     };
     this.latestTickers[symbol] = { ...ticker, last: price };
-    return this.placeMarketOrder(symbol, side, amount);
+    return this.placeMarketOrder(symbol, side, amount, clientOrderId);
   }
 
   async cancelOrder(_orderId: string, _symbol: string): Promise<void> {
@@ -132,11 +150,14 @@ export class PaperExchange implements ExchangeAdapter {
     return [];
   }
 
+  async fetchOrder(orderId: string, _symbol: string): Promise<UnifiedOrder | null> {
+    return this.orders.find((o) => o.id === orderId) ?? null;
+  }
+
   async healthCheck() {
     return { ok: true, message: "Paper mode active" };
   }
 
-  // Helpers for the UI / bot engine
   getPositions() {
     return { ...this.positions };
   }
@@ -147,5 +168,34 @@ export class PaperExchange implements ExchangeAdapter {
 
   getTradeHistory() {
     return [...this.orders];
+  }
+
+  private rejectOrder(
+    symbol: string,
+    side: Side,
+    type: "market" | "limit",
+    amount: number,
+    price: number | undefined,
+    clientOrderId: string | undefined,
+    reason: string,
+  ): UnifiedOrder {
+    const order: UnifiedOrder = {
+      id: `paper-${this.orderIdCounter++}`,
+      clientOrderId,
+      symbol,
+      side,
+      type,
+      amount,
+      price,
+      status: "rejected",
+      filled: 0,
+      remaining: amount,
+      cost: 0,
+      timestamp: Date.now(),
+      rejectReason: reason,
+    };
+    this.orders.unshift(order);
+    if (clientOrderId) this.clientOrderIndex.set(clientOrderId, order.id);
+    return order;
   }
 }

@@ -3,15 +3,16 @@
  * Works in both paper and live modes.
  */
 
-import { TRADING_CONFIG, type StrategyId } from "@/config/trading";
+import type { StrategyId } from "@/config/trading";
 import { runStrategy, type StrategyContext } from "@/lib/strategies";
 import { evaluateRisk, type RiskState } from "@/lib/risk";
 import type { PricePoint } from "@/lib/trading";
 import type { Side } from "@/lib/exchange/types";
+import type { OrderManager, SubmitResult } from "@/lib/orders/order-manager";
 
 export interface BotTickInput {
   strategy: StrategyId;
-  symbol: string;                 // e.g. "BTC/USDT"
+  symbol: string; // e.g. "BTC/USDT"
   history: PricePoint[];
   currentPrice: number;
   hasPosition: boolean;
@@ -31,7 +32,8 @@ export interface BotTickResult {
 
 /**
  * One bot tick: run strategy → check risk → decide whether to execute.
- * Does NOT place the order itself – caller does that (paper or live).
+ * Does NOT place the order itself – caller does that (paper or live),
+ * or use executeBotTick() to go through OrderManager.
  */
 export function botTick(input: BotTickInput): BotTickResult {
   const ctx: StrategyContext = {
@@ -66,6 +68,36 @@ export function botTick(input: BotTickInput): BotTickResult {
     suggestedSizeUsd: risk.suggestedSizeUsd,
     shouldExecute: risk.allowed,
   };
+}
+
+/**
+ * Full path: strategy → risk → OrderManager → adapter (Paper or KuCoin).
+ * Same interface regardless of exchange. No UI changes.
+ */
+export async function executeBotTick(
+  input: BotTickInput,
+  manager: OrderManager,
+): Promise<{ tick: BotTickResult; submit?: SubmitResult }> {
+  const tick = botTick(input);
+  if (!tick.shouldExecute || tick.action === "hold") {
+    return { tick };
+  }
+
+  const sizeUsd = tick.suggestedSizeUsd ?? 0;
+  const amount = input.currentPrice > 0 ? sizeUsd / input.currentPrice : 0;
+
+  const submit = await manager.submit(
+    {
+      symbol: input.symbol,
+      side: tick.action,
+      amount,
+      type: "market",
+      reason: tick.reason,
+    },
+    input.riskState,
+  );
+
+  return { tick, submit };
 }
 
 /** Helper: map CoinGecko id → KuCoin symbol */

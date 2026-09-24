@@ -5,8 +5,16 @@
 
 export type Side = "buy" | "sell";
 
+export type OrderStatus =
+  | "pending"
+  | "open"
+  | "partially_filled"
+  | "closed"
+  | "rejected"
+  | "canceled";
+
 export interface UnifiedTicker {
-  symbol: string;       // e.g. "BTC/USDT"
+  symbol: string; // e.g. "BTC/USDT"
   last: number;
   bid: number;
   ask: number;
@@ -14,31 +22,55 @@ export interface UnifiedTicker {
 }
 
 export interface UnifiedBalance {
-  free: number;         // available USDT
+  free: number; // available USDT
   used: number;
   total: number;
 }
 
 export interface UnifiedOrder {
   id: string;
+  clientOrderId?: string;
   symbol: string;
   side: Side;
   type: "market" | "limit";
   amount: number;
   price?: number;
-  status: string;
+  status: OrderStatus | string;
   filled: number;
+  remaining?: number;
   cost: number;
   timestamp: number;
+  rejectReason?: string;
+}
+
+export interface PlaceOrderParams {
+  symbol: string;
+  side: Side;
+  amount: number;
+  price?: number;
+  type?: "market" | "limit";
+  clientOrderId?: string;
 }
 
 export interface ExchangeAdapter {
   name: "paper" | "kucoin";
   fetchBalance(): Promise<UnifiedBalance>;
   fetchTickers(symbols: string[]): Promise<Record<string, UnifiedTicker>>;
-  placeMarketOrder(symbol: string, side: Side, amount: number): Promise<UnifiedOrder>;
-  placeLimitOrder(symbol: string, side: Side, amount: number, price: number): Promise<UnifiedOrder>;
+  placeMarketOrder(
+    symbol: string,
+    side: Side,
+    amount: number,
+    clientOrderId?: string,
+  ): Promise<UnifiedOrder>;
+  placeLimitOrder(
+    symbol: string,
+    side: Side,
+    amount: number,
+    price: number,
+    clientOrderId?: string,
+  ): Promise<UnifiedOrder>;
   cancelOrder(orderId: string, symbol: string): Promise<void>;
   fetchOpenOrders(symbol?: string): Promise<UnifiedOrder[]>;
+  fetchOrder?(orderId: string, symbol: string): Promise<UnifiedOrder | null>;
   healthCheck(): Promise<{ ok: boolean; message: string }>;
 }
