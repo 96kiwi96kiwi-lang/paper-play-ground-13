@@ -3,6 +3,7 @@
  * Works with any ExchangeAdapter (paper or kucoin).
  */
 
+import { TRADING_CONFIG } from "@/config/trading";
 import type { PricePoint } from "@/lib/trading";
 import { pctChangeSince, avgSince, rsi } from "@/lib/trading";
 import type { Side } from "@/lib/exchange/types";
@@ -68,28 +69,119 @@ export function rsiStrategy(ctx: StrategyContext): StrategySignal {
   return { action: "hold", reason: `RSI ${value.toFixed(1)}` };
 }
 
+interface GridBook {
+  mid: number;
+  spacingPct: number;
+  builtAt: number;
+}
+
+const gridBooks = new Map<string, GridBook>();
+
+export function effectiveGridSpacingPct(): number {
+  const { spacingPct, takerFeePct, minNetEdgeMultiplier } = TRADING_CONFIG.grid;
+  const roundTripFee = takerFeePct * 2;
+  const feeFloor = roundTripFee * minNetEdgeMultiplier;
+  return Math.max(spacingPct, feeFloor);
+}
+
+function recentMid(history: PricePoint[], lookback: number): number {
+  const slice = history.slice(-lookback);
+  if (slice.length === 0) return 0;
+  const sum = slice.reduce((acc, p) => acc + p.price, 0);
+  return sum / slice.length;
+}
+
+function rebuildGrid(symbol: string, mid: number, spacingPct: number): GridBook {
+  const book: GridBook = { mid, spacingPct, builtAt: Date.now() };
+  gridBooks.set(symbol, book);
+  return book;
+}
+
 /**
- * Simple Grid strategy (high trade frequency)
- * Places buy below current price and sell above.
+ * Grid strategy (Hour 7)
+ * - Even % spacing around a mid price
+ * - Spacing is never thinner than fee-aware net edge
+ * - Rebalances (recenters) when price walks off the book
  */
 export function gridStrategy(ctx: StrategyContext): StrategySignal {
-  if (ctx.history.length < 10) return { action: "hold", reason: "Warming up grid" };
-
-  const recent = ctx.history.slice(-20).map((p) => p.price);
-  const min = Math.min(...recent);
-  const max = Math.max(...recent);
-  const range = max - min;
-  if (range <= 0) return { action: "hold", reason: "No range" };
-
-  const positionInRange = (ctx.currentPrice - min) / range;
-
-  if (!ctx.hasPosition && positionInRange < 0.35) {
-    return { action: "buy", reason: `Grid lower zone (${(positionInRange * 100).toFixed(0)}%)`, confidence: 0.6 };
+  const cfg = TRADING_CONFIG.grid;
+  if (ctx.history.length < 10 || ctx.currentPrice <= 0) {
+    return { action: "hold", reason: "Warming up grid" };
   }
-  if (ctx.hasPosition && positionInRange > 0.65) {
-    return { action: "sell", reason: `Grid upper zone (${(positionInRange * 100).toFixed(0)}%)`, confidence: 0.6 };
+
+  const spacingPct = effectiveGridSpacingPct();
+  const midHint = recentMid(ctx.history, cfg.recenterLookback) || ctx.currentPrice;
+  let book = gridBooks.get(ctx.symbol);
+
+  if (!book) {
+    book = rebuildGrid(ctx.symbol, midHint, spacingPct);
+    return { action: "hold", reason: `Grid seeded mid=${book.mid.toFixed(4)} spacing=${spacingPct.toFixed(2)}%` };
   }
-  return { action: "hold", reason: `Grid mid zone` };
+
+  if (Math.abs(book.spacingPct - spacingPct) > 1e-6) {
+    book = rebuildGrid(ctx.symbol, midHint, spacingPct);
+  }
+
+  const driftPct = ((ctx.currentPrice - book.mid) / book.mid) * 100;
+  if (Math.abs(driftPct) >= cfg.rebalanceThresholdPct) {
+    book = rebuildGrid(ctx.symbol, ctx.currentPrice, spacingPct);
+    return {
+      action: "hold",
+      reason: `Grid rebalanced mid=${book.mid.toFixed(4)} after ${driftPct.toFixed(2)}% drift`,
+    };
+  }
+
+  const halfLevels = Math.max(1, Math.floor(cfg.levels / 2));
+  const buyTrigger = book.mid * (1 - (spacingPct / 100) * 1);
+  const sellTrigger = book.mid * (1 + (spacingPct / 100) * 1);
+  const lowerBound = book.mid * (1 - (spacingPct / 100) * halfLevels);
+  const upperBound = book.mid * (1 + (spacingPct / 100) * halfLevels);
+
+  const feeAwareEdge =
+    ctx.hasPosition && ctx.positionAvgEntry && ctx.positionAvgEntry > 0
+      ? ((ctx.currentPrice - ctx.positionAvgEntry) / ctx.positionAvgEntry) * 100
+      : null;
+
+  if (ctx.hasPosition && feeAwareEdge !== null && feeAwareEdge < cfg.takerFeePct * 2) {
+    if (ctx.currentPrice >= sellTrigger) {
+      return {
+        action: "hold",
+        reason: `Grid hold: edge ${feeAwareEdge.toFixed(2)}% < round-trip fee`,
+      };
+    }
+  }
+
+  if (!ctx.hasPosition && ctx.currentPrice <= buyTrigger && ctx.currentPrice >= lowerBound) {
+    const dist = ((book.mid - ctx.currentPrice) / book.mid) * 100;
+    return {
+      action: "buy",
+      reason: `Grid buy ${dist.toFixed(2)}% below mid (space ${spacingPct.toFixed(2)}%)`,
+      confidence: Math.min(0.45 + dist / (spacingPct * halfLevels), 0.95),
+    };
+  }
+
+  if (ctx.hasPosition && ctx.currentPrice >= sellTrigger && ctx.currentPrice <= upperBound) {
+    if (feeAwareEdge !== null && feeAwareEdge < spacingPct * 0.5) {
+      return {
+        action: "hold",
+        reason: `Grid skip sell: net edge ${feeAwareEdge.toFixed(2)}% too thin vs spacing`,
+      };
+    }
+    return {
+      action: "sell",
+      reason: `Grid sell ${(driftPct).toFixed(2)}% above mid (space ${spacingPct.toFixed(2)}%)`,
+      confidence: 0.7,
+    };
+  }
+
+  return {
+    action: "hold",
+    reason: `Grid idle mid=${book.mid.toFixed(4)} px=${ctx.currentPrice.toFixed(4)}`,
+  };
+}
+
+export function resetGridBooks(): void {
+  gridBooks.clear();
 }
 
 export function runStrategy(id: StrategyId, ctx: StrategyContext): StrategySignal {
