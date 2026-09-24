@@ -12,7 +12,7 @@ import type {
   UnifiedOrder,
   UnifiedTicker,
 } from "./types";
-import { TRADING_CONFIG } from "@/config/trading";
+import { getRuntimeMode } from "@/lib/server/trading-mode";
 
 function mapOrder(raw: kucoin.OrderResult, clientOrderId?: string): UnifiedOrder {
   const filled = raw.filled ?? 0;
@@ -36,6 +36,31 @@ function mapOrder(raw: kucoin.OrderResult, clientOrderId?: string): UnifiedOrder
     remaining,
     cost: raw.cost,
     timestamp: raw.timestamp,
+  };
+}
+
+function liveBlocked(
+  symbol: string,
+  side: Side,
+  amount: number,
+  type: "market" | "limit",
+  clientOrderId?: string,
+  price?: number,
+): UnifiedOrder {
+  return {
+    id: `blocked-${Date.now()}`,
+    clientOrderId,
+    symbol,
+    side,
+    type,
+    amount,
+    price,
+    status: "rejected",
+    filled: 0,
+    remaining: amount,
+    cost: 0,
+    timestamp: Date.now(),
+    rejectReason: "Live trading is disabled. Current mode is paper.",
   };
 }
 
@@ -65,21 +90,8 @@ export class KuCoinExchange implements ExchangeAdapter {
     if (clientOrderId && this.clientOrderIndex.has(clientOrderId)) {
       return this.clientOrderIndex.get(clientOrderId)!;
     }
-    if (TRADING_CONFIG.mode !== "live") {
-      const rejected: UnifiedOrder = {
-        id: `blocked-${Date.now()}`,
-        clientOrderId,
-        symbol,
-        side,
-        type: "market",
-        amount,
-        status: "rejected",
-        filled: 0,
-        remaining: amount,
-        cost: 0,
-        timestamp: Date.now(),
-        rejectReason: "Live trading is disabled. Current mode is paper.",
-      };
+    if (getRuntimeMode() !== "live") {
+      const rejected = liveBlocked(symbol, side, amount, "market", clientOrderId);
       if (clientOrderId) this.clientOrderIndex.set(clientOrderId, rejected);
       return rejected;
     }
@@ -99,22 +111,8 @@ export class KuCoinExchange implements ExchangeAdapter {
     if (clientOrderId && this.clientOrderIndex.has(clientOrderId)) {
       return this.clientOrderIndex.get(clientOrderId)!;
     }
-    if (TRADING_CONFIG.mode !== "live") {
-      const rejected: UnifiedOrder = {
-        id: `blocked-${Date.now()}`,
-        clientOrderId,
-        symbol,
-        side,
-        type: "limit",
-        amount,
-        price,
-        status: "rejected",
-        filled: 0,
-        remaining: amount,
-        cost: 0,
-        timestamp: Date.now(),
-        rejectReason: "Live trading is disabled. Current mode is paper.",
-      };
+    if (getRuntimeMode() !== "live") {
+      const rejected = liveBlocked(symbol, side, amount, "limit", clientOrderId, price);
       if (clientOrderId) this.clientOrderIndex.set(clientOrderId, rejected);
       return rejected;
     }
