@@ -8,6 +8,8 @@
 import { TRADING_CONFIG } from "@/config/trading";
 import * as kucoin from "@/lib/exchange/kucoin";
 import { assertLiveAllowed, getRuntimeMode, type TradingRuntimeMode } from "./trading-mode";
+import { loadPaperPortfolio, persistPaperPortfolio } from "./persist";
+import type { PortfolioSnapshot } from "@/lib/orders/order-manager";
 
 export type Mode = TradingRuntimeMode;
 
@@ -24,6 +26,7 @@ export interface BalanceResponse {
   used: number;
   total: number;
   source: "paper" | "kucoin";
+  positions?: PortfolioSnapshot["positions"];
 }
 
 export interface TickersResponse {
@@ -59,18 +62,23 @@ export async function getHealth(): Promise<HealthResponse> {
   };
 }
 
-/** Balance – paper returns virtual, live hits KuCoin */
+/** Balance – paper returns persisted virtual cash when available; live hits KuCoin */
 export async function getBalance(paperCash?: number): Promise<BalanceResponse> {
   const mode = getMode();
 
   if (mode === "paper") {
-    const cash = paperCash ?? TRADING_CONFIG.paperStartingBalance;
+    const stored = loadPaperPortfolio();
+    const cash = stored?.cash ?? paperCash ?? TRADING_CONFIG.paperStartingBalance;
+    const used = stored
+      ? Object.values(stored.positions).reduce((sum, p) => sum + p.amount * p.avgEntry, 0)
+      : 0;
     return {
       mode: "paper",
       free: cash,
-      used: 0,
-      total: cash,
+      used,
+      total: cash + used,
       source: "paper",
+      positions: stored?.positions ?? {},
     };
   }
 
@@ -82,6 +90,11 @@ export async function getBalance(paperCash?: number): Promise<BalanceResponse> {
     total: bal.total,
     source: "kucoin",
   };
+}
+
+/** Persist a paper fill so a process restart does not reset virtual cash. */
+export function recordPaperPortfolio(portfolio: PortfolioSnapshot): void {
+  persistPaperPortfolio(portfolio);
 }
 
 /** Tickers from KuCoin when live, otherwise empty (client uses CoinGecko) */

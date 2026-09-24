@@ -17,7 +17,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hour 5 – Risk polish | ✅ Done |
 | Hour 6 – UI Paper/Live switch | ✅ Done |
 | Hour 7 – Grid improvements | ✅ Done |
-| Hour 8 – Docs + persist + alerts | ✅ Done (this push) |
+| Hour 8 – Docs + persist + alerts | ✅ Done |
+| Hardening – paper portfolio file persist | ✅ Done (this push) |
 
 ## Architecture
 
@@ -32,7 +33,7 @@ ExchangeAdapter
    ① PaperExchange   (CoinGecko + virtual money)
    ② KuCoin (CCXT)   (real orders – live only, keys stay on server)
 
-Persist: data/bot-state.json (risk snapshot + last hard-stop)
+Persist: data/bot-state.json (risk snapshot + last hard-stop + paper portfolio)
 Alerts:  console + optional HARD_STOP_WEBHOOK_URL
 ```
 
@@ -44,7 +45,7 @@ Alerts:  console + optional HARD_STOP_WEBHOOK_URL
 4. Leave the dashboard in Paper. Virtual balance starts at $10 000 USDT.
 5. Prices come from CoinGecko. No exchange orders are sent.
 
-Dashboard LocalStorage is UI convenience only. Risk / halt snapshots are also written under `data/bot-state.json` on the server so a restart does not wipe the last halt reason.
+Dashboard LocalStorage is UI convenience only. Risk / halt snapshots and the paper cash+positions book are written under `data/bot-state.json` so a restart does not wipe the last halt reason or reset virtual inventory.
 
 ## Live mode — steps
 
@@ -66,11 +67,12 @@ On first halt:
 - `[ALERT][HARD-STOP]` is written to server logs
 - `data/bot-state.json` records `lastHardStop`
 - If `HARD_STOP_WEBHOOK_URL` is set, a JSON POST is attempted
+- In live mode, visible open orders are canceled (positions are not market-dumped)
 
 ## Risk rules (shared paper + live)
 
 | Rule                    | Value   |
-|-------------------------|---------| 
+|-------------------------|---------|
 | Trade size              | 15 %    |
 | Max position per coin   | 20 %    |
 | Stop-loss               | –4 %    |

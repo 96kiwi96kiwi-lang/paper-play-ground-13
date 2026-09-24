@@ -44,6 +44,13 @@ export interface SubmitResult {
   portfolio?: PortfolioSnapshot;
 }
 
+export type OrderManagerOptions = {
+  startingCash?: number;
+  startingPositions?: PortfolioSnapshot["positions"];
+  /** Optional hook so a server host can persist paper state without importing fs here. */
+  onPortfolioChange?: (portfolio: PortfolioSnapshot) => void;
+};
+
 function newClientOrderId(intent: ManagedOrderIntent): string {
   const raw = `${intent.symbol}|${intent.side}|${intent.amount}|${intent.type ?? "market"}|${intent.price ?? ""}`;
   const stamp = Date.now().toString(36);
@@ -64,16 +71,25 @@ export class OrderManager {
   private seen = new Map<string, UnifiedOrder>();
   private portfolio: PortfolioSnapshot;
   private eventsLog: OrderLifecycleEvent[] = [];
+  private onPortfolioChange?: (portfolio: PortfolioSnapshot) => void;
 
   constructor(
     private adapter: ExchangeAdapter,
-    startingCash = 10_000,
+    startingCashOrOptions: number | OrderManagerOptions = 10_000,
     startingPositions: PortfolioSnapshot["positions"] = {},
   ) {
-    this.portfolio = {
-      cash: startingCash,
-      positions: { ...startingPositions },
-    };
+    if (typeof startingCashOrOptions === "number") {
+      this.portfolio = {
+        cash: startingCashOrOptions,
+        positions: { ...startingPositions },
+      };
+    } else {
+      this.portfolio = {
+        cash: startingCashOrOptions.startingCash ?? 10_000,
+        positions: { ...(startingCashOrOptions.startingPositions ?? startingPositions) },
+      };
+      this.onPortfolioChange = startingCashOrOptions.onPortfolioChange;
+    }
   }
 
   getAdapterName() {
@@ -84,6 +100,13 @@ export class OrderManager {
     return {
       cash: this.portfolio.cash,
       positions: { ...this.portfolio.positions },
+    };
+  }
+
+  hydrate(snapshot: PortfolioSnapshot) {
+    this.portfolio = {
+      cash: snapshot.cash,
+      positions: { ...snapshot.positions },
     };
   }
 
@@ -223,5 +246,7 @@ export class OrderManager {
         if (existing.amount <= 1e-8) delete this.portfolio.positions[order.symbol];
       }
     }
+
+    this.onPortfolioChange?.(this.getPortfolio());
   }
 }

@@ -7,6 +7,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import type { RiskState } from "@/lib/risk";
+import type { PortfolioSnapshot } from "@/lib/orders/order-manager";
 import type { TradingRuntimeMode } from "./trading-mode";
 
 export type PersistedBotState = {
@@ -28,6 +29,8 @@ export type PersistedBotState = {
     | "lastPrices"
   > | null;
   lastHardStop: { at: number; reason: string } | null;
+  /** Paper portfolio only. Live balances always come from the exchange. */
+  paperPortfolio: PortfolioSnapshot | null;
 };
 
 const STATE_PATH = resolve(process.cwd(), "data", "bot-state.json");
@@ -40,6 +43,7 @@ function emptyState(): PersistedBotState {
     liveConfirmedAt: null,
     risk: null,
     lastHardStop: null,
+    paperPortfolio: null,
   };
 }
 
@@ -54,11 +58,33 @@ export function loadBotState(): PersistedBotState {
       mode: raw.mode === "live" ? "paper" : (raw.mode ?? "paper"),
       // Always boot in paper. Live must be re-confirmed after restart.
       liveConfirmedAt: null,
+      paperPortfolio: sanitizePortfolio(raw.paperPortfolio),
     };
   } catch (err) {
     console.warn("[persist] failed to load bot-state.json", err);
     return emptyState();
   }
+}
+
+function sanitizePortfolio(raw: unknown): PortfolioSnapshot | null {
+  if (!raw || typeof raw !== "object") return null;
+  const cash = Number((raw as PortfolioSnapshot).cash);
+  if (!Number.isFinite(cash)) return null;
+  const positions: PortfolioSnapshot["positions"] = {};
+  const src = (raw as PortfolioSnapshot).positions;
+  if (src && typeof src === "object") {
+    for (const [symbol, pos] of Object.entries(src)) {
+      if (!pos) continue;
+      const amount = Number(pos.amount);
+      const avgEntry = Number(pos.avgEntry);
+      if (!Number.isFinite(amount) || amount <= 0) continue;
+      positions[symbol] = {
+        amount,
+        avgEntry: Number.isFinite(avgEntry) ? avgEntry : 0,
+      };
+    }
+  }
+  return { cash: Math.max(0, cash), positions };
 }
 
 export function saveBotState(patch: Partial<PersistedBotState>): PersistedBotState {
@@ -96,4 +122,17 @@ export function persistRiskSnapshot(risk: RiskState): void {
       ? { at: Date.now(), reason: risk.haltReason }
       : loadBotState().lastHardStop,
   });
+}
+
+export function persistPaperPortfolio(portfolio: PortfolioSnapshot): void {
+  saveBotState({
+    paperPortfolio: {
+      cash: portfolio.cash,
+      positions: { ...portfolio.positions },
+    },
+  });
+}
+
+export function loadPaperPortfolio(): PortfolioSnapshot | null {
+  return loadBotState().paperPortfolio;
 }
