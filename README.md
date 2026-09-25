@@ -27,7 +27,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hardening – daily trade cap (UTC, persisted) | ✅ Done |
 | Hardening – min submit interval (burst guard) | ✅ Done |
 | Hardening – max concurrent open orders | ✅ Done |
-| Hardening – per-symbol open cap + max notional | ✅ Done (this push) |
+| Hardening – per-symbol open cap + max notional | ✅ Done |
+| Hardening – pair allowlist + max gross exposure | ✅ Done (this push) |
 
 ## Architecture
 
@@ -99,10 +100,12 @@ This does **not** dump positions. It tells you the loop died.
 ## Order lifecycle
 
 `OrderManager.submit` then `syncOpenOrders` / `cancelStaleOpenOrders`:
-- create → risk validate → submit with clientOrderId
+- create → pair allowlist → risk validate → submit with clientOrderId
+- refuse symbols outside `TRADING_CONFIG.pairs` (BTC/ETH/SOL/BNB vs USDT)
 - refuse a new submit if local working orders already ≥ `maxConcurrentOpenOrders` (4)
 - refuse a new submit if working orders on that symbol already ≥ `maxOpenOrdersPerSymbol` (2)
 - refuse when `amount * price` exceeds `maxOrderNotionalUsd` (2500) if a price is present
+- refuse a **buy** when booked cost basis + this order notional would exceed `maxGrossExposureUsd` (8000)
 - refuse a new submit if the last *accepted* one was within `minSubmitIntervalMs` (8s)
 - track status via `fetchOrder` / `fetchOpenOrders`
 - apply **only the new fill delta** to the local book (no double-count after restart)
@@ -112,7 +115,7 @@ This does **not** dump positions. It tells you the loop died.
 ## Risk rules (shared paper + live)
 
 | Rule                    | Value   |
-|-------------------------|---------|
+|-------------------------|---------|----------|
 | Trade size              | 15 %    |
 | Max position per coin   | 20 %    |
 | Stop-loss               | –4 %    |
@@ -130,6 +133,8 @@ This does **not** dump positions. It tells you the loop died.
 | Max concurrent open orders | 4    |
 | Max open orders per symbol | 2    |
 | Max order notional      | 2500 USD |
+| Max gross exposure      | 8000 USD |
+| Allowed pairs           | BTC/ETH/SOL/BNB USDT |
 
 ## Grid (Hour 7)
 
