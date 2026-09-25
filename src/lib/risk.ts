@@ -4,6 +4,7 @@
  *
  * Hour 5: daily loss, max drawdown, and losing streak HARD-STOP the bot.
  * Network errors, partial fills, and price gaps are first-class risk events.
+ * Daily trade cap refuses further submits without setting haltReason.
  */
 
 import { TRADING_CONFIG } from "@/config/trading";
@@ -15,6 +16,7 @@ export type HardStopReason =
   | "losing_streak"
   | "price_gap"
   | "network_errors"
+  | "daily_trade_cap"
   | "manual"
   | string;
 
@@ -31,6 +33,10 @@ export interface RiskState {
   networkErrorStreak?: number;
   /** Last observed mid/last price per symbol */
   lastPrices?: Record<string, number>;
+  /** Accepted submits on tradesDayKey (UTC date). */
+  tradesToday?: number;
+  /** YYYY-MM-DD UTC bucket for tradesToday. */
+  tradesDayKey?: string;
 }
 
 export interface RiskDecision {
@@ -51,7 +57,7 @@ export type RiskLogEntry = {
   code?: string;
   snapshot: Pick<
     RiskState,
-    "dailyPnlPct" | "drawdownPct" | "losingStreak" | "haltReason" | "openPositionsCount" | "portfolioValue"
+    "dailyPnlPct" | "drawdownPct" | "losingStreak" | "haltReason" | "openPositionsCount" | "portfolioValue" | "tradesToday"
   >;
 };
 
@@ -63,6 +69,28 @@ export const PRICE_GAP_LIMIT = 0.035; // 3.5%
 /** Consecutive network failures that hard-stop the bot. */
 export const NETWORK_ERROR_HARD_STOP = 5;
 
+export function utcDayKey(now = Date.now()): string {
+  return new Date(now).toISOString().slice(0, 10);
+}
+
+/** Reset tradesToday when the UTC day rolls. */
+export function rollDailyTradeWindow(state: RiskState, now = Date.now()): RiskState {
+  const key = utcDayKey(now);
+  if (state.tradesDayKey !== key) {
+    state.tradesDayKey = key;
+    state.tradesToday = 0;
+  }
+  if (state.tradesToday == null) state.tradesToday = 0;
+  return state;
+}
+
+/** Count an accepted submit against the daily cap. */
+export function recordAcceptedTrade(state: RiskState, now = Date.now()): RiskState {
+  rollDailyTradeWindow(state, now);
+  state.tradesToday = (state.tradesToday ?? 0) + 1;
+  return state;
+}
+
 function logDecision(entry: Omit<RiskLogEntry, "ts">): void {
   riskLog.push({ ...entry, ts: Date.now() });
   if (riskLog.length > MAX_LOG) riskLog.splice(0, riskLog.length - MAX_LOG);
@@ -70,7 +98,8 @@ function logDecision(entry: Omit<RiskLogEntry, "ts">): void {
   console.info(
     `[risk] ${tag} ${entry.side ?? "-"} ${entry.symbol ?? "-"} — ${entry.reason}` +
       ` | daily=${entry.snapshot.dailyPnlPct.toFixed(2)}% dd=${entry.snapshot.drawdownPct.toFixed(2)}%` +
-      ` streak=${entry.snapshot.losingStreak} halt=${entry.snapshot.haltReason ?? "none"}`,
+      ` streak=${entry.snapshot.losingStreak} trades=${entry.snapshot.tradesToday ?? 0}` +
+      ` halt=${entry.snapshot.haltReason ?? "none"}`,
   );
 }
 
@@ -122,6 +151,8 @@ function halt(state: RiskState, reason: string, code: HardStopReason, symbol?: s
  */
 export function applyHardStops(state: RiskState, currentPrice?: { symbol: string; price: number }): RiskState {
   const { risk } = TRADING_CONFIG;
+
+  rollDailyTradeWindow(state);
 
   if (state.haltReason) return state;
 
@@ -190,6 +221,7 @@ function snap(state: RiskState): RiskLogEntry["snapshot"] {
     haltReason: state.haltReason,
     openPositionsCount: state.openPositionsCount,
     portfolioValue: state.portfolioValue,
+    tradesToday: state.tradesToday ?? 0,
   };
 }
 
@@ -228,6 +260,14 @@ export function evaluateRisk(
   if (state.cooldownUntil && now < state.cooldownUntil) {
     const remaining = Math.ceil((state.cooldownUntil - now) / 1000);
     return finish({ allowed: false, reason: `Cooldown ${remaining}s remaining` });
+  }
+
+  if ((state.tradesToday ?? 0) >= risk.maxDailyTrades) {
+    return finish({
+      allowed: false,
+      code: "daily_trade_cap",
+      reason: `Daily trade cap reached (${state.tradesToday}/${risk.maxDailyTrades})`,
+    });
   }
 
   if (state.dailyPnlPct <= risk.dailyLossLimitPct) {

@@ -31,6 +31,8 @@ export const TRADING_CONFIG = {
     maxDrawdownPct: -18,
     maxOpenPositions: 3,
     losingStreakHardStop: 4,
+    /** Max accepted orders (buy or sell) per UTC day. Not a hard-stop — just refuse new submits. */
+    maxDailyTrades: 12,
   },
 
   // Grid strategy (Hour 7)
