@@ -19,7 +19,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hour 7 – Grid improvements | ✅ Done |
 | Hour 8 – Docs + persist + alerts | ✅ Done |
 | Hardening – paper portfolio file persist | ✅ Done |
-| Hardening – Trade-only key audit (no Withdraw) | ✅ Done (this push) |
+| Hardening – Trade-only key audit (no Withdraw) | ✅ Done |
+| Hardening – clientOrderId ledger persist | ✅ Done (this push) |
 
 ## Architecture
 
@@ -34,7 +35,7 @@ ExchangeAdapter
    ① PaperExchange   (CoinGecko + virtual money)
    ② KuCoin (CCXT)   (real orders – live only, keys stay on server)
 
-Persist: data/bot-state.json (risk snapshot + last hard-stop + paper portfolio)
+Persist: data/bot-state.json (risk snapshot + last hard-stop + paper portfolio + seen orders)
 Alerts:  console + optional HARD_STOP_WEBHOOK_URL
 Live gate: inspectKucoinKeyPermissions() — Withdraw on the key blocks LIVE
 ```
@@ -47,7 +48,7 @@ Live gate: inspectKucoinKeyPermissions() — Withdraw on the key blocks LIVE
 4. Leave the dashboard in Paper. Virtual balance starts at $10 000 USDT.
 5. Prices come from CoinGecko. No exchange orders are sent.
 
-Dashboard LocalStorage is UI convenience only. Risk / halt snapshots and the paper cash+positions book are written under `data/bot-state.json` so a restart does not wipe the last halt reason or reset virtual inventory.
+Dashboard LocalStorage is UI convenience only. Risk / halt snapshots, the paper cash+positions book, and the last ~200 clientOrderIds are written under `data/bot-state.json` so a restart does not wipe the last halt reason, reset virtual inventory, or allow a retry to double-submit the same intent.
 
 ## Live mode — steps
 
