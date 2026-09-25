@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, ShieldCheck } from "lucide-react";
 import {
+  fetchExchangeHealth,
   fetchModeStatus,
   requestSetMode,
 } from "@/lib/server/mode-fns";
@@ -27,11 +28,18 @@ export function ModeSwitch() {
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [typed, setTyped] = useState("");
+  const [stale, setStale] = useState(false);
+  const [ageSec, setAgeSec] = useState<number | null>(null);
 
   const refresh = async () => {
     try {
       const next = await fetchModeStatus();
       setStatus(next);
+      const health = await fetchExchangeHealth();
+      setStale(Boolean(health.heartbeatStale));
+      setAgeSec(
+        health.heartbeatAgeMs != null ? Math.round(health.heartbeatAgeMs / 1000) : null,
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load mode");
     }
@@ -39,6 +47,8 @@ export function ModeSwitch() {
 
   useEffect(() => {
     void refresh();
+    const id = setInterval(() => void refresh(), 45_000);
+    return () => clearInterval(id);
   }, []);
 
   const mode = status?.mode ?? "paper";
@@ -108,6 +118,11 @@ export function ModeSwitch() {
           LIVE
         </button>
       </div>
+      {stale && (
+        <span className="text-[10px] text-amber-400 max-w-[18rem]">
+          Watchdog: no tick for {ageSec ?? "?"}s
+        </span>
+      )}
       {error && <span className="text-[10px] text-red-400 max-w-[18rem] truncate">{error}</span>}
       {status?.keyAuditMessage && mode === "paper" && (
         <span className="text-[10px] text-muted-foreground max-w-[18rem] truncate" title={status.keyAuditMessage}>
