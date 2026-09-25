@@ -3,6 +3,7 @@
  *
  * Lifecycle: create → validate (risk) → submit → track status → update portfolio.
  * Idempotency: clientOrderId is generated once per intent and reused on retry.
+ * Seen IDs can be hydrated from server persist so a restart does not double-submit.
  */
 
 import { evaluateRisk, type RiskState } from "@/lib/risk";
@@ -49,6 +50,9 @@ export type OrderManagerOptions = {
   startingPositions?: PortfolioSnapshot["positions"];
   /** Optional hook so a server host can persist paper state without importing fs here. */
   onPortfolioChange?: (portfolio: PortfolioSnapshot) => void;
+  /** Optional hook after a new clientOrderId is recorded. */
+  onSeenOrdersChange?: (orders: UnifiedOrder[]) => void;
+  seenOrders?: UnifiedOrder[];
 };
 
 function newClientOrderId(intent: ManagedOrderIntent): string {
@@ -72,6 +76,7 @@ export class OrderManager {
   private portfolio: PortfolioSnapshot;
   private eventsLog: OrderLifecycleEvent[] = [];
   private onPortfolioChange?: (portfolio: PortfolioSnapshot) => void;
+  private onSeenOrdersChange?: (orders: UnifiedOrder[]) => void;
 
   constructor(
     private adapter: ExchangeAdapter,
@@ -89,6 +94,10 @@ export class OrderManager {
         positions: { ...(startingCashOrOptions.startingPositions ?? startingPositions) },
       };
       this.onPortfolioChange = startingCashOrOptions.onPortfolioChange;
+      this.onSeenOrdersChange = startingCashOrOptions.onSeenOrdersChange;
+      if (startingCashOrOptions.seenOrders) {
+        this.hydrateSeen(startingCashOrOptions.seenOrders);
+      }
     }
   }
 
@@ -108,6 +117,18 @@ export class OrderManager {
       cash: snapshot.cash,
       positions: { ...snapshot.positions },
     };
+  }
+
+  hydrateSeen(orders: UnifiedOrder[]) {
+    for (const order of orders) {
+      const key = order.clientOrderId || order.id;
+      if (!key) continue;
+      this.seen.set(key, order);
+    }
+  }
+
+  snapshotSeen(): UnifiedOrder[] {
+    return [...this.seen.values()];
   }
 
   getEvents() {
@@ -175,7 +196,9 @@ export class OrderManager {
       return { ok: false, reason, events, portfolio: this.getPortfolio() };
     }
 
+    if (!order.clientOrderId) order.clientOrderId = clientOrderId;
     this.seen.set(clientOrderId, order);
+    this.onSeenOrdersChange?.(this.snapshotSeen());
     events.push({ stage: "submitted", order });
 
     if (order.status === "rejected") {
@@ -216,6 +239,7 @@ export class OrderManager {
     const latest = await this.adapter.fetchOrder(orderId, symbol);
     if (!latest) return null;
     if (latest.clientOrderId) this.seen.set(latest.clientOrderId, latest);
+    this.onSeenOrdersChange?.(this.snapshotSeen());
     return latest;
   }
 
