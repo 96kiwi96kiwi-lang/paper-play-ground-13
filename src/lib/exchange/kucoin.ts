@@ -64,6 +64,25 @@ function getExchange(): ccxt.kucoin {
   return exchange;
 }
 
+function toOrderResult(
+  order: ccxt.Order,
+  fallback: { symbol: string; side: "buy" | "sell"; type: "market" | "limit"; amount: number },
+): OrderResult {
+  return {
+    id: String(order.id),
+    symbol: order.symbol ?? fallback.symbol,
+    side: (order.side as "buy" | "sell") ?? fallback.side,
+    type: (order.type as "market" | "limit") ?? fallback.type,
+    amount: order.amount ?? fallback.amount,
+    price: order.price,
+    status: order.status ?? "unknown",
+    filled: order.filled ?? 0,
+    remaining: order.remaining ?? 0,
+    cost: order.cost ?? 0,
+    timestamp: order.timestamp ?? Date.now(),
+  };
+}
+
 /** Check if we have valid credentials (without throwing) */
 export function hasCredentials(): boolean {
   return Boolean(
@@ -115,20 +134,7 @@ export async function placeMarketOrder(
 ): Promise<OrderResult> {
   const ex = getExchange();
   const order = await ex.createOrder(symbol, "market", side, amount);
-
-  return {
-    id: String(order.id),
-    symbol: order.symbol ?? symbol,
-    side,
-    type: "market",
-    amount: order.amount ?? amount,
-    price: order.price,
-    status: order.status ?? "unknown",
-    filled: order.filled ?? 0,
-    remaining: order.remaining ?? 0,
-    cost: order.cost ?? 0,
-    timestamp: order.timestamp ?? Date.now(),
-  };
+  return toOrderResult(order, { symbol, side, type: "market", amount });
 }
 
 /** Place a limit order. Caller must have asserted live mode. */
@@ -140,20 +146,15 @@ export async function placeLimitOrder(
 ): Promise<OrderResult> {
   const ex = getExchange();
   const order = await ex.createOrder(symbol, "limit", side, amount, price);
+  return toOrderResult(order, { symbol, side, type: "limit", amount });
+}
 
-  return {
-    id: String(order.id),
-    symbol: order.symbol ?? symbol,
-    side,
-    type: "limit",
-    amount: order.amount ?? amount,
-    price: order.price ?? price,
-    status: order.status ?? "unknown",
-    filled: order.filled ?? 0,
-    remaining: order.remaining ?? 0,
-    cost: order.cost ?? 0,
-    timestamp: order.timestamp ?? Date.now(),
-  };
+/** Fetch a single order by id. */
+export async function fetchOrder(orderId: string, symbol: string): Promise<OrderResult | null> {
+  const ex = getExchange();
+  const order = await ex.fetchOrder(orderId, symbol);
+  if (!order) return null;
+  return toOrderResult(order, { symbol, side: "buy", type: "limit", amount: 0 });
 }
 
 /** Cancel an open order */

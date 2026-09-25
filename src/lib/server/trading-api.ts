@@ -171,3 +171,9 @@ export async function getOpenOrders(symbol?: string) {
   }
   return kucoin.fetchOpenOrders(symbol);
 }
+
+/** Fetch a single live order by id. */
+export async function getLiveOrder(orderId: string, symbol: string) {
+  if (getMode() !== "live") return null;
+  return kucoin.fetchOrder(orderId, symbol);
+}

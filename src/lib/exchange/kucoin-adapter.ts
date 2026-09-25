@@ -148,6 +148,13 @@ export class KuCoinExchange implements ExchangeAdapter {
     );
   }
 
+  async fetchOrder(orderId: string, symbol: string): Promise<UnifiedOrder | null> {
+    const raw = await kucoin.fetchOrder(orderId, symbol);
+    if (!raw) return null;
+    const remembered = [...this.clientOrderIndex.values()].find((o) => o.id === orderId);
+    return mapOrder(raw, remembered?.clientOrderId);
+  }
+
   async healthCheck() {
     return kucoin.healthCheck();
   }

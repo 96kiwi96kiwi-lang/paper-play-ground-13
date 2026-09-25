@@ -4,6 +4,7 @@
  * Lifecycle: create → validate (risk) → submit → track status → update portfolio.
  * Idempotency: clientOrderId is generated once per intent and reused on retry.
  * Seen IDs can be hydrated from server persist so a restart does not double-submit.
+ * Incremental fills: only the delta vs last applied filled amount hits the book.
  */
 
 import { evaluateRisk, type RiskState } from "@/lib/risk";
@@ -35,6 +36,7 @@ export type OrderLifecycleEvent =
   | { stage: "rejected"; order?: UnifiedOrder; reason: string }
   | { stage: "partial"; order: UnifiedOrder }
   | { stage: "filled"; order: UnifiedOrder }
+  | { stage: "synced"; order: UnifiedOrder }
   | { stage: "portfolio_updated"; portfolio: PortfolioSnapshot };
 
 export interface SubmitResult {
@@ -71,8 +73,14 @@ function hashLite(s: string): string {
   return (h >>> 0).toString(36);
 }
 
+function keyOf(order: UnifiedOrder): string {
+  return order.clientOrderId || order.id;
+}
+
 export class OrderManager {
   private seen = new Map<string, UnifiedOrder>();
+  /** How much of each order has already been booked locally. */
+  private appliedFilled = new Map<string, number>();
   private portfolio: PortfolioSnapshot;
   private eventsLog: OrderLifecycleEvent[] = [];
   private onPortfolioChange?: (portfolio: PortfolioSnapshot) => void;
@@ -121,9 +129,11 @@ export class OrderManager {
 
   hydrateSeen(orders: UnifiedOrder[]) {
     for (const order of orders) {
-      const key = order.clientOrderId || order.id;
+      const key = keyOf(order);
       if (!key) continue;
       this.seen.set(key, order);
+      // Treat persisted filled qty as already booked so a restart does not double-apply.
+      this.appliedFilled.set(key, order.filled ?? 0);
     }
   }
 
@@ -197,8 +207,7 @@ export class OrderManager {
     }
 
     if (!order.clientOrderId) order.clientOrderId = clientOrderId;
-    this.seen.set(clientOrderId, order);
-    this.onSeenOrdersChange?.(this.snapshotSeen());
+    this.remember(order);
     events.push({ stage: "submitted", order });
 
     if (order.status === "rejected") {
@@ -208,23 +217,11 @@ export class OrderManager {
       return { ok: false, order, reason, events, portfolio: this.getPortfolio() };
     }
 
-    const filled = order.filled ?? 0;
-    const remaining = order.remaining ?? Math.max(0, order.amount - filled);
-
-    if (filled > 0 && remaining > 0) {
-      events.push({ stage: "partial", order });
-    }
-
-    if (filled > 0) {
-      this.applyFill(order);
-      events.push({ stage: "portfolio_updated", portfolio: this.getPortfolio() });
-    }
-
-    if (remaining <= 0 || order.status === "closed") {
-      events.push({ stage: "filled", order });
-    }
+    this.applyIncrementalFill(order, events);
 
     this.eventsLog.push(...events);
+    const filled = order.filled ?? 0;
+    const remaining = order.remaining ?? Math.max(0, order.amount - filled);
     return {
       ok: filled > 0 || order.status === "open" || order.status === "partially_filled",
       order,
@@ -238,35 +235,127 @@ export class OrderManager {
     if (!this.adapter.fetchOrder) return null;
     const latest = await this.adapter.fetchOrder(orderId, symbol);
     if (!latest) return null;
-    if (latest.clientOrderId) this.seen.set(latest.clientOrderId, latest);
-    this.onSeenOrdersChange?.(this.snapshotSeen());
+    this.ingestRemoteOrder(latest);
     return latest;
   }
 
-  private applyFill(order: UnifiedOrder) {
-    const filled = order.filled;
-    if (filled <= 0) return;
-    const px = order.price ?? (order.cost && filled ? order.cost / filled : 0);
-    const cost = order.cost || filled * px;
+  /**
+   * Poll open / in-flight orders and book only new fill deltas.
+   * Same path for Paper (no-op if nothing open) and KuCoin.
+   */
+  async syncOpenOrders(symbol?: string): Promise<UnifiedOrder[]> {
+    const events: OrderLifecycleEvent[] = [];
+    const updated: UnifiedOrder[] = [];
+
+    let remoteOpen: UnifiedOrder[] = [];
+    try {
+      remoteOpen = await this.adapter.fetchOpenOrders(symbol);
+    } catch (err) {
+      console.warn("[orders] fetchOpenOrders failed", err);
+    }
+
+    const pendingLocal = [...this.seen.values()].filter((o) => {
+      const status = String(o.status);
+      return status === "open" || status === "partially_filled" || status === "pending";
+    });
+
+    const byId = new Map<string, UnifiedOrder>();
+    for (const o of remoteOpen) byId.set(o.id, o);
+    for (const o of pendingLocal) {
+      if (!byId.has(o.id) && this.adapter.fetchOrder) {
+        try {
+          const latest = await this.adapter.fetchOrder(o.id, o.symbol);
+          if (latest) byId.set(latest.id, latest);
+        } catch {
+          /* keep last known snapshot */
+        }
+      }
+    }
+
+    for (const latest of byId.values()) {
+      const applied = this.ingestRemoteOrder(latest);
+      updated.push(latest);
+      events.push({ stage: "synced", order: latest });
+      if (applied) {
+        events.push({ stage: "portfolio_updated", portfolio: this.getPortfolio() });
+      }
+    }
+
+    this.eventsLog.push(...events);
+    return updated;
+  }
+
+  private ingestRemoteOrder(latest: UnifiedOrder): boolean {
+    const known = [...this.seen.values()].find((o) => o.id === latest.id);
+    if (known?.clientOrderId && !latest.clientOrderId) {
+      latest.clientOrderId = known.clientOrderId;
+    }
+    this.remember(latest);
+    const events: OrderLifecycleEvent[] = [];
+    const applied = this.applyIncrementalFill(latest, events);
+    this.eventsLog.push(...events);
+    return applied;
+  }
+
+  private remember(order: UnifiedOrder) {
+    const key = keyOf(order);
+    if (!key) return;
+    this.seen.set(key, order);
+    this.onSeenOrdersChange?.(this.snapshotSeen());
+  }
+
+  /** Book only the unapplied slice of filled quantity. Returns true if book changed. */
+  private applyIncrementalFill(order: UnifiedOrder, events: OrderLifecycleEvent[]): boolean {
+    const key = keyOf(order);
+    const filled = order.filled ?? 0;
+    const remaining = order.remaining ?? Math.max(0, order.amount - filled);
+    const already = this.appliedFilled.get(key) ?? 0;
+    const delta = Math.max(0, filled - already);
+
+    if (filled > 0 && remaining > 0) {
+      events.push({ stage: "partial", order });
+    }
+
+    if (delta > 0) {
+      this.applyFillDelta(order, delta);
+      this.appliedFilled.set(key, already + delta);
+      events.push({ stage: "portfolio_updated", portfolio: this.getPortfolio() });
+    } else if (!this.appliedFilled.has(key)) {
+      this.appliedFilled.set(key, filled);
+    }
+
+    if (remaining <= 0 || order.status === "closed" || order.status === "canceled") {
+      if (order.status === "closed" || remaining <= 0) {
+        events.push({ stage: "filled", order });
+      }
+    }
+
+    return delta > 0;
+  }
+
+  private applyFillDelta(order: UnifiedOrder, filledDelta: number) {
+    if (filledDelta <= 0) return;
+    const px = order.price ?? (order.cost && order.filled ? order.cost / order.filled : 0);
+    const cost = filledDelta * px;
 
     if (order.side === "buy") {
       this.portfolio.cash = Math.max(0, this.portfolio.cash - cost);
       const existing = this.portfolio.positions[order.symbol];
       if (existing) {
-        const totalAmt = existing.amount + filled;
+        const totalAmt = existing.amount + filledDelta;
         const totalCost = existing.amount * existing.avgEntry + cost;
         this.portfolio.positions[order.symbol] = {
           amount: totalAmt,
           avgEntry: totalAmt > 0 ? totalCost / totalAmt : px,
         };
       } else {
-        this.portfolio.positions[order.symbol] = { amount: filled, avgEntry: px };
+        this.portfolio.positions[order.symbol] = { amount: filledDelta, avgEntry: px };
       }
     } else {
       this.portfolio.cash += cost;
       const existing = this.portfolio.positions[order.symbol];
       if (existing) {
-        existing.amount -= filled;
+        existing.amount -= filledDelta;
         if (existing.amount <= 1e-8) delete this.portfolio.positions[order.symbol];
       }
     }

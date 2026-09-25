@@ -20,7 +20,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hour 8 – Docs + persist + alerts | ✅ Done |
 | Hardening – paper portfolio file persist | ✅ Done |
 | Hardening – Trade-only key audit (no Withdraw) | ✅ Done |
-| Hardening – clientOrderId ledger persist | ✅ Done (this push) |
+| Hardening – clientOrderId ledger persist | ✅ Done |
+| Hardening – incremental fills + open-order sync | ✅ Done (this push) |
 
 ## Architecture
 
@@ -74,6 +75,14 @@ On first halt:
 - `data/bot-state.json` records `lastHardStop`
 - If `HARD_STOP_WEBHOOK_URL` is set, a JSON POST is attempted
 - In live mode, visible open orders are canceled (positions are not market-dumped)
+
+## Order lifecycle
+
+`OrderManager.submit` then `syncOpenOrders`:
+- create → risk validate → submit with clientOrderId
+- track status via `fetchOrder` / `fetchOpenOrders`
+- apply **only the new fill delta** to the local book (no double-count after restart)
+- same interface for Paper and KuCoin
 
 ## Risk rules (shared paper + live)
 
