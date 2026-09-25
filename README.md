@@ -22,7 +22,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hardening – Trade-only key audit (no Withdraw) | ✅ Done |
 | Hardening – clientOrderId ledger persist | ✅ Done |
 | Hardening – incremental fills + open-order sync | ✅ Done |
-| Hardening – stale open-order TTL cancel | ✅ Done (this push) |
+| Hardening – stale open-order TTL cancel | ✅ Done |
+| Hardening – tick heartbeat + stalled-loop watchdog | ✅ Done (this push) |
 
 ## Architecture
 
@@ -37,9 +38,10 @@ ExchangeAdapter
    ① PaperExchange   (CoinGecko + virtual money)
    ② KuCoin (CCXT)   (real orders – live only, keys stay on server)
 
-Persist: data/bot-state.json (risk snapshot + last hard-stop + paper portfolio + seen orders)
+Persist: data/bot-state.json (risk snapshot + last hard-stop + paper portfolio + seen orders + lastHeartbeat)
 Alerts:  console + optional HARD_STOP_WEBHOOK_URL
 Live gate: inspectKucoinKeyPermissions() — Withdraw on the key blocks LIVE
+Watchdog: lastHeartbeat older than 3× botTickMs → health.ok=false + alert
 ```
 
 ## Paper mode — quick start
@@ -50,7 +52,7 @@ Live gate: inspectKucoinKeyPermissions() — Withdraw on the key blocks LIVE
 4. Leave the dashboard in Paper. Virtual balance starts at $10 000 USDT.
 5. Prices come from CoinGecko. No exchange orders are sent.
 
-Dashboard LocalStorage is UI convenience only. Risk / halt snapshots, the paper cash+positions book, and the last ~200 clientOrderIds are written under `data/bot-state.json` so a restart does not wipe the last halt reason, reset virtual inventory, or allow a retry to double-submit the same intent.
+Dashboard LocalStorage is UI convenience only. Risk / halt snapshots, the paper cash+positions book, the last ~200 clientOrderIds, and the last bot heartbeat are written under `data/bot-state.json` so a restart does not wipe the last halt reason, reset virtual inventory, or allow a retry to double-submit the same intent.
 
 ## Live mode — steps
 
@@ -77,6 +79,17 @@ On first halt:
 - If `HARD_STOP_WEBHOOK_URL` is set, a JSON POST is attempted
 - In live mode, visible open orders are canceled (positions are not market-dumped)
 
+## Heartbeat watchdog
+
+Call `markBotTick` / `markBotTickFn` after each engine tick. Health then reports `lastTickAt` and `heartbeatStale`.
+
+If no tick is recorded for `TRADING_CONFIG.orders.staleHeartbeatMs` (default 135s = 3× `botTickMs`):
+- `getHealth().ok` becomes false
+- a `stale_heartbeat` alert is emitted (rate-limited to one per window)
+- the dashboard Paper/Live cluster shows "Watchdog: no tick for Ns"
+
+This does **not** dump positions. It tells you the loop died.
+
 ## Order lifecycle
 
 `OrderManager.submit` then `syncOpenOrders` / `cancelStaleOpenOrders`:
@@ -89,7 +102,7 @@ On first halt:
 ## Risk rules (shared paper + live)
 
 | Rule                    | Value   |
-|-------------------------|---------| 
+|-------------------------|---------|
 | Trade size              | 15 %    |
 | Max position per coin   | 20 %    |
 | Stop-loss               | –4 %    |
@@ -101,6 +114,7 @@ On first halt:
 | Price gap hard stop     | 3.5 %   |
 | Network error streak    | 5       |
 | Stale open-order TTL    | 15 min  |
+| Stale heartbeat         | 135 s   |
 
 ## Grid (Hour 7)
 
