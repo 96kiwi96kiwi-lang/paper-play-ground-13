@@ -8,8 +8,14 @@
 import { TRADING_CONFIG } from "@/config/trading";
 import * as kucoin from "@/lib/exchange/kucoin";
 import { assertLiveAllowed, getRuntimeMode, type TradingRuntimeMode } from "./trading-mode";
-import { loadPaperPortfolio, persistPaperPortfolio } from "./persist";
+import {
+  loadPaperPortfolio,
+  persistPaperPortfolio,
+  loadSeenOrders,
+  persistSeenOrders,
+} from "./persist";
 import type { PortfolioSnapshot } from "@/lib/orders/order-manager";
+import type { UnifiedOrder } from "@/lib/exchange/types";
 
 export type Mode = TradingRuntimeMode;
 
@@ -95,6 +101,15 @@ export async function getBalance(paperCash?: number): Promise<BalanceResponse> {
 /** Persist a paper fill so a process restart does not reset virtual cash. */
 export function recordPaperPortfolio(portfolio: PortfolioSnapshot): void {
   persistPaperPortfolio(portfolio);
+}
+
+/** Persist clientOrderId ledger so retries after restart stay idempotent. */
+export function recordSeenOrders(orders: UnifiedOrder[]): void {
+  persistSeenOrders(orders);
+}
+
+export function getSeenOrders(): UnifiedOrder[] {
+  return loadSeenOrders();
 }
 
 /** Tickers from KuCoin when live, otherwise empty (client uses CoinGecko) */
