@@ -11,6 +11,13 @@ import type { PortfolioSnapshot } from "@/lib/orders/order-manager";
 import type { UnifiedOrder } from "@/lib/exchange/types";
 import type { TradingRuntimeMode } from "./trading-mode";
 
+export type PersistedHeartbeat = {
+  at: number;
+  symbol?: string;
+  action?: string;
+  hardStopped?: boolean;
+};
+
 export type PersistedBotState = {
   version: 1;
   savedAt: number;
@@ -30,6 +37,7 @@ export type PersistedBotState = {
     | "lastPrices"
   > | null;
   lastHardStop: { at: number; reason: string } | null;
+  lastHeartbeat: PersistedHeartbeat | null;
   /** Paper portfolio only. Live balances always come from the exchange. */
   paperPortfolio: PortfolioSnapshot | null;
   /** Recent orders keyed by clientOrderId for idempotent replay after restart. */
@@ -47,6 +55,7 @@ function emptyState(): PersistedBotState {
     liveConfirmedAt: null,
     risk: null,
     lastHardStop: null,
+    lastHeartbeat: null,
     paperPortfolio: null,
     seenOrders: [],
   };
@@ -65,11 +74,26 @@ export function loadBotState(): PersistedBotState {
       liveConfirmedAt: null,
       paperPortfolio: sanitizePortfolio(raw.paperPortfolio),
       seenOrders: sanitizeSeenOrders(raw.seenOrders),
+      lastHeartbeat: sanitizeHeartbeat(raw.lastHeartbeat),
     };
   } catch (err) {
     console.warn("[persist] failed to load bot-state.json", err);
     return emptyState();
   }
+}
+
+function sanitizeHeartbeat(raw: unknown): PersistedHeartbeat | null {
+  if (!raw || typeof raw !== "object") return null;
+  const at = Number((raw as PersistedHeartbeat).at);
+  if (!Number.isFinite(at) || at <= 0) return null;
+  const symbol = (raw as PersistedHeartbeat).symbol;
+  const action = (raw as PersistedHeartbeat).action;
+  return {
+    at,
+    symbol: typeof symbol === "string" ? symbol : undefined,
+    action: typeof action === "string" ? action : undefined,
+    hardStopped: Boolean((raw as PersistedHeartbeat).hardStopped),
+  };
 }
 
 function sanitizePortfolio(raw: unknown): PortfolioSnapshot | null {
