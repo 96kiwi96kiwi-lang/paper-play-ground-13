@@ -10,9 +10,11 @@
  * Concurrent cap: refuse submit while local working orders ≥ maxConcurrentOpenOrders.
  * Per-symbol cap: refuse while working orders on that pair ≥ maxOpenOrdersPerSymbol.
  * Notional cap: refuse when amount * price exceeds maxOrderNotionalUsd (if price known).
+ * Pair allowlist: refuse symbols not in TRADING_CONFIG.pairs.
+ * Gross exposure: refuse buys that would push booked cost + order notional over maxGrossExposureUsd.
  */
 
-import { TRADING_CONFIG } from "@/config/trading";
+import { TRADING_CONFIG, type Pair } from "@/config/trading";
 import { evaluateRisk, type RiskState } from "@/lib/risk";
 import type {
   ExchangeAdapter,
@@ -64,6 +66,8 @@ export type OrderManagerOptions = {
   seenOrders?: UnifiedOrder[];
   lastSubmitAt?: number;
 };
+
+const ALLOWED_PAIRS = new Set<string>(TRADING_CONFIG.pairs as readonly Pair[]);
 
 function newClientOrderId(intent: ManagedOrderIntent): string {
   const raw = `${intent.symbol}|${intent.side}|${intent.amount}|${intent.type ?? "market"}|${intent.price ?? ""}`;
@@ -154,6 +158,16 @@ export class OrderManager {
     return n;
   }
 
+  /** Booked cost basis of open positions (amount * avgEntry). */
+  bookedGrossExposureUsd() {
+    let gross = 0;
+    for (const pos of Object.values(this.portfolio.positions)) {
+      if (!pos) continue;
+      gross += Math.abs(pos.amount * pos.avgEntry);
+    }
+    return gross;
+  }
+
   hydrate(snapshot: PortfolioSnapshot) {
     this.portfolio = {
       cash: snapshot.cash,
@@ -201,6 +215,14 @@ export class OrderManager {
       };
     }
 
+    if (!ALLOWED_PAIRS.has(normalized.symbol)) {
+      const reason = `Pair not allowed: ${normalized.symbol} (allowed: ${[...ALLOWED_PAIRS].join(", ")})`;
+      events.push({ stage: "validated", allowed: false, reason });
+      events.push({ stage: "rejected", reason });
+      this.eventsLog.push(...events);
+      return { ok: false, reason, events, portfolio: this.getPortfolio() };
+    }
+
     const risk = evaluateRisk(riskState, normalized.side, normalized.symbol);
     events.push({
       stage: "validated",
@@ -234,10 +256,22 @@ export class OrderManager {
     }
 
     const maxNotional = TRADING_CONFIG.orders.maxOrderNotionalUsd;
-    if (normalized.price != null && normalized.price > 0 && normalized.amount > 0) {
-      const notional = normalized.amount * normalized.price;
-      if (notional > maxNotional) {
-        const reason = `Notional cap: ${notional.toFixed(2)} USD exceeds max ${maxNotional}`;
+    const orderNotional =
+      normalized.price != null && normalized.price > 0 && normalized.amount > 0
+        ? normalized.amount * normalized.price
+        : null;
+    if (orderNotional != null && orderNotional > maxNotional) {
+      const reason = `Notional cap: ${orderNotional.toFixed(2)} USD exceeds max ${maxNotional}`;
+      events.push({ stage: "rejected", reason });
+      this.eventsLog.push(...events);
+      return { ok: false, reason, events, portfolio: this.getPortfolio() };
+    }
+
+    const maxGross = TRADING_CONFIG.orders.maxGrossExposureUsd;
+    if (normalized.side === "buy" && orderNotional != null) {
+      const nextGross = this.bookedGrossExposureUsd() + orderNotional;
+      if (nextGross > maxGross) {
+        const reason = `Gross exposure cap: ${nextGross.toFixed(2)} USD would exceed max ${maxGross}`;
         events.push({ stage: "rejected", reason });
         this.eventsLog.push(...events);
         return { ok: false, reason, events, portfolio: this.getPortfolio() };
