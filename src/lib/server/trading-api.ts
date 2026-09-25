@@ -14,6 +14,7 @@ import {
   loadSeenOrders,
   persistSeenOrders,
 } from "./persist";
+import { checkStaleHeartbeat, recordBotHeartbeat, type BotHeartbeat } from "./heartbeat";
 import type { PortfolioSnapshot } from "@/lib/orders/order-manager";
 import type { UnifiedOrder } from "@/lib/exchange/types";
 
@@ -24,6 +25,9 @@ export interface HealthResponse {
   mode: Mode;
   message: string;
   hasCredentials: boolean;
+  heartbeat?: BotHeartbeat | null;
+  heartbeatAgeMs?: number | null;
+  heartbeatStale?: boolean;
 }
 
 export interface BalanceResponse {
@@ -46,25 +50,41 @@ export function getMode(): Mode {
   return getRuntimeMode();
 }
 
+/** Call after each bot tick so health can detect a dead loop. */
+export function markBotTick(partial: { symbol?: string; action?: string; hardStopped?: boolean }): void {
+  recordBotHeartbeat(partial);
+}
+
 /** Health check – safe for both modes */
 export async function getHealth(): Promise<HealthResponse> {
   const mode = getMode();
+  const watch = await checkStaleHeartbeat();
 
   if (mode === "paper") {
     return {
-      ok: true,
+      ok: !watch.stale,
       mode: "paper",
-      message: "Paper mode active – no real money at risk",
+      message: watch.stale
+        ? `Paper mode – heartbeat stale (${Math.round((watch.ageMs ?? 0) / 1000)}s)`
+        : "Paper mode active – no real money at risk",
       hasCredentials: kucoin.hasCredentials(),
+      heartbeat: watch.heartbeat,
+      heartbeatAgeMs: watch.ageMs,
+      heartbeatStale: watch.stale,
     };
   }
 
   const health = await kucoin.healthCheck();
   return {
-    ok: health.ok,
+    ok: health.ok && !watch.stale,
     mode: "live",
-    message: health.message,
+    message: watch.stale
+      ? `LIVE heartbeat stale (${Math.round((watch.ageMs ?? 0) / 1000)}s)`
+      : health.message,
     hasCredentials: kucoin.hasCredentials(),
+    heartbeat: watch.heartbeat,
+    heartbeatAgeMs: watch.ageMs,
+    heartbeatStale: watch.stale,
   };
 }
 
