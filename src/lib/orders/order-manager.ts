@@ -5,8 +5,10 @@
  * Idempotency: clientOrderId is generated once per intent and reused on retry.
  * Seen IDs can be hydrated from server persist so a restart does not double-submit.
  * Incremental fills: only the delta vs last applied filled amount hits the book.
+ * Stale open orders: resting limits older than TTL are canceled (no fill unwind).
  */
 
+import { TRADING_CONFIG } from "@/config/trading";
 import { evaluateRisk, type RiskState } from "@/lib/risk";
 import type {
   ExchangeAdapter,
@@ -37,6 +39,7 @@ export type OrderLifecycleEvent =
   | { stage: "partial"; order: UnifiedOrder }
   | { stage: "filled"; order: UnifiedOrder }
   | { stage: "synced"; order: UnifiedOrder }
+  | { stage: "canceled"; order: UnifiedOrder; reason: string }
   | { stage: "portfolio_updated"; portfolio: PortfolioSnapshot };
 
 export interface SubmitResult {
@@ -75,6 +78,10 @@ function hashLite(s: string): string {
 
 function keyOf(order: UnifiedOrder): string {
   return order.clientOrderId || order.id;
+}
+
+function isWorkingStatus(status: string): boolean {
+  return status === "open" || status === "partially_filled" || status === "pending";
 }
 
 export class OrderManager {
@@ -254,10 +261,7 @@ export class OrderManager {
       console.warn("[orders] fetchOpenOrders failed", err);
     }
 
-    const pendingLocal = [...this.seen.values()].filter((o) => {
-      const status = String(o.status);
-      return status === "open" || status === "partially_filled" || status === "pending";
-    });
+    const pendingLocal = [...this.seen.values()].filter((o) => isWorkingStatus(String(o.status)));
 
     const byId = new Map<string, UnifiedOrder>();
     for (const o of remoteOpen) byId.set(o.id, o);
@@ -283,6 +287,64 @@ export class OrderManager {
 
     this.eventsLog.push(...events);
     return updated;
+  }
+
+  /**
+   * Cancel resting orders older than `maxAgeMs` (default from TRADING_CONFIG).
+   * Market orders that already filled are ignored. Partial fills already booked stay booked.
+   */
+  async cancelStaleOpenOrders(
+    maxAgeMs: number = TRADING_CONFIG.orders.staleOpenOrderMs,
+    now = Date.now(),
+  ): Promise<UnifiedOrder[]> {
+    const canceled: UnifiedOrder[] = [];
+    const events: OrderLifecycleEvent[] = [];
+
+    let remoteOpen: UnifiedOrder[] = [];
+    try {
+      remoteOpen = await this.adapter.fetchOpenOrders();
+    } catch (err) {
+      console.warn("[orders] fetchOpenOrders failed during stale sweep", err);
+    }
+
+    const candidates = new Map<string, UnifiedOrder>();
+    for (const o of remoteOpen) candidates.set(o.id, o);
+    for (const o of this.seen.values()) {
+      if (isWorkingStatus(String(o.status)) && !candidates.has(o.id)) {
+        candidates.set(o.id, o);
+      }
+    }
+
+    for (const order of candidates.values()) {
+      if (order.type === "market" && (order.filled ?? 0) >= order.amount) continue;
+      const age = now - (order.timestamp || 0);
+      if (!order.timestamp || age < maxAgeMs) continue;
+      if (!isWorkingStatus(String(order.status))) continue;
+
+      try {
+        await this.adapter.cancelOrder(order.id, order.symbol);
+        const next: UnifiedOrder = {
+          ...order,
+          status: "canceled",
+          remaining: order.remaining ?? Math.max(0, order.amount - (order.filled ?? 0)),
+        };
+        this.remember(next);
+        events.push({
+          stage: "canceled",
+          order: next,
+          reason: `Stale open order canceled after ${age}ms`,
+        });
+        canceled.push(next);
+        console.info(
+          `[orders] canceled stale ${order.type} ${order.side} ${order.symbol} id=${order.id} ageMs=${age}`,
+        );
+      } catch (err) {
+        console.warn("[orders] cancel stale failed", order.id, err);
+      }
+    }
+
+    this.eventsLog.push(...events);
+    return canceled;
   }
 
   private ingestRemoteOrder(latest: UnifiedOrder): boolean {

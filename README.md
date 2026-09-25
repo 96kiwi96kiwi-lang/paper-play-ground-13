@@ -21,7 +21,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hardening – paper portfolio file persist | ✅ Done |
 | Hardening – Trade-only key audit (no Withdraw) | ✅ Done |
 | Hardening – clientOrderId ledger persist | ✅ Done |
-| Hardening – incremental fills + open-order sync | ✅ Done (this push) |
+| Hardening – incremental fills + open-order sync | ✅ Done |
+| Hardening – stale open-order TTL cancel | ✅ Done (this push) |
 
 ## Architecture
 
@@ -78,10 +79,11 @@ On first halt:
 
 ## Order lifecycle
 
-`OrderManager.submit` then `syncOpenOrders`:
+`OrderManager.submit` then `syncOpenOrders` / `cancelStaleOpenOrders`:
 - create → risk validate → submit with clientOrderId
 - track status via `fetchOrder` / `fetchOpenOrders`
 - apply **only the new fill delta** to the local book (no double-count after restart)
+- resting open/limit orders older than `TRADING_CONFIG.orders.staleOpenOrderMs` (15 min) are canceled
 - same interface for Paper and KuCoin
 
 ## Risk rules (shared paper + live)
@@ -98,6 +100,7 @@ On first halt:
 | Losing streak hard stop | 4       |
 | Price gap hard stop     | 3.5 %   |
 | Network error streak    | 5       |
+| Stale open-order TTL    | 15 min  |
 
 ## Grid (Hour 7)
 
