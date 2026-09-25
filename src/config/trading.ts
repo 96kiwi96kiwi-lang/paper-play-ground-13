@@ -15,7 +15,7 @@ export const TRADING_CONFIG = {
   // Starting virtual balance for paper mode
   paperStartingBalance: 10_000,
 
-  // Supported pairs on KuCoin (spot)
+  // Supported pairs on KuCoin (spot) — OrderManager refuses anything else
   pairs: ["BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT"] as const,
 
   // Default strategy
@@ -59,6 +59,8 @@ export const TRADING_CONFIG = {
     maxOpenOrdersPerSymbol: 2,
     /** Refuse when amount * price exceeds this USD notional (skipped if no price on the intent). */
     maxOrderNotionalUsd: 2_500,
+    /** Refuse a buy when booked cost basis + this order notional would exceed this USD total. */
+    maxGrossExposureUsd: 8_000,
   },
 
   // Bot timing
