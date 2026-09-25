@@ -26,7 +26,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hardening – tick heartbeat + stalled-loop watchdog | ✅ Done |
 | Hardening – daily trade cap (UTC, persisted) | ✅ Done |
 | Hardening – min submit interval (burst guard) | ✅ Done |
-| Hardening – max concurrent open orders | ✅ Done (this push) |
+| Hardening – max concurrent open orders | ✅ Done |
+| Hardening – per-symbol open cap + max notional | ✅ Done (this push) |
 
 ## Architecture
 
@@ -100,6 +101,8 @@ This does **not** dump positions. It tells you the loop died.
 `OrderManager.submit` then `syncOpenOrders` / `cancelStaleOpenOrders`:
 - create → risk validate → submit with clientOrderId
 - refuse a new submit if local working orders already ≥ `maxConcurrentOpenOrders` (4)
+- refuse a new submit if working orders on that symbol already ≥ `maxOpenOrdersPerSymbol` (2)
+- refuse when `amount * price` exceeds `maxOrderNotionalUsd` (2500) if a price is present
 - refuse a new submit if the last *accepted* one was within `minSubmitIntervalMs` (8s)
 - track status via `fetchOrder` / `fetchOpenOrders`
 - apply **only the new fill delta** to the local book (no double-count after restart)
@@ -125,6 +128,8 @@ This does **not** dump positions. It tells you the loop died.
 | Stale heartbeat         | 135 s   |
 | Min submit interval     | 8 s     |
 | Max concurrent open orders | 4    |
+| Max open orders per symbol | 2    |
+| Max order notional      | 2500 USD |
 
 ## Grid (Hour 7)
 

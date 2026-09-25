@@ -55,6 +55,10 @@ export const TRADING_CONFIG = {
     minSubmitIntervalMs: 8_000,
     /** Refuse a new submit while this many local working orders are still open / partial / pending. */
     maxConcurrentOpenOrders: 4,
+    /** Refuse a new submit if this many working orders already exist on the same symbol. */
+    maxOpenOrdersPerSymbol: 2,
+    /** Refuse when amount * price exceeds this USD notional (skipped if no price on the intent). */
+    maxOrderNotionalUsd: 2_500,
   },
 
   // Bot timing

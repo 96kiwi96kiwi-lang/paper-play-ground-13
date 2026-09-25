@@ -8,6 +8,8 @@
  * Stale open orders: resting limits older than TTL are canceled (no fill unwind).
  * Burst guard: a second submit inside minSubmitIntervalMs is rejected (not persisted as seen).
  * Concurrent cap: refuse submit while local working orders ≥ maxConcurrentOpenOrders.
+ * Per-symbol cap: refuse while working orders on that pair ≥ maxOpenOrdersPerSymbol.
+ * Notional cap: refuse when amount * price exceeds maxOrderNotionalUsd (if price known).
  */
 
 import { TRADING_CONFIG } from "@/config/trading";
@@ -144,6 +146,14 @@ export class OrderManager {
     return n;
   }
 
+  countWorkingOrdersForSymbol(symbol: string) {
+    let n = 0;
+    for (const order of this.seen.values()) {
+      if (order.symbol === symbol && isWorkingStatus(String(order.status))) n += 1;
+    }
+    return n;
+  }
+
   hydrate(snapshot: PortfolioSnapshot) {
     this.portfolio = {
       cash: snapshot.cash,
@@ -212,6 +222,26 @@ export class OrderManager {
       events.push({ stage: "rejected", reason });
       this.eventsLog.push(...events);
       return { ok: false, reason, events, portfolio: this.getPortfolio() };
+    }
+
+    const maxPerSymbol = TRADING_CONFIG.orders.maxOpenOrdersPerSymbol;
+    const workingOnSymbol = this.countWorkingOrdersForSymbol(normalized.symbol);
+    if (workingOnSymbol >= maxPerSymbol) {
+      const reason = `Symbol open-order cap: ${workingOnSymbol} working on ${normalized.symbol} (max ${maxPerSymbol})`;
+      events.push({ stage: "rejected", reason });
+      this.eventsLog.push(...events);
+      return { ok: false, reason, events, portfolio: this.getPortfolio() };
+    }
+
+    const maxNotional = TRADING_CONFIG.orders.maxOrderNotionalUsd;
+    if (normalized.price != null && normalized.price > 0 && normalized.amount > 0) {
+      const notional = normalized.amount * normalized.price;
+      if (notional > maxNotional) {
+        const reason = `Notional cap: ${notional.toFixed(2)} USD exceeds max ${maxNotional}`;
+        events.push({ stage: "rejected", reason });
+        this.eventsLog.push(...events);
+        return { ok: false, reason, events, portfolio: this.getPortfolio() };
+      }
     }
 
     const minInterval = TRADING_CONFIG.orders.minSubmitIntervalMs;
