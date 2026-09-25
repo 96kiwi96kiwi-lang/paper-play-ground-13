@@ -51,6 +51,8 @@ export const TRADING_CONFIG = {
     staleOpenOrderMs: 15 * 60 * 1000,
     /** Alert if no bot tick has been recorded for this long (ms). */
     staleHeartbeatMs: 3 * 45_000,
+    /** Refuse a new submit if the last accepted one was more recent than this. */
+    minSubmitIntervalMs: 8_000,
   },
 
   // Bot timing
