@@ -27,6 +27,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] You know how to inspect `data/bot-state.json` and server logs after a halt
 - [ ] Optional `HARD_STOP_WEBHOOK_URL` is set if you want an external ping
 - [ ] You will not clear `haltReason` without reviewing why it fired
+- [ ] Health reports last tick age; a stale heartbeat (no tick for ~135s) fails health and fires a watchdog alert
 
 ## Capital
 
@@ -38,6 +39,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 
 - [ ] You can stop the process quickly
 - [ ] You will monitor the first live session in real time
+- [ ] Tick host calls `markBotTick` / `markBotTickFn` so the watchdog can see a dead loop
 - [ ] You understand this software is provided as-is; there is no guarantee of profit
 
 If any box is unchecked, stay in paper mode.
