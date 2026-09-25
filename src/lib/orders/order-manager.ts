@@ -6,6 +6,7 @@
  * Seen IDs can be hydrated from server persist so a restart does not double-submit.
  * Incremental fills: only the delta vs last applied filled amount hits the book.
  * Stale open orders: resting limits older than TTL are canceled (no fill unwind).
+ * Burst guard: a second submit inside minSubmitIntervalMs is rejected (not persisted as seen).
  */
 
 import { TRADING_CONFIG } from "@/config/trading";
@@ -58,6 +59,7 @@ export type OrderManagerOptions = {
   /** Optional hook after a new clientOrderId is recorded. */
   onSeenOrdersChange?: (orders: UnifiedOrder[]) => void;
   seenOrders?: UnifiedOrder[];
+  lastSubmitAt?: number;
 };
 
 function newClientOrderId(intent: ManagedOrderIntent): string {
@@ -92,6 +94,7 @@ export class OrderManager {
   private eventsLog: OrderLifecycleEvent[] = [];
   private onPortfolioChange?: (portfolio: PortfolioSnapshot) => void;
   private onSeenOrdersChange?: (orders: UnifiedOrder[]) => void;
+  private lastSubmitAt = 0;
 
   constructor(
     private adapter: ExchangeAdapter,
@@ -110,6 +113,7 @@ export class OrderManager {
       };
       this.onPortfolioChange = startingCashOrOptions.onPortfolioChange;
       this.onSeenOrdersChange = startingCashOrOptions.onSeenOrdersChange;
+      this.lastSubmitAt = startingCashOrOptions.lastSubmitAt ?? 0;
       if (startingCashOrOptions.seenOrders) {
         this.hydrateSeen(startingCashOrOptions.seenOrders);
       }
@@ -125,6 +129,10 @@ export class OrderManager {
       cash: this.portfolio.cash,
       positions: { ...this.portfolio.positions },
     };
+  }
+
+  getLastSubmitAt() {
+    return this.lastSubmitAt;
   }
 
   hydrate(snapshot: PortfolioSnapshot) {
@@ -188,6 +196,15 @@ export class OrderManager {
       return { ok: false, reason: risk.reason, events, portfolio: this.getPortfolio() };
     }
 
+    const minInterval = TRADING_CONFIG.orders.minSubmitIntervalMs;
+    const elapsed = Date.now() - this.lastSubmitAt;
+    if (this.lastSubmitAt > 0 && elapsed < minInterval) {
+      const reason = `Submit cooldown: wait ${minInterval - elapsed}ms (min ${minInterval}ms between accepted orders)`;
+      events.push({ stage: "rejected", reason });
+      this.eventsLog.push(...events);
+      return { ok: false, reason, events, portfolio: this.getPortfolio() };
+    }
+
     let order: UnifiedOrder;
     try {
       if (normalized.type === "limit" && normalized.price != null) {
@@ -224,6 +241,7 @@ export class OrderManager {
       return { ok: false, order, reason, events, portfolio: this.getPortfolio() };
     }
 
+    this.lastSubmitAt = Date.now();
     this.applyIncrementalFill(order, events);
 
     this.eventsLog.push(...events);
