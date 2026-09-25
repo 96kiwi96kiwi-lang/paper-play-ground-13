@@ -43,6 +43,12 @@ export const TRADING_CONFIG = {
     recenterLookback: 40,
   },
 
+  // Order lifecycle
+  orders: {
+    /** Cancel resting limit / open orders older than this (ms). Market fills are ignored. */
+    staleOpenOrderMs: 15 * 60 * 1000,
+  },
+
   // Bot timing
   priceRefreshMs: 20_000,
   botTickMs: 45_000,
