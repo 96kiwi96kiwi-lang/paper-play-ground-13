@@ -23,7 +23,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hardening – clientOrderId ledger persist | ✅ Done |
 | Hardening – incremental fills + open-order sync | ✅ Done |
 | Hardening – stale open-order TTL cancel | ✅ Done |
-| Hardening – tick heartbeat + stalled-loop watchdog | ✅ Done (this push) |
+| Hardening – tick heartbeat + stalled-loop watchdog | ✅ Done |
+| Hardening – daily trade cap (UTC, persisted) | ✅ Done (this push) |
 
 ## Architecture
 
@@ -38,7 +39,7 @@ ExchangeAdapter
    ① PaperExchange   (CoinGecko + virtual money)
    ② KuCoin (CCXT)   (real orders – live only, keys stay on server)
 
-Persist: data/bot-state.json (risk snapshot + last hard-stop + paper portfolio + seen orders + lastHeartbeat)
+Persist: data/bot-state.json (risk snapshot + last hard-stop + paper portfolio + seen orders + lastHeartbeat + tradesToday)
 Alerts:  console + optional HARD_STOP_WEBHOOK_URL
 Live gate: inspectKucoinKeyPermissions() — Withdraw on the key blocks LIVE
 Watchdog: lastHeartbeat older than 3× botTickMs → health.ok=false + alert
@@ -79,6 +80,8 @@ On first halt:
 - If `HARD_STOP_WEBHOOK_URL` is set, a JSON POST is attempted
 - In live mode, visible open orders are canceled (positions are not market-dumped)
 
+The daily trade cap (default 12 accepted submits per UTC day) is **not** a hard-stop. It only refuses further `submit` calls until the next UTC day. The counter is persisted so a restart cannot reset the cap.
+
 ## Heartbeat watchdog
 
 Call `markBotTick` / `markBotTickFn` after each engine tick. Health then reports `lastTickAt` and `heartbeatStale`.
@@ -113,6 +116,7 @@ This does **not** dump positions. It tells you the loop died.
 | Losing streak hard stop | 4       |
 | Price gap hard stop     | 3.5 %   |
 | Network error streak    | 5       |
+| Daily trade cap         | 12 / UTC day |
 | Stale open-order TTL    | 15 min  |
 | Stale heartbeat         | 135 s   |
 

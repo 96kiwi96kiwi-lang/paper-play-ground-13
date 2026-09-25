@@ -35,6 +35,8 @@ export type PersistedBotState = {
     | "haltReason"
     | "networkErrorStreak"
     | "lastPrices"
+    | "tradesToday"
+    | "tradesDayKey"
   > | null;
   lastHardStop: { at: number; reason: string } | null;
   lastHeartbeat: PersistedHeartbeat | null;
@@ -176,6 +178,8 @@ export function persistRiskSnapshot(risk: RiskState): void {
       haltReason: risk.haltReason,
       networkErrorStreak: risk.networkErrorStreak,
       lastPrices: risk.lastPrices,
+      tradesToday: risk.tradesToday ?? 0,
+      tradesDayKey: risk.tradesDayKey,
     },
     lastHardStop: risk.haltReason
       ? { at: Date.now(), reason: risk.haltReason }

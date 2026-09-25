@@ -8,6 +8,7 @@ import { runStrategy, type StrategyContext } from "@/lib/strategies";
 import {
   applyHardStops,
   evaluateRisk,
+  recordAcceptedTrade,
   recordNetworkOutcome,
   recordPartialFill,
   type RiskState,
@@ -124,6 +125,10 @@ export async function executeBotTick(
     );
 
     recordNetworkOutcome(input.riskState, null);
+
+    if (submit.ok && submit.order && submit.order.status !== "rejected") {
+      recordAcceptedTrade(input.riskState);
+    }
 
     if (submit.order) {
       const filled = submit.order.filled ?? 0;
