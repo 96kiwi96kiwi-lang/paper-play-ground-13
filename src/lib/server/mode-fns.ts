@@ -5,7 +5,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { getModeStatus, setRuntimeMode, type ModeStatus } from "./trading-mode";
-import { getHealth } from "./trading-api";
+import { getHealth, markBotTick } from "./trading-api";
 import { registerHardStopMonitoring } from "./register-monitoring";
 
 registerHardStopMonitoring();
@@ -21,8 +21,26 @@ export const fetchExchangeHealth = createServerFn({ method: "GET" }).handler(asy
     mode: health.mode,
     message: health.message,
     hasCredentials: health.hasCredentials,
+    heartbeatAgeMs: health.heartbeatAgeMs ?? null,
+    heartbeatStale: health.heartbeatStale ?? false,
+    lastTickAt: health.heartbeat?.at ?? null,
+    lastTickSymbol: health.heartbeat?.symbol ?? null,
   };
 });
+
+export const markBotTickFn = createServerFn({ method: "POST" })
+  .validator((data: unknown) => {
+    const body = (data ?? {}) as { symbol?: string; action?: string; hardStopped?: boolean };
+    return {
+      symbol: typeof body.symbol === "string" ? body.symbol : undefined,
+      action: typeof body.action === "string" ? body.action : undefined,
+      hardStopped: Boolean(body.hardStopped),
+    };
+  })
+  .handler(async ({ data }) => {
+    markBotTick(data);
+    return { ok: true as const };
+  });
 
 export const requestSetMode = createServerFn({ method: "POST" })
   .validator((data: unknown) => {
