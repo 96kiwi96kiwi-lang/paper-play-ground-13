@@ -53,6 +53,8 @@ export const TRADING_CONFIG = {
     staleHeartbeatMs: 3 * 45_000,
     /** Refuse a new submit if the last accepted one was more recent than this. */
     minSubmitIntervalMs: 8_000,
+    /** Refuse a new submit while this many local working orders are still open / partial / pending. */
+    maxConcurrentOpenOrders: 4,
   },
 
   // Bot timing

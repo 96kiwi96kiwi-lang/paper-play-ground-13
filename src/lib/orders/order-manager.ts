@@ -7,6 +7,7 @@
  * Incremental fills: only the delta vs last applied filled amount hits the book.
  * Stale open orders: resting limits older than TTL are canceled (no fill unwind).
  * Burst guard: a second submit inside minSubmitIntervalMs is rejected (not persisted as seen).
+ * Concurrent cap: refuse submit while local working orders ≥ maxConcurrentOpenOrders.
  */
 
 import { TRADING_CONFIG } from "@/config/trading";
@@ -135,6 +136,14 @@ export class OrderManager {
     return this.lastSubmitAt;
   }
 
+  countWorkingOrders() {
+    let n = 0;
+    for (const order of this.seen.values()) {
+      if (isWorkingStatus(String(order.status))) n += 1;
+    }
+    return n;
+  }
+
   hydrate(snapshot: PortfolioSnapshot) {
     this.portfolio = {
       cash: snapshot.cash,
@@ -194,6 +203,15 @@ export class OrderManager {
       events.push({ stage: "rejected", reason: risk.reason });
       this.eventsLog.push(...events);
       return { ok: false, reason: risk.reason, events, portfolio: this.getPortfolio() };
+    }
+
+    const maxOpen = TRADING_CONFIG.orders.maxConcurrentOpenOrders;
+    const working = this.countWorkingOrders();
+    if (working >= maxOpen) {
+      const reason = `Open-order cap: ${working} working orders (max ${maxOpen})`;
+      events.push({ stage: "rejected", reason });
+      this.eventsLog.push(...events);
+      return { ok: false, reason, events, portfolio: this.getPortfolio() };
     }
 
     const minInterval = TRADING_CONFIG.orders.minSubmitIntervalMs;
