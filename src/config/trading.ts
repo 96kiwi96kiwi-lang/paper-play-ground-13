@@ -47,6 +47,8 @@ export const TRADING_CONFIG = {
   orders: {
     /** Cancel resting limit / open orders older than this (ms). Market fills are ignored. */
     staleOpenOrderMs: 15 * 60 * 1000,
+    /** Alert if no bot tick has been recorded for this long (ms). */
+    staleHeartbeatMs: 3 * 45_000,
   },
 
   // Bot timing
