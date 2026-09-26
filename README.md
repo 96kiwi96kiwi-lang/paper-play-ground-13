@@ -36,7 +36,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hardening – persist lastHardStop + health/UI halt | ✅ Done |
 | Hardening – atomic bot-state write + lastHardStop code | ✅ Done |
 | Hardening – restore halt + risk counters on server submit | ✅ Done |
-| Hardening – grid stacked-buy cap + reservation rollback | ✅ Done (this push) |
+| Hardening – grid stacked-buy cap + reservation rollback | ✅ Done |
+| Hardening – expire unconfirmed grid reservations (TTL) | ✅ Done (this push) |
 
 ## Architecture
 
@@ -132,7 +133,7 @@ This does **not** dump positions. It tells you the loop died.
 ## Risk rules (shared paper + live)
 
 | Rule                    | Value   |
-|-------------------------|---------|-----------|
+|-------------------------|---------|
 | Trade size              | 15 %    |
 | Max position per coin   | 20 %    |
 | Stop-loss               | –4 %    |
@@ -161,7 +162,8 @@ This does **not** dump positions. It tells you the loop died.
 - Same side+level is not re-fired until price walks to another rung (last-fill guard)
 - Flipping buy↔sell waits `minHoldMs` (3 min) and `minLevelsBeforeFlip` (2 rungs) to cut whipsaws
 - At most `maxStackedBuys` (3) unclosed grid buys per symbol — further buys idle until a sell decrements the stack
-- A grid signal **reserves** the rung; `executeBotTick` confirms only after OrderManager accepts, and `releaseGridReservation` undoes the stack if the submit is rejected or throws (2 min TTL)
+- A grid signal **reserves** the rung; `executeBotTick` confirms only after OrderManager accepts, and `releaseGridReservation` undoes the stack if the submit is rejected or throws
+- Unconfirmed reservations older than `reservationTtlMs` (2 min) are rolled back on the next grid tick and on hydrate, so a crash mid-submit cannot lock the rung or inflate `stackedBuys` forever
 - Sells that would not cover round-trip fees are skipped (uses position avg or lastFillPrice)
 - Book recenters when price drifts ≥ `rebalanceThresholdPct` from mid (clears last-fill, keeps stackedBuys)
 - Mid + last-fill (side, level, price, time, stackedBuys, reserved) are written to `data/bot-state.json` on each `markBotTick` and restored on boot so a restart does not re-seed and double-buy the same level or skip the hold clock
