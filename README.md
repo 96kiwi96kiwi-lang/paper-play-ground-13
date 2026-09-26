@@ -35,7 +35,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hardening – grid anti-whipsaw + lastFillPrice persist | ✅ Done |
 | Hardening – persist lastHardStop + health/UI halt | ✅ Done |
 | Hardening – atomic bot-state write + lastHardStop code | ✅ Done |
-| Hardening – restore halt + risk counters on server submit | ✅ Done (this push) |
+| Hardening – restore halt + risk counters on server submit | ✅ Done |
+| Hardening – grid stacked-buy cap + reservation rollback | ✅ Done (this push) |
 
 ## Architecture
 
@@ -66,7 +67,7 @@ Submit: createServerOrderManager applies persisted halt/counters before every or
 4. Leave the dashboard in Paper. Virtual balance starts at $10 000 USDT.
 5. Prices come from CoinGecko. No exchange orders are sent.
 
-Dashboard LocalStorage is UI convenience only. Risk / halt snapshots, the paper cash+positions book, the last ~200 clientOrderIds, the last bot heartbeat, grid mid/last-fill books (including lastFillPrice / lastFillAt), and the last accepted submit timestamp are written under `data/bot-state.json` so a restart does not wipe the last halt reason, reset virtual inventory, allow a retry to double-submit the same intent, re-fire the same grid rung, skip the min-submit burst guard, or flip grid side before the anti-whipsaw hold expires.
+Dashboard LocalStorage is UI convenience only. Risk / halt snapshots, the paper cash+positions book, the last ~200 clientOrderIds, the last bot heartbeat, grid mid/last-fill books (including lastFillPrice / lastFillAt / stackedBuys / reserved), and the last accepted submit timestamp are written under `data/bot-state.json` so a restart does not wipe the last halt reason, reset virtual inventory, allow a retry to double-submit the same intent, re-fire the same grid rung, skip the min-submit burst guard, or flip grid side before the anti-whipsaw hold expires.
 
 Writes go through `data/bot-state.json.tmp` then `rename`, so a crash mid-save cannot leave a truncated JSON file.
 
@@ -131,7 +132,7 @@ This does **not** dump positions. It tells you the loop died.
 ## Risk rules (shared paper + live)
 
 | Rule                    | Value   |
-|-------------------------|---------|
+|-------------------------|---------|-----------|
 | Trade size              | 15 %    |
 | Max position per coin   | 20 %    |
 | Stop-loss               | –4 %    |
@@ -159,9 +160,11 @@ This does **not** dump positions. It tells you the loop died.
 - Signals use the **nearest crossed level** (±L across `levels/2`), not only the first rung
 - Same side+level is not re-fired until price walks to another rung (last-fill guard)
 - Flipping buy↔sell waits `minHoldMs` (3 min) and `minLevelsBeforeFlip` (2 rungs) to cut whipsaws
+- At most `maxStackedBuys` (3) unclosed grid buys per symbol — further buys idle until a sell decrements the stack
+- A grid signal **reserves** the rung; `executeBotTick` confirms only after OrderManager accepts, and `releaseGridReservation` undoes the stack if the submit is rejected or throws (2 min TTL)
 - Sells that would not cover round-trip fees are skipped (uses position avg or lastFillPrice)
-- Book recenters when price drifts ≥ `rebalanceThresholdPct` from mid (clears last-fill)
-- Mid + last-fill (side, level, price, time) are written to `data/bot-state.json` on each `markBotTick` and restored on boot so a restart does not re-seed and double-buy the same level or skip the hold clock
+- Book recenters when price drifts ≥ `rebalanceThresholdPct` from mid (clears last-fill, keeps stackedBuys)
+- Mid + last-fill (side, level, price, time, stackedBuys, reserved) are written to `data/bot-state.json` on each `markBotTick` and restored on boot so a restart does not re-seed and double-buy the same level or skip the hold clock
 
 ## Warning
 
