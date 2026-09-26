@@ -32,6 +32,10 @@ export interface GridBook {
   lastLevel?: number;
   lastFillPrice?: number;
   lastFillAt?: number;
+  /** Count of unclosed grid buys on this symbol. */
+  stackedBuys?: number;
+  /** Last markFill is a reservation until the submit is accepted. */
+  reserved?: boolean;
 }
 
 /** Momentum: buy on strong short-term rise, sell on drop */
@@ -105,6 +109,8 @@ function rebuildGrid(symbol: string, mid: number, spacingPct: number): GridBook 
     lastLevel: prev?.lastLevel,
     lastFillPrice: prev?.lastFillPrice,
     lastFillAt: prev?.lastFillAt,
+    stackedBuys: prev?.stackedBuys ?? 0,
+    reserved: prev?.reserved,
   };
   gridBooks.set(symbol, book);
   return book;
@@ -115,6 +121,10 @@ function markFill(book: GridBook, side: Side, level: number, price: number): voi
   book.lastLevel = level;
   book.lastFillPrice = price;
   book.lastFillAt = Date.now();
+  book.reserved = true;
+  const stacked = book.stackedBuys ?? 0;
+  if (side === "buy") book.stackedBuys = stacked + 1;
+  else book.stackedBuys = Math.max(0, stacked - 1);
 }
 
 function flipBlocked(book: GridBook, nextSide: Side, nextLevel: number): string | null {
@@ -153,6 +163,7 @@ function priceAtLevel(mid: number, spacingPct: number, level: number): number {
  * - Uses the nearest crossed level (not only ±1)
  * - Skips repeating the same side+level until price walks to another rung
  * - Anti-whipsaw: min hold + min rungs before flipping side
+ * - Inventory ladder: refuse more buys once stackedBuys hits maxStackedBuys
  * - Rebalances (recenters) when price walks off the book
  */
 export function gridStrategy(ctx: StrategyContext): StrategySignal {
@@ -181,6 +192,7 @@ export function gridStrategy(ctx: StrategyContext): StrategySignal {
     book.lastLevel = undefined;
     book.lastFillPrice = undefined;
     book.lastFillAt = undefined;
+    book.reserved = false;
     return {
       action: "hold",
       reason: `Grid rebalanced mid=${book.mid.toFixed(4)} after ${driftPct.toFixed(2)}% drift`,
@@ -210,8 +222,15 @@ export function gridStrategy(ctx: StrategyContext): StrategySignal {
   }
 
   const alreadyFired = book.lastSide !== undefined && book.lastLevel === clamped;
+  const stacked = book.stackedBuys ?? 0;
 
   if (!ctx.hasPosition && clamped <= -1 && ctx.currentPrice >= lowerBound) {
+    if (stacked >= cfg.maxStackedBuys) {
+      return {
+        action: "hold",
+        reason: `Grid idle: stacked buys ${stacked}/${cfg.maxStackedBuys}`,
+      };
+    }
     if (alreadyFired && book.lastSide === "buy") {
       return {
         action: "hold",
@@ -224,7 +243,7 @@ export function gridStrategy(ctx: StrategyContext): StrategySignal {
     markFill(book, "buy", clamped, ctx.currentPrice);
     return {
       action: "buy",
-      reason: `Grid buy L${clamped} ${dist.toFixed(2)}% below mid (space ${spacingPct.toFixed(2)}%)`,
+      reason: `Grid buy L${clamped} ${dist.toFixed(2)}% below mid (space ${spacingPct.toFixed(2)}%, stack ${stacked + 1}/${cfg.maxStackedBuys})`,
       confidence: Math.min(0.45 + Math.abs(clamped) / halfLevels, 0.95),
     };
   }
@@ -254,8 +273,37 @@ export function gridStrategy(ctx: StrategyContext): StrategySignal {
 
   return {
     action: "hold",
-    reason: `Grid idle mid=${book.mid.toFixed(4)} L${clamped} px=${ctx.currentPrice.toFixed(4)}`,
+    reason: `Grid idle mid=${book.mid.toFixed(4)} L${clamped} px=${ctx.currentPrice.toFixed(4)} stack=${stacked}`,
   };
+}
+
+/** Confirm the last reservation after OrderManager accepts the order. */
+export function confirmGridReservation(symbol: string): void {
+  const book = gridBooks.get(symbol);
+  if (!book) return;
+  book.reserved = false;
+}
+
+/**
+ * If the last grid mark was only a reservation and the submit failed,
+ * undo side/level/stack so the same rung can fire again.
+ */
+export function releaseGridReservation(symbol: string, now = Date.now()): boolean {
+  const book = gridBooks.get(symbol);
+  if (!book?.reserved || book.lastFillAt == null || !book.lastSide) return false;
+  if (now - book.lastFillAt > TRADING_CONFIG.grid.reservationTtlMs) {
+    book.reserved = false;
+    return false;
+  }
+  const stacked = book.stackedBuys ?? 0;
+  if (book.lastSide === "buy") book.stackedBuys = Math.max(0, stacked - 1);
+  else book.stackedBuys = stacked + 1;
+  book.lastSide = undefined;
+  book.lastLevel = undefined;
+  book.lastFillPrice = undefined;
+  book.lastFillAt = undefined;
+  book.reserved = false;
+  return true;
 }
 
 export function resetGridBooks(): void {
@@ -275,28 +323,36 @@ export function snapshotGridBooks(): Record<string, GridBook> {
   return out;
 }
 
+function sanitizeOneBook(book: GridBook): GridBook | null {
+  const mid = Number(book.mid);
+  const spacingPct = Number(book.spacingPct);
+  const builtAt = Number(book.builtAt);
+  if (!Number.isFinite(mid) || mid <= 0) return null;
+  if (!Number.isFinite(spacingPct) || spacingPct <= 0) return null;
+  const lastSide = book.lastSide === "buy" || book.lastSide === "sell" ? book.lastSide : undefined;
+  const lastLevel = book.lastLevel != null ? Number(book.lastLevel) : undefined;
+  const lastFillPrice = book.lastFillPrice != null ? Number(book.lastFillPrice) : undefined;
+  const lastFillAt = book.lastFillAt != null ? Number(book.lastFillAt) : undefined;
+  const stackedRaw = book.stackedBuys != null ? Number(book.stackedBuys) : 0;
+  return {
+    mid,
+    spacingPct,
+    builtAt: Number.isFinite(builtAt) && builtAt > 0 ? builtAt : Date.now(),
+    lastSide,
+    lastLevel: lastLevel != null && Number.isFinite(lastLevel) ? lastLevel : undefined,
+    lastFillPrice: lastFillPrice != null && Number.isFinite(lastFillPrice) && lastFillPrice > 0 ? lastFillPrice : undefined,
+    lastFillAt: lastFillAt != null && Number.isFinite(lastFillAt) && lastFillAt > 0 ? lastFillAt : undefined,
+    stackedBuys: Number.isFinite(stackedRaw) && stackedRaw > 0 ? Math.floor(stackedRaw) : 0,
+    reserved: Boolean(book.reserved),
+  };
+}
+
 export function hydrateGridBooks(raw: Record<string, GridBook> | null | undefined): void {
   if (!raw || typeof raw !== "object") return;
   for (const [symbol, book] of Object.entries(raw)) {
     if (!symbol || !book) continue;
-    const mid = Number(book.mid);
-    const spacingPct = Number(book.spacingPct);
-    const builtAt = Number(book.builtAt);
-    if (!Number.isFinite(mid) || mid <= 0) continue;
-    if (!Number.isFinite(spacingPct) || spacingPct <= 0) continue;
-    const lastSide = book.lastSide === "buy" || book.lastSide === "sell" ? book.lastSide : undefined;
-    const lastLevel = book.lastLevel != null ? Number(book.lastLevel) : undefined;
-    const lastFillPrice = book.lastFillPrice != null ? Number(book.lastFillPrice) : undefined;
-    const lastFillAt = book.lastFillAt != null ? Number(book.lastFillAt) : undefined;
-    gridBooks.set(symbol, {
-      mid,
-      spacingPct,
-      builtAt: Number.isFinite(builtAt) && builtAt > 0 ? builtAt : Date.now(),
-      lastSide,
-      lastLevel: lastLevel != null && Number.isFinite(lastLevel) ? lastLevel : undefined,
-      lastFillPrice: lastFillPrice != null && Number.isFinite(lastFillPrice) && lastFillPrice > 0 ? lastFillPrice : undefined,
-      lastFillAt: lastFillAt != null && Number.isFinite(lastFillAt) && lastFillAt > 0 ? lastFillAt : undefined,
-    });
+    const clean = sanitizeOneBook(book);
+    if (clean) gridBooks.set(symbol, clean);
   }
 }
 

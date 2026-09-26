@@ -47,6 +47,10 @@ export const TRADING_CONFIG = {
     minHoldMs: 3 * 60 * 1000,
     /** Require price to walk this many extra rungs before flipping side. */
     minLevelsBeforeFlip: 2,
+    /** Max unclosed grid buys on one symbol (inventory ladder). */
+    maxStackedBuys: 3,
+    /** Undo a rung reservation if the matching submit fails within this window. */
+    reservationTtlMs: 2 * 60 * 1000,
   },
 
   // Order lifecycle

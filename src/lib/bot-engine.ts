@@ -4,7 +4,12 @@
  */
 
 import type { StrategyId } from "@/config/trading";
-import { runStrategy, type StrategyContext } from "@/lib/strategies";
+import {
+  confirmGridReservation,
+  releaseGridReservation,
+  runStrategy,
+  type StrategyContext,
+} from "@/lib/strategies";
 import {
   applyHardStops,
   evaluateRisk,
@@ -99,6 +104,7 @@ export function botTick(input: BotTickInput): BotTickResult {
 /**
  * Full path: strategy → risk → OrderManager → adapter (Paper or KuCoin).
  * Same interface regardless of exchange. No UI changes.
+ * Grid rung reservations are confirmed only after an accepted submit.
  */
 export async function executeBotTick(
   input: BotTickInput,
@@ -128,6 +134,9 @@ export async function executeBotTick(
 
     if (submit.ok && submit.order && submit.order.status !== "rejected") {
       recordAcceptedTrade(input.riskState);
+      if (input.strategy === "grid") confirmGridReservation(input.symbol);
+    } else if (input.strategy === "grid") {
+      releaseGridReservation(input.symbol);
     }
 
     if (submit.order) {
@@ -140,6 +149,7 @@ export async function executeBotTick(
 
     return { tick, submit };
   } catch (err) {
+    if (input.strategy === "grid") releaseGridReservation(input.symbol);
     recordNetworkOutcome(input.riskState, err);
     throw err;
   }
