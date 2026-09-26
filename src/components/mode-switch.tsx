@@ -30,6 +30,7 @@ export function ModeSwitch() {
   const [typed, setTyped] = useState("");
   const [stale, setStale] = useState(false);
   const [ageSec, setAgeSec] = useState<number | null>(null);
+  const [haltReason, setHaltReason] = useState<string | null>(null);
 
   const refresh = async () => {
     try {
@@ -40,6 +41,7 @@ export function ModeSwitch() {
       setAgeSec(
         health.heartbeatAgeMs != null ? Math.round(health.heartbeatAgeMs / 1000) : null,
       );
+      setHaltReason(health.haltReason ?? health.lastHardStop?.reason ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load mode");
     }
@@ -121,6 +123,11 @@ export function ModeSwitch() {
       {stale && (
         <span className="text-[10px] text-amber-400 max-w-[18rem]">
           Watchdog: no tick for {ageSec ?? "?"}s
+        </span>
+      )}
+      {haltReason && (
+        <span className="text-[10px] text-red-400 max-w-[18rem] truncate" title={haltReason}>
+          Halt: {haltReason}
         </span>
       )}
       {error && <span className="text-[10px] text-red-400 max-w-[18rem] truncate">{error}</span>}

@@ -19,6 +19,12 @@ export type PersistedHeartbeat = {
   hardStopped?: boolean;
 };
 
+export type PersistedHardStop = {
+  at: number;
+  reason: string;
+  code?: string;
+};
+
 export type PersistedBotState = {
   version: 1;
   savedAt: number;
@@ -39,7 +45,7 @@ export type PersistedBotState = {
     | "tradesToday"
     | "tradesDayKey"
   > | null;
-  lastHardStop: { at: number; reason: string } | null;
+  lastHardStop: PersistedHardStop | null;
   lastHeartbeat: PersistedHeartbeat | null;
   /** Paper portfolio only. Live balances always come from the exchange. */
   paperPortfolio: PortfolioSnapshot | null;
@@ -84,6 +90,7 @@ export function loadBotState(): PersistedBotState {
       paperPortfolio: sanitizePortfolio(raw.paperPortfolio),
       seenOrders: sanitizeSeenOrders(raw.seenOrders),
       lastHeartbeat: sanitizeHeartbeat(raw.lastHeartbeat),
+      lastHardStop: sanitizeHardStop(raw.lastHardStop),
       gridBooks: sanitizeGridBooks(raw.gridBooks),
       lastSubmitAt: sanitizeLastSubmitAt(raw.lastSubmitAt),
     };
@@ -97,6 +104,20 @@ function sanitizeLastSubmitAt(raw: unknown): number {
   const n = Number(raw);
   if (!Number.isFinite(n) || n <= 0) return 0;
   return n;
+}
+
+export function sanitizeHardStop(raw: unknown): PersistedHardStop | null {
+  if (!raw || typeof raw !== "object") return null;
+  const at = Number((raw as PersistedHardStop).at);
+  const reason = (raw as PersistedHardStop).reason;
+  if (!Number.isFinite(at) || at <= 0) return null;
+  if (typeof reason !== "string" || !reason.trim()) return null;
+  const code = (raw as PersistedHardStop).code;
+  return {
+    at,
+    reason: reason.trim(),
+    code: typeof code === "string" && code.trim() ? code.trim() : undefined,
+  };
 }
 
 function sanitizeHeartbeat(raw: unknown): PersistedHeartbeat | null {
@@ -214,6 +235,11 @@ export function saveBotState(patch: Partial<PersistedBotState>): PersistedBotSta
 }
 
 export function persistRiskSnapshot(risk: RiskState): void {
+  const existing = loadBotState().lastHardStop;
+  const nextStop =
+    risk.haltReason && (!existing || existing.reason !== risk.haltReason)
+      ? { at: Date.now(), reason: risk.haltReason }
+      : existing;
   saveBotState({
     risk: {
       portfolioValue: risk.portfolioValue,
@@ -229,9 +255,7 @@ export function persistRiskSnapshot(risk: RiskState): void {
       tradesToday: risk.tradesToday ?? 0,
       tradesDayKey: risk.tradesDayKey,
     },
-    lastHardStop: risk.haltReason
-      ? { at: Date.now(), reason: risk.haltReason }
-      : loadBotState().lastHardStop,
+    lastHardStop: nextStop,
   });
 }
 

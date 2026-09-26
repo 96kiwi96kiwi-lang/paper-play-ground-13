@@ -25,6 +25,8 @@ export const fetchExchangeHealth = createServerFn({ method: "GET" }).handler(asy
     heartbeatStale: health.heartbeatStale ?? false,
     lastTickAt: health.heartbeat?.at ?? null,
     lastTickSymbol: health.heartbeat?.symbol ?? null,
+    lastHardStop: health.lastHardStop ?? null,
+    haltReason: health.haltReason ?? null,
   };
 });
 

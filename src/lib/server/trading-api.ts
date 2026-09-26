@@ -10,11 +10,13 @@ import * as kucoin from "@/lib/exchange/kucoin";
 import { snapshotGridBooks } from "@/lib/strategies";
 import { assertLiveAllowed, getRuntimeMode, type TradingRuntimeMode } from "./trading-mode";
 import {
+  loadBotState,
   loadPaperPortfolio,
   persistPaperPortfolio,
   loadSeenOrders,
   persistSeenOrders,
   persistGridBooks,
+  type PersistedHardStop,
 } from "./persist";
 import { checkStaleHeartbeat, recordBotHeartbeat, type BotHeartbeat } from "./heartbeat";
 import { restorePersistedGridBooks } from "./register-monitoring";
@@ -31,6 +33,8 @@ export interface HealthResponse {
   heartbeat?: BotHeartbeat | null;
   heartbeatAgeMs?: number | null;
   heartbeatStale?: boolean;
+  lastHardStop?: PersistedHardStop | null;
+  haltReason?: string | null;
 }
 
 export interface BalanceResponse {
@@ -60,11 +64,20 @@ export function markBotTick(partial: { symbol?: string; action?: string; hardSto
   persistGridBooks(snapshotGridBooks());
 }
 
+function haltFields(): Pick<HealthResponse, "lastHardStop" | "haltReason"> {
+  const state = loadBotState();
+  return {
+    lastHardStop: state.lastHardStop,
+    haltReason: state.risk?.haltReason ?? state.lastHardStop?.reason ?? null,
+  };
+}
+
 /** Health check – safe for both modes */
 export async function getHealth(): Promise<HealthResponse> {
   restorePersistedGridBooks();
   const mode = getMode();
   const watch = await checkStaleHeartbeat();
+  const halt = haltFields();
 
   if (mode === "paper") {
     return {
@@ -77,6 +90,7 @@ export async function getHealth(): Promise<HealthResponse> {
       heartbeat: watch.heartbeat,
       heartbeatAgeMs: watch.ageMs,
       heartbeatStale: watch.stale,
+      ...halt,
     };
   }
 
@@ -91,6 +105,7 @@ export async function getHealth(): Promise<HealthResponse> {
     heartbeat: watch.heartbeat,
     heartbeatAgeMs: watch.ageMs,
     heartbeatStale: watch.stale,
+    ...halt,
   };
 }
 

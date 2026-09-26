@@ -3,7 +3,7 @@
  * Logs loudly and persists last alert. Optional webhook via HARD_STOP_WEBHOOK_URL.
  */
 
-import { saveBotState } from "./persist";
+import { saveBotState, sanitizeHardStop, type PersistedHardStop } from "./persist";
 
 export type HardStopAlert = {
   at: number;
@@ -32,7 +32,12 @@ export async function emitHardStopAlert(alert: HardStopAlert): Promise<void> {
     `[ALERT][HARD-STOP] ${new Date(alert.at).toISOString()} ${alert.code ?? "-"} ${alert.reason} mode=${alert.mode ?? "?"}`,
   );
 
-  saveBotState({ lastHardStop: { at: alert.at, reason: alert.reason } });
+  const stop: PersistedHardStop = {
+    at: alert.at,
+    reason: alert.reason,
+    code: alert.code,
+  };
+  saveBotState({ lastHardStop: sanitizeHardStop(stop) });
 
   const url = process.env.HARD_STOP_WEBHOOK_URL;
   if (!url) return;
