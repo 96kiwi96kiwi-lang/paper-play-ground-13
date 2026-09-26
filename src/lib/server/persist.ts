@@ -9,6 +9,7 @@ import { dirname, resolve } from "node:path";
 import type { RiskState } from "@/lib/risk";
 import type { PortfolioSnapshot } from "@/lib/orders/order-manager";
 import type { UnifiedOrder } from "@/lib/exchange/types";
+import type { GridBook } from "@/lib/strategies";
 import type { TradingRuntimeMode } from "./trading-mode";
 
 export type PersistedHeartbeat = {
@@ -44,6 +45,8 @@ export type PersistedBotState = {
   paperPortfolio: PortfolioSnapshot | null;
   /** Recent orders keyed by clientOrderId for idempotent replay after restart. */
   seenOrders: UnifiedOrder[];
+  /** Grid mid + last-fill so a restart does not re-buy the same rung. */
+  gridBooks: Record<string, GridBook>;
 };
 
 const STATE_PATH = resolve(process.cwd(), "data", "bot-state.json");
@@ -60,6 +63,7 @@ function emptyState(): PersistedBotState {
     lastHeartbeat: null,
     paperPortfolio: null,
     seenOrders: [],
+    gridBooks: {},
   };
 }
 
@@ -77,6 +81,7 @@ export function loadBotState(): PersistedBotState {
       paperPortfolio: sanitizePortfolio(raw.paperPortfolio),
       seenOrders: sanitizeSeenOrders(raw.seenOrders),
       lastHeartbeat: sanitizeHeartbeat(raw.lastHeartbeat),
+      gridBooks: sanitizeGridBooks(raw.gridBooks),
     };
   } catch (err) {
     console.warn("[persist] failed to load bot-state.json", err);
@@ -145,6 +150,29 @@ function sanitizeSeenOrders(raw: unknown): UnifiedOrder[] {
   return out.slice(-MAX_SEEN_ORDERS);
 }
 
+function sanitizeGridBooks(raw: unknown): Record<string, GridBook> {
+  if (!raw || typeof raw !== "object") return {};
+  const out: Record<string, GridBook> = {};
+  for (const [symbol, book] of Object.entries(raw as Record<string, GridBook>)) {
+    if (!symbol || !book || typeof book !== "object") continue;
+    const mid = Number(book.mid);
+    const spacingPct = Number(book.spacingPct);
+    const builtAt = Number(book.builtAt);
+    if (!Number.isFinite(mid) || mid <= 0) continue;
+    if (!Number.isFinite(spacingPct) || spacingPct <= 0) continue;
+    const lastSide = book.lastSide === "buy" || book.lastSide === "sell" ? book.lastSide : undefined;
+    const lastLevelNum = book.lastLevel != null ? Number(book.lastLevel) : undefined;
+    out[symbol] = {
+      mid,
+      spacingPct,
+      builtAt: Number.isFinite(builtAt) && builtAt > 0 ? builtAt : Date.now(),
+      lastSide,
+      lastLevel: lastLevelNum != null && Number.isFinite(lastLevelNum) ? lastLevelNum : undefined,
+    };
+  }
+  return out;
+}
+
 export function saveBotState(patch: Partial<PersistedBotState>): PersistedBotState {
   const current = loadBotState();
   const next: PersistedBotState = {
@@ -206,4 +234,12 @@ export function persistSeenOrders(orders: UnifiedOrder[]): void {
 
 export function loadSeenOrders(): UnifiedOrder[] {
   return loadBotState().seenOrders;
+}
+
+export function persistGridBooks(books: Record<string, GridBook>): void {
+  saveBotState({ gridBooks: sanitizeGridBooks(books) });
+}
+
+export function loadGridBooks(): Record<string, GridBook> {
+  return loadBotState().gridBooks;
 }

@@ -24,6 +24,14 @@ export interface StrategyContext {
   positionAvgEntry?: number;
 }
 
+export interface GridBook {
+  mid: number;
+  spacingPct: number;
+  builtAt: number;
+  lastSide?: Side;
+  lastLevel?: number;
+}
+
 /** Momentum: buy on strong short-term rise, sell on drop */
 export function momentumStrategy(ctx: StrategyContext): StrategySignal {
   const change5m = pctChangeSince(ctx.history, 5 * 60 * 1000);
@@ -67,14 +75,6 @@ export function rsiStrategy(ctx: StrategyContext): StrategySignal {
     return { action: "sell", reason: `RSI overbought ${value.toFixed(1)}`, confidence: (value - 70) / 30 };
   }
   return { action: "hold", reason: `RSI ${value.toFixed(1)}` };
-}
-
-interface GridBook {
-  mid: number;
-  spacingPct: number;
-  builtAt: number;
-  lastSide?: Side;
-  lastLevel?: number;
 }
 
 const gridBooks = new Map<string, GridBook>();
@@ -229,6 +229,35 @@ export function resetGridBooks(): void {
 export function getGridBook(symbol: string): GridBook | undefined {
   const book = gridBooks.get(symbol);
   return book ? { ...book } : undefined;
+}
+
+export function snapshotGridBooks(): Record<string, GridBook> {
+  const out: Record<string, GridBook> = {};
+  for (const [symbol, book] of gridBooks.entries()) {
+    out[symbol] = { ...book };
+  }
+  return out;
+}
+
+export function hydrateGridBooks(raw: Record<string, GridBook> | null | undefined): void {
+  if (!raw || typeof raw !== "object") return;
+  for (const [symbol, book] of Object.entries(raw)) {
+    if (!symbol || !book) continue;
+    const mid = Number(book.mid);
+    const spacingPct = Number(book.spacingPct);
+    const builtAt = Number(book.builtAt);
+    if (!Number.isFinite(mid) || mid <= 0) continue;
+    if (!Number.isFinite(spacingPct) || spacingPct <= 0) continue;
+    const lastSide = book.lastSide === "buy" || book.lastSide === "sell" ? book.lastSide : undefined;
+    const lastLevel = book.lastLevel != null ? Number(book.lastLevel) : undefined;
+    gridBooks.set(symbol, {
+      mid,
+      spacingPct,
+      builtAt: Number.isFinite(builtAt) && builtAt > 0 ? builtAt : Date.now(),
+      lastSide,
+      lastLevel: lastLevel != null && Number.isFinite(lastLevel) ? lastLevel : undefined,
+    });
+  }
 }
 
 export function runStrategy(id: StrategyId, ctx: StrategyContext): StrategySignal {

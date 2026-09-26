@@ -7,14 +7,17 @@
 
 import { TRADING_CONFIG } from "@/config/trading";
 import * as kucoin from "@/lib/exchange/kucoin";
+import { snapshotGridBooks } from "@/lib/strategies";
 import { assertLiveAllowed, getRuntimeMode, type TradingRuntimeMode } from "./trading-mode";
 import {
   loadPaperPortfolio,
   persistPaperPortfolio,
   loadSeenOrders,
   persistSeenOrders,
+  persistGridBooks,
 } from "./persist";
 import { checkStaleHeartbeat, recordBotHeartbeat, type BotHeartbeat } from "./heartbeat";
+import { restorePersistedGridBooks } from "./register-monitoring";
 import type { PortfolioSnapshot } from "@/lib/orders/order-manager";
 import type { UnifiedOrder } from "@/lib/exchange/types";
 
@@ -52,11 +55,14 @@ export function getMode(): Mode {
 
 /** Call after each bot tick so health can detect a dead loop. */
 export function markBotTick(partial: { symbol?: string; action?: string; hardStopped?: boolean }): void {
+  restorePersistedGridBooks();
   recordBotHeartbeat(partial);
+  persistGridBooks(snapshotGridBooks());
 }
 
 /** Health check – safe for both modes */
 export async function getHealth(): Promise<HealthResponse> {
+  restorePersistedGridBooks();
   const mode = getMode();
   const watch = await checkStaleHeartbeat();
 
