@@ -196,6 +196,7 @@ function sanitizeGridBooks(raw: unknown): Record<string, GridBook> {
     const lastLevelNum = book.lastLevel != null ? Number(book.lastLevel) : undefined;
     const lastFillPriceNum = book.lastFillPrice != null ? Number(book.lastFillPrice) : undefined;
     const lastFillAtNum = book.lastFillAt != null ? Number(book.lastFillAt) : undefined;
+    const stackedRaw = book.stackedBuys != null ? Number(book.stackedBuys) : 0;
     out[symbol] = {
       mid,
       spacingPct,
@@ -207,6 +208,8 @@ function sanitizeGridBooks(raw: unknown): Record<string, GridBook> {
           ? lastFillPriceNum
           : undefined,
       lastFillAt: lastFillAtNum != null && Number.isFinite(lastFillAtNum) && lastFillAtNum > 0 ? lastFillAtNum : undefined,
+      stackedBuys: Number.isFinite(stackedRaw) && stackedRaw > 0 ? Math.floor(stackedRaw) : 0,
+      reserved: Boolean(book.reserved),
     };
   }
   return out;
