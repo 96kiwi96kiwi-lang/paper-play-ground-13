@@ -47,6 +47,8 @@ export type PersistedBotState = {
   seenOrders: UnifiedOrder[];
   /** Grid mid + last-fill so a restart does not re-buy the same rung. */
   gridBooks: Record<string, GridBook>;
+  /** Last accepted submit timestamp — burst guard must survive restart. */
+  lastSubmitAt: number;
 };
 
 const STATE_PATH = resolve(process.cwd(), "data", "bot-state.json");
@@ -64,6 +66,7 @@ function emptyState(): PersistedBotState {
     paperPortfolio: null,
     seenOrders: [],
     gridBooks: {},
+    lastSubmitAt: 0,
   };
 }
 
@@ -82,11 +85,18 @@ export function loadBotState(): PersistedBotState {
       seenOrders: sanitizeSeenOrders(raw.seenOrders),
       lastHeartbeat: sanitizeHeartbeat(raw.lastHeartbeat),
       gridBooks: sanitizeGridBooks(raw.gridBooks),
+      lastSubmitAt: sanitizeLastSubmitAt(raw.lastSubmitAt),
     };
   } catch (err) {
     console.warn("[persist] failed to load bot-state.json", err);
     return emptyState();
   }
+}
+
+function sanitizeLastSubmitAt(raw: unknown): number {
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return n;
 }
 
 function sanitizeHeartbeat(raw: unknown): PersistedHeartbeat | null {
@@ -242,4 +252,13 @@ export function persistGridBooks(books: Record<string, GridBook>): void {
 
 export function loadGridBooks(): Record<string, GridBook> {
   return loadBotState().gridBooks;
+}
+
+export function persistLastSubmitAt(at: number): void {
+  const n = Number(at);
+  saveBotState({ lastSubmitAt: Number.isFinite(n) && n > 0 ? n : 0 });
+}
+
+export function loadLastSubmitAt(): number {
+  return loadBotState().lastSubmitAt ?? 0;
 }
