@@ -7,7 +7,7 @@ import { onHardStop } from "@/lib/hard-stop-hook";
 import { hydrateGridBooks } from "@/lib/strategies";
 import { emitHardStopAlert } from "./alerts";
 import { flattenOpenOrdersOnHalt } from "./flatten-on-halt";
-import { loadGridBooks } from "./persist";
+import { loadGridBooks, recordPersistedHardStop } from "./persist";
 import { getRuntimeMode } from "./trading-mode";
 
 let registered = false;
@@ -24,6 +24,7 @@ export function registerHardStopMonitoring(): void {
   if (registered) return;
   registered = true;
   onHardStop(({ reason, code }) => {
+    recordPersistedHardStop(reason, code);
     void emitHardStopAlert({
       at: Date.now(),
       reason,
