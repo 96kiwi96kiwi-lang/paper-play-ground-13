@@ -30,6 +30,8 @@ export interface GridBook {
   builtAt: number;
   lastSide?: Side;
   lastLevel?: number;
+  lastFillPrice?: number;
+  lastFillAt?: number;
 }
 
 /** Momentum: buy on strong short-term rise, sell on drop */
@@ -101,9 +103,36 @@ function rebuildGrid(symbol: string, mid: number, spacingPct: number): GridBook 
     builtAt: Date.now(),
     lastSide: prev?.lastSide,
     lastLevel: prev?.lastLevel,
+    lastFillPrice: prev?.lastFillPrice,
+    lastFillAt: prev?.lastFillAt,
   };
   gridBooks.set(symbol, book);
   return book;
+}
+
+function markFill(book: GridBook, side: Side, level: number, price: number): void {
+  book.lastSide = side;
+  book.lastLevel = level;
+  book.lastFillPrice = price;
+  book.lastFillAt = Date.now();
+}
+
+function flipBlocked(book: GridBook, nextSide: Side, nextLevel: number): string | null {
+  const { minHoldMs, minLevelsBeforeFlip } = TRADING_CONFIG.grid;
+  if (!book.lastSide || book.lastFillAt == null || book.lastLevel == null) return null;
+  if (book.lastSide === nextSide) return null;
+
+  const age = Date.now() - book.lastFillAt;
+  if (age < minHoldMs) {
+    const waitSec = Math.ceil((minHoldMs - age) / 1000);
+    return `Grid hold: anti-whipsaw ${waitSec}s left after ${book.lastSide}`;
+  }
+
+  const walked = Math.abs(nextLevel - book.lastLevel);
+  if (walked < minLevelsBeforeFlip) {
+    return `Grid hold: need ${minLevelsBeforeFlip} rungs to flip (walked ${walked})`;
+  }
+  return null;
 }
 
 /** Signed level index: negative = below mid (buy rungs), positive = above mid (sell rungs). */
@@ -123,6 +152,7 @@ function priceAtLevel(mid: number, spacingPct: number, level: number): number {
  * - Spacing is never thinner than fee-aware net edge
  * - Uses the nearest crossed level (not only ±1)
  * - Skips repeating the same side+level until price walks to another rung
+ * - Anti-whipsaw: min hold + min rungs before flipping side
  * - Rebalances (recenters) when price walks off the book
  */
 export function gridStrategy(ctx: StrategyContext): StrategySignal {
@@ -149,6 +179,8 @@ export function gridStrategy(ctx: StrategyContext): StrategySignal {
     book = rebuildGrid(ctx.symbol, ctx.currentPrice, spacingPct);
     book.lastSide = undefined;
     book.lastLevel = undefined;
+    book.lastFillPrice = undefined;
+    book.lastFillAt = undefined;
     return {
       action: "hold",
       reason: `Grid rebalanced mid=${book.mid.toFixed(4)} after ${driftPct.toFixed(2)}% drift`,
@@ -164,7 +196,9 @@ export function gridStrategy(ctx: StrategyContext): StrategySignal {
   const feeAwareEdge =
     ctx.hasPosition && ctx.positionAvgEntry && ctx.positionAvgEntry > 0
       ? ((ctx.currentPrice - ctx.positionAvgEntry) / ctx.positionAvgEntry) * 100
-      : null;
+      : book.lastFillPrice && book.lastFillPrice > 0
+        ? ((ctx.currentPrice - book.lastFillPrice) / book.lastFillPrice) * 100
+        : null;
 
   if (ctx.hasPosition && feeAwareEdge !== null && feeAwareEdge < cfg.takerFeePct * 2) {
     if (clamped > 0) {
@@ -184,9 +218,10 @@ export function gridStrategy(ctx: StrategyContext): StrategySignal {
         reason: `Grid idle: already bought L${clamped}`,
       };
     }
+    const blocked = flipBlocked(book, "buy", clamped);
+    if (blocked) return { action: "hold", reason: blocked };
     const dist = ((book.mid - ctx.currentPrice) / book.mid) * 100;
-    book.lastSide = "buy";
-    book.lastLevel = clamped;
+    markFill(book, "buy", clamped, ctx.currentPrice);
     return {
       action: "buy",
       reason: `Grid buy L${clamped} ${dist.toFixed(2)}% below mid (space ${spacingPct.toFixed(2)}%)`,
@@ -207,8 +242,9 @@ export function gridStrategy(ctx: StrategyContext): StrategySignal {
         reason: `Grid idle: already sold L${clamped}`,
       };
     }
-    book.lastSide = "sell";
-    book.lastLevel = clamped;
+    const blocked = flipBlocked(book, "sell", clamped);
+    if (blocked) return { action: "hold", reason: blocked };
+    markFill(book, "sell", clamped, ctx.currentPrice);
     return {
       action: "sell",
       reason: `Grid sell L${clamped} ${driftPct.toFixed(2)}% above mid (space ${spacingPct.toFixed(2)}%)`,
@@ -250,12 +286,16 @@ export function hydrateGridBooks(raw: Record<string, GridBook> | null | undefine
     if (!Number.isFinite(spacingPct) || spacingPct <= 0) continue;
     const lastSide = book.lastSide === "buy" || book.lastSide === "sell" ? book.lastSide : undefined;
     const lastLevel = book.lastLevel != null ? Number(book.lastLevel) : undefined;
+    const lastFillPrice = book.lastFillPrice != null ? Number(book.lastFillPrice) : undefined;
+    const lastFillAt = book.lastFillAt != null ? Number(book.lastFillAt) : undefined;
     gridBooks.set(symbol, {
       mid,
       spacingPct,
       builtAt: Number.isFinite(builtAt) && builtAt > 0 ? builtAt : Date.now(),
       lastSide,
       lastLevel: lastLevel != null && Number.isFinite(lastLevel) ? lastLevel : undefined,
+      lastFillPrice: lastFillPrice != null && Number.isFinite(lastFillPrice) && lastFillPrice > 0 ? lastFillPrice : undefined,
+      lastFillAt: lastFillAt != null && Number.isFinite(lastFillAt) && lastFillAt > 0 ? lastFillAt : undefined,
     });
   }
 }
