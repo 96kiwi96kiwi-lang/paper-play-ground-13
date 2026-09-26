@@ -165,7 +165,8 @@ function priceAtLevel(mid: number, spacingPct: number, level: number): number {
  * - Anti-whipsaw: min hold + min rungs before flipping side
  * - Inventory ladder: allow extra buys while holding, up to maxStackedBuys,
  *   but only on a strictly lower rung than the last buy
- * - Rebalances (recenters) when price walks off the book
+ * - Rebalances (recenters) when price walks off the book, keeping last-fill
+ *   clocks and remapping lastLevel onto the new mid so scale-in / flip guards survive
  * - Unconfirmed reservations older than reservationTtlMs are rolled back
  */
 export function gridStrategy(ctx: StrategyContext): StrategySignal {
@@ -191,15 +192,15 @@ export function gridStrategy(ctx: StrategyContext): StrategySignal {
 
   const driftPct = ((ctx.currentPrice - book.mid) / book.mid) * 100;
   if (Math.abs(driftPct) >= cfg.rebalanceThresholdPct) {
+    const prevFillPrice = book.lastFillPrice;
     book = rebuildGrid(ctx.symbol, ctx.currentPrice, spacingPct);
-    book.lastSide = undefined;
-    book.lastLevel = undefined;
-    book.lastFillPrice = undefined;
-    book.lastFillAt = undefined;
-    book.reserved = false;
+    if (prevFillPrice && prevFillPrice > 0) {
+      book.lastLevel = gridLevelIndex(prevFillPrice, book.mid, spacingPct);
+    }
+    const kept = book.lastLevel != null ? `L${book.lastLevel}` : "n/a";
     return {
       action: "hold",
-      reason: `Grid rebalanced mid=${book.mid.toFixed(4)} after ${driftPct.toFixed(2)}% drift`,
+      reason: `Grid rebalanced mid=${book.mid.toFixed(4)} after ${driftPct.toFixed(2)}% drift (kept last-fill ${kept})`,
     };
   }
 
