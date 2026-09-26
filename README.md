@@ -33,7 +33,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hardening – persist grid mid + last-fill | ✅ Done |
 | Hardening – persist lastSubmitAt (burst guard) | ✅ Done |
 | Hardening – grid anti-whipsaw + lastFillPrice persist | ✅ Done |
-| Hardening – persist lastHardStop + health/UI halt | ✅ Done (this push) |
+| Hardening – persist lastHardStop + health/UI halt | ✅ Done |
+| Hardening – atomic bot-state write + lastHardStop code | ✅ Done (this push) |
 
 ## Architecture
 
@@ -48,7 +49,7 @@ ExchangeAdapter
    ① PaperExchange   (CoinGecko + virtual money)
    ② KuCoin (CCXT)   (real orders – live only, keys stay on server)
 
-Persist: data/bot-state.json (risk snapshot + last hard-stop + paper portfolio + seen orders + lastHeartbeat + tradesToday + gridBooks + lastSubmitAt)
+Persist: data/bot-state.json (atomic tmp+rename; risk snapshot + last hard-stop code + paper portfolio + seen orders + lastHeartbeat + tradesToday + gridBooks + lastSubmitAt)
 Alerts:  console + optional HARD_STOP_WEBHOOK_URL
 Live gate: inspectKucoinKeyPermissions() — Withdraw on the key blocks LIVE
 Watchdog: lastHeartbeat older than 3× botTickMs → health.ok=false + alert
@@ -64,6 +65,8 @@ Health: lastHardStop + haltReason survive restart and show on the Paper/Live clu
 5. Prices come from CoinGecko. No exchange orders are sent.
 
 Dashboard LocalStorage is UI convenience only. Risk / halt snapshots, the paper cash+positions book, the last ~200 clientOrderIds, the last bot heartbeat, grid mid/last-fill books (including lastFillPrice / lastFillAt), and the last accepted submit timestamp are written under `data/bot-state.json` so a restart does not wipe the last halt reason, reset virtual inventory, allow a retry to double-submit the same intent, re-fire the same grid rung, skip the min-submit burst guard, or flip grid side before the anti-whipsaw hold expires.
+
+Writes go through `data/bot-state.json.tmp` then `rename`, so a crash mid-save cannot leave a truncated JSON file.
 
 Use `createServerOrderManager(adapter)` on the server so those persist hooks are wired automatically.
 
@@ -88,7 +91,7 @@ Daily loss, max drawdown, losing streak, price gap (≥ 3.5%), and network-error
 
 On first halt:
 - `[ALERT][HARD-STOP]` is written to server logs
-- `data/bot-state.json` records `lastHardStop` (reason + optional code). Re-persisting the same halt does **not** refresh the timestamp
+- `data/bot-state.json` records `lastHardStop` (reason + inferred/passed `code`). Re-persisting the same halt does **not** refresh the timestamp
 - If `HARD_STOP_WEBHOOK_URL` is set, a JSON POST is attempted
 - In live mode, visible open orders are canceled (positions are not market-dumped)
 - `getHealth()` / the dashboard Paper/Live cluster expose `haltReason` and `lastHardStop` after restart
@@ -125,7 +128,7 @@ This does **not** dump positions. It tells you the loop died.
 ## Risk rules (shared paper + live)
 
 | Rule                    | Value   |
-|-------------------------|---------|---------|
+|-------------------------|---------|
 | Trade size              | 15 %    |
 | Max position per coin   | 20 %    |
 | Stop-loss               | –4 %    |
