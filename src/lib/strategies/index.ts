@@ -163,7 +163,8 @@ function priceAtLevel(mid: number, spacingPct: number, level: number): number {
  * - Uses the nearest crossed level (not only ±1)
  * - Skips repeating the same side+level until price walks to another rung
  * - Anti-whipsaw: min hold + min rungs before flipping side
- * - Inventory ladder: refuse more buys once stackedBuys hits maxStackedBuys
+ * - Inventory ladder: allow extra buys while holding, up to maxStackedBuys,
+ *   but only on a strictly lower rung than the last buy
  * - Rebalances (recenters) when price walks off the book
  * - Unconfirmed reservations older than reservationTtlMs are rolled back
  */
@@ -227,7 +228,7 @@ export function gridStrategy(ctx: StrategyContext): StrategySignal {
   const alreadyFired = book.lastSide !== undefined && book.lastLevel === clamped;
   const stacked = book.stackedBuys ?? 0;
 
-  if (!ctx.hasPosition && clamped <= -1 && ctx.currentPrice >= lowerBound) {
+  if (clamped <= -1 && ctx.currentPrice >= lowerBound) {
     if (stacked >= cfg.maxStackedBuys) {
       return {
         action: "hold",
@@ -240,13 +241,26 @@ export function gridStrategy(ctx: StrategyContext): StrategySignal {
         reason: `Grid idle: already bought L${clamped}`,
       };
     }
+    // Scale-in only on a strictly lower (more negative) rung than the last buy.
+    if (
+      ctx.hasPosition &&
+      book.lastSide === "buy" &&
+      book.lastLevel != null &&
+      clamped >= book.lastLevel
+    ) {
+      return {
+        action: "hold",
+        reason: `Grid idle: scale-in needs a lower rung than L${book.lastLevel} (at L${clamped})`,
+      };
+    }
     const blocked = flipBlocked(book, "buy", clamped);
     if (blocked) return { action: "hold", reason: blocked };
     const dist = ((book.mid - ctx.currentPrice) / book.mid) * 100;
+    const nextStack = stacked + 1;
     markFill(book, "buy", clamped, ctx.currentPrice);
     return {
       action: "buy",
-      reason: `Grid buy L${clamped} ${dist.toFixed(2)}% below mid (space ${spacingPct.toFixed(2)}%, stack ${stacked + 1}/${cfg.maxStackedBuys})`,
+      reason: `Grid buy L${clamped} ${dist.toFixed(2)}% below mid (space ${spacingPct.toFixed(2)}%, stack ${nextStack}/${cfg.maxStackedBuys}${ctx.hasPosition ? ", scale-in" : ""})`,
       confidence: Math.min(0.45 + Math.abs(clamped) / halfLevels, 0.95),
     };
   }
