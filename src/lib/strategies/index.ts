@@ -165,12 +165,15 @@ function priceAtLevel(mid: number, spacingPct: number, level: number): number {
  * - Anti-whipsaw: min hold + min rungs before flipping side
  * - Inventory ladder: refuse more buys once stackedBuys hits maxStackedBuys
  * - Rebalances (recenters) when price walks off the book
+ * - Unconfirmed reservations older than reservationTtlMs are rolled back
  */
 export function gridStrategy(ctx: StrategyContext): StrategySignal {
   const cfg = TRADING_CONFIG.grid;
   if (ctx.history.length < 10 || ctx.currentPrice <= 0) {
     return { action: "hold", reason: "Warming up grid" };
   }
+
+  expireStaleGridReservation(ctx.symbol);
 
   const spacingPct = effectiveGridSpacingPct();
   const midHint = recentMid(ctx.history, cfg.recenterLookback) || ctx.currentPrice;
@@ -284,26 +287,46 @@ export function confirmGridReservation(symbol: string): void {
   book.reserved = false;
 }
 
-/**
- * If the last grid mark was only a reservation and the submit failed,
- * undo side/level/stack so the same rung can fire again.
- */
-export function releaseGridReservation(symbol: string, now = Date.now()): boolean {
-  const book = gridBooks.get(symbol);
-  if (!book?.reserved || book.lastFillAt == null || !book.lastSide) return false;
-  if (now - book.lastFillAt > TRADING_CONFIG.grid.reservationTtlMs) {
-    book.reserved = false;
-    return false;
-  }
+function undoReservation(book: GridBook): void {
   const stacked = book.stackedBuys ?? 0;
   if (book.lastSide === "buy") book.stackedBuys = Math.max(0, stacked - 1);
-  else book.stackedBuys = stacked + 1;
+  else if (book.lastSide === "sell") book.stackedBuys = stacked + 1;
   book.lastSide = undefined;
   book.lastLevel = undefined;
   book.lastFillPrice = undefined;
   book.lastFillAt = undefined;
   book.reserved = false;
+}
+
+/**
+ * If the last grid mark was only a reservation and the submit failed,
+ * undo side/level/stack so the same rung can fire again.
+ */
+export function releaseGridReservation(symbol: string): boolean {
+  const book = gridBooks.get(symbol);
+  if (!book?.reserved || !book.lastSide) return false;
+  undoReservation(book);
   return true;
+}
+
+/**
+ * Roll back a reservation that was never confirmed (crash mid-submit, hung adapter).
+ * Confirmed fills (reserved=false) are left alone.
+ */
+export function expireStaleGridReservation(symbol: string, now = Date.now()): boolean {
+  const book = gridBooks.get(symbol);
+  if (!book?.reserved || book.lastFillAt == null) return false;
+  if (now - book.lastFillAt < TRADING_CONFIG.grid.reservationTtlMs) return false;
+  undoReservation(book);
+  return true;
+}
+
+export function expireStaleGridReservations(now = Date.now()): number {
+  let n = 0;
+  for (const symbol of gridBooks.keys()) {
+    if (expireStaleGridReservation(symbol, now)) n += 1;
+  }
+  return n;
 }
 
 export function resetGridBooks(): void {
@@ -354,6 +377,7 @@ export function hydrateGridBooks(raw: Record<string, GridBook> | null | undefine
     const clean = sanitizeOneBook(book);
     if (clean) gridBooks.set(symbol, clean);
   }
+  expireStaleGridReservations();
 }
 
 export function runStrategy(id: StrategyId, ctx: StrategyContext): StrategySignal {
