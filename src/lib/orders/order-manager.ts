@@ -63,6 +63,8 @@ export type OrderManagerOptions = {
   onPortfolioChange?: (portfolio: PortfolioSnapshot) => void;
   /** Optional hook after a new clientOrderId is recorded. */
   onSeenOrdersChange?: (orders: UnifiedOrder[]) => void;
+  /** Optional hook after an accepted submit updates the burst-guard clock. */
+  onLastSubmitAtChange?: (at: number) => void;
   seenOrders?: UnifiedOrder[];
   lastSubmitAt?: number;
 };
@@ -101,6 +103,7 @@ export class OrderManager {
   private eventsLog: OrderLifecycleEvent[] = [];
   private onPortfolioChange?: (portfolio: PortfolioSnapshot) => void;
   private onSeenOrdersChange?: (orders: UnifiedOrder[]) => void;
+  private onLastSubmitAtChange?: (at: number) => void;
   private lastSubmitAt = 0;
 
   constructor(
@@ -120,6 +123,7 @@ export class OrderManager {
       };
       this.onPortfolioChange = startingCashOrOptions.onPortfolioChange;
       this.onSeenOrdersChange = startingCashOrOptions.onSeenOrdersChange;
+      this.onLastSubmitAtChange = startingCashOrOptions.onLastSubmitAtChange;
       this.lastSubmitAt = startingCashOrOptions.lastSubmitAt ?? 0;
       if (startingCashOrOptions.seenOrders) {
         this.hydrateSeen(startingCashOrOptions.seenOrders);
@@ -324,6 +328,7 @@ export class OrderManager {
     }
 
     this.lastSubmitAt = Date.now();
+    this.onLastSubmitAtChange?.(this.lastSubmitAt);
     this.applyIncrementalFill(order, events);
 
     this.eventsLog.push(...events);
