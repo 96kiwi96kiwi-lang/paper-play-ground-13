@@ -30,7 +30,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hardening – per-symbol open cap + max notional | ✅ Done |
 | Hardening – pair allowlist + max gross exposure | ✅ Done |
 | Hardening – multi-level grid + last-fill guard | ✅ Done |
-| Hardening – persist grid mid + last-fill | ✅ Done (this push) |
+| Hardening – persist grid mid + last-fill | ✅ Done |
+| Hardening – persist lastSubmitAt (burst guard) | ✅ Done (this push) |
 
 ## Architecture
 
@@ -45,7 +46,7 @@ ExchangeAdapter
    ① PaperExchange   (CoinGecko + virtual money)
    ② KuCoin (CCXT)   (real orders – live only, keys stay on server)
 
-Persist: data/bot-state.json (risk snapshot + last hard-stop + paper portfolio + seen orders + lastHeartbeat + tradesToday + gridBooks)
+Persist: data/bot-state.json (risk snapshot + last hard-stop + paper portfolio + seen orders + lastHeartbeat + tradesToday + gridBooks + lastSubmitAt)
 Alerts:  console + optional HARD_STOP_WEBHOOK_URL
 Live gate: inspectKucoinKeyPermissions() — Withdraw on the key blocks LIVE
 Watchdog: lastHeartbeat older than 3× botTickMs → health.ok=false + alert
@@ -59,7 +60,9 @@ Watchdog: lastHeartbeat older than 3× botTickMs → health.ok=false + alert
 4. Leave the dashboard in Paper. Virtual balance starts at $10 000 USDT.
 5. Prices come from CoinGecko. No exchange orders are sent.
 
-Dashboard LocalStorage is UI convenience only. Risk / halt snapshots, the paper cash+positions book, the last ~200 clientOrderIds, the last bot heartbeat, and grid mid/last-fill books are written under `data/bot-state.json` so a restart does not wipe the last halt reason, reset virtual inventory, allow a retry to double-submit the same intent, or re-fire the same grid rung.
+Dashboard LocalStorage is UI convenience only. Risk / halt snapshots, the paper cash+positions book, the last ~200 clientOrderIds, the last bot heartbeat, grid mid/last-fill books, and the last accepted submit timestamp are written under `data/bot-state.json` so a restart does not wipe the last halt reason, reset virtual inventory, allow a retry to double-submit the same intent, re-fire the same grid rung, or skip the min-submit burst guard.
+
+Use `createServerOrderManager(adapter)` on the server so those persist hooks are wired automatically.
 
 ## Live mode — steps
 
@@ -109,6 +112,7 @@ This does **not** dump positions. It tells you the loop died.
 - refuse when `amount * price` exceeds `maxOrderNotionalUsd` (2500) if a price is present
 - refuse a **buy** when booked cost basis + this order notional would exceed `maxGrossExposureUsd` (8000)
 - refuse a new submit if the last *accepted* one was within `minSubmitIntervalMs` (8s)
+- that last-submit clock is persisted (`lastSubmitAt`) so a crash + immediate restart cannot burst two accepts
 - track status via `fetchOrder` / `fetchOpenOrders`
 - apply **only the new fill delta** to the local book (no double-count after restart)
 - resting open/limit orders older than `TRADING_CONFIG.orders.staleOpenOrderMs` (15 min) are canceled
@@ -117,7 +121,7 @@ This does **not** dump positions. It tells you the loop died.
 ## Risk rules (shared paper + live)
 
 | Rule                    | Value   |
-|-------------------------|---------| 
+|-------------------------|---------|
 | Trade size              | 15 %    |
 | Max position per coin   | 20 %    |
 | Stop-loss               | –4 %    |
