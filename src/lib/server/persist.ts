@@ -287,6 +287,76 @@ export function persistRiskSnapshot(risk: RiskState, code?: string): void {
   });
 }
 
+/** Record a halt even when the caller only has reason/code (no full RiskState). */
+export function recordPersistedHardStop(reason: string, code?: string): void {
+  const trimmed = reason.trim();
+  if (!trimmed) return;
+  const current = loadBotState();
+  const existing = current.lastHardStop;
+  const same = existing && existing.reason === trimmed;
+  const nextStop: PersistedHardStop = same && existing
+    ? existing
+    : {
+        at: Date.now(),
+        reason: trimmed,
+        code: code ?? existing?.code ?? inferHardStopCode(trimmed),
+      };
+  saveBotState({
+    lastHardStop: nextStop,
+    risk: {
+      portfolioValue: current.risk?.portfolioValue ?? 0,
+      cash: current.risk?.cash ?? 0,
+      openPositionsCount: current.risk?.openPositionsCount ?? 0,
+      dailyPnlPct: current.risk?.dailyPnlPct ?? 0,
+      drawdownPct: current.risk?.drawdownPct ?? 0,
+      losingStreak: current.risk?.losingStreak ?? 0,
+      cooldownUntil: current.risk?.cooldownUntil ?? null,
+      haltReason: trimmed,
+      networkErrorStreak: current.risk?.networkErrorStreak ?? 0,
+      lastPrices: current.risk?.lastPrices ?? {},
+      tradesToday: current.risk?.tradesToday ?? 0,
+      tradesDayKey: current.risk?.tradesDayKey,
+    },
+  });
+}
+
+export function loadHaltReason(): string | null {
+  const state = loadBotState();
+  return state.risk?.haltReason ?? state.lastHardStop?.reason ?? null;
+}
+
+/**
+ * Overlay disk halt + counters onto an in-memory RiskState.
+ * A process restart must not resume trading after a hard-stop or reset the UTC trade cap.
+ */
+export function applyPersistedHalt(state: RiskState): RiskState {
+  const saved = loadBotState();
+  const reason = saved.risk?.haltReason ?? saved.lastHardStop?.reason ?? null;
+  if (reason && !state.haltReason) {
+    state.haltReason = reason;
+  }
+  const risk = saved.risk;
+  if (!risk) return state;
+
+  if (risk.tradesDayKey) state.tradesDayKey = risk.tradesDayKey;
+  if (risk.tradesToday != null) state.tradesToday = risk.tradesToday;
+  if (risk.losingStreak != null) {
+    state.losingStreak = Math.max(state.losingStreak ?? 0, risk.losingStreak);
+  }
+  if (risk.networkErrorStreak != null) {
+    state.networkErrorStreak = Math.max(state.networkErrorStreak ?? 0, risk.networkErrorStreak);
+  }
+  if (risk.cooldownUntil != null) {
+    state.cooldownUntil = Math.max(state.cooldownUntil ?? 0, risk.cooldownUntil);
+  }
+  if (typeof risk.dailyPnlPct === "number") state.dailyPnlPct = risk.dailyPnlPct;
+  if (typeof risk.drawdownPct === "number") state.drawdownPct = risk.drawdownPct;
+  if (risk.lastPrices && Object.keys(risk.lastPrices).length) {
+    state.lastPrices = { ...(state.lastPrices ?? {}), ...risk.lastPrices };
+  }
+  return state;
+}
+
 export function persistPaperPortfolio(portfolio: PortfolioSnapshot): void {
   saveBotState({
     paperPortfolio: {
