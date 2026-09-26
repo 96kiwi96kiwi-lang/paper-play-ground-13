@@ -34,7 +34,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hardening – persist lastSubmitAt (burst guard) | ✅ Done |
 | Hardening – grid anti-whipsaw + lastFillPrice persist | ✅ Done |
 | Hardening – persist lastHardStop + health/UI halt | ✅ Done |
-| Hardening – atomic bot-state write + lastHardStop code | ✅ Done (this push) |
+| Hardening – atomic bot-state write + lastHardStop code | ✅ Done |
+| Hardening – restore halt + risk counters on server submit | ✅ Done (this push) |
 
 ## Architecture
 
@@ -54,6 +55,7 @@ Alerts:  console + optional HARD_STOP_WEBHOOK_URL
 Live gate: inspectKucoinKeyPermissions() — Withdraw on the key blocks LIVE
 Watchdog: lastHeartbeat older than 3× botTickMs → health.ok=false + alert
 Health: lastHardStop + haltReason survive restart and show on the Paper/Live cluster
+Submit: createServerOrderManager applies persisted halt/counters before every order
 ```
 
 ## Paper mode — quick start
@@ -68,7 +70,7 @@ Dashboard LocalStorage is UI convenience only. Risk / halt snapshots, the paper 
 
 Writes go through `data/bot-state.json.tmp` then `rename`, so a crash mid-save cannot leave a truncated JSON file.
 
-Use `createServerOrderManager(adapter)` on the server so those persist hooks are wired automatically.
+Use `createServerOrderManager(adapter)` on the server so those persist hooks are wired automatically. That factory also overlays `haltReason`, daily PnL, losing streak, network-error streak, cooldown, last prices, and the UTC trade-cap counters from disk onto the in-memory `RiskState` **before** `submit`, then writes the snapshot back after. A restart therefore cannot trade through an uncleared hard-stop or reset the daily cap.
 
 ## Live mode — steps
 
@@ -91,10 +93,11 @@ Daily loss, max drawdown, losing streak, price gap (≥ 3.5%), and network-error
 
 On first halt:
 - `[ALERT][HARD-STOP]` is written to server logs
-- `data/bot-state.json` records `lastHardStop` (reason + inferred/passed `code`). Re-persisting the same halt does **not** refresh the timestamp
+- `recordPersistedHardStop` writes `lastHardStop` + `risk.haltReason` (same reason does **not** refresh the timestamp)
 - If `HARD_STOP_WEBHOOK_URL` is set, a JSON POST is attempted
 - In live mode, visible open orders are canceled (positions are not market-dumped)
 - `getHealth()` / the dashboard Paper/Live cluster expose `haltReason` and `lastHardStop` after restart
+- The next `createServerOrderManager().submit` reapplies that halt even if the caller forgot it on the RiskState
 
 The daily trade cap (default 12 accepted submits per UTC day) is **not** a hard-stop. It only refuses further `submit` calls until the next UTC day. The counter is persisted so a restart cannot reset the cap.
 
