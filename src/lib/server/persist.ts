@@ -4,7 +4,7 @@
  * Never write API keys here.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import type { RiskState } from "@/lib/risk";
 import type { PortfolioSnapshot } from "@/lib/orders/order-manager";
@@ -58,6 +58,7 @@ export type PersistedBotState = {
 };
 
 const STATE_PATH = resolve(process.cwd(), "data", "bot-state.json");
+const STATE_TMP_PATH = `${STATE_PATH}.tmp`;
 const MAX_SEEN_ORDERS = 200;
 
 function emptyState(): PersistedBotState {
@@ -205,13 +206,37 @@ function sanitizeGridBooks(raw: unknown): Record<string, GridBook> {
         lastFillPriceNum != null && Number.isFinite(lastFillPriceNum) && lastFillPriceNum > 0
           ? lastFillPriceNum
           : undefined,
-      lastFillAt:
-        lastFillAtNum != null && Number.isFinite(lastFillAtNum) && lastFillAtNum > 0
-          ? lastFillAtNum
-          : undefined,
+      lastFillAt: lastFillAtNum != null && Number.isFinite(lastFillAtNum) && lastFillAtNum > 0 ? lastFillAtNum : undefined,
     };
   }
   return out;
+}
+
+function inferHardStopCode(reason: string): string | undefined {
+  const r = reason.toLowerCase();
+  if (r.includes("daily loss")) return "daily_loss_limit";
+  if (r.includes("drawdown")) return "max_drawdown";
+  if (r.includes("losing streak")) return "losing_streak";
+  if (r.includes("price gap")) return "price_gap";
+  if (r.includes("network")) return "network_errors";
+  if (r.includes("daily trade cap")) return "daily_trade_cap";
+  return undefined;
+}
+
+/** Write via sibling .tmp + rename so a crash cannot leave a half-written JSON file. */
+function writeStateAtomic(state: PersistedBotState): void {
+  mkdirSync(dirname(STATE_PATH), { recursive: true });
+  writeFileSync(STATE_TMP_PATH, JSON.stringify(state, null, 2), "utf8");
+  try {
+    renameSync(STATE_TMP_PATH, STATE_PATH);
+  } catch (err) {
+    try {
+      unlinkSync(STATE_TMP_PATH);
+    } catch {
+      /* ignore leftover tmp */
+    }
+    throw err;
+  }
 }
 
 export function saveBotState(patch: Partial<PersistedBotState>): PersistedBotState {
@@ -226,19 +251,22 @@ export function saveBotState(patch: Partial<PersistedBotState>): PersistedBotSta
     next.seenOrders = next.seenOrders.slice(-MAX_SEEN_ORDERS);
   }
   try {
-    mkdirSync(dirname(STATE_PATH), { recursive: true });
-    writeFileSync(STATE_PATH, JSON.stringify(next, null, 2), "utf8");
+    writeStateAtomic(next);
   } catch (err) {
     console.error("[persist] failed to write bot-state.json", err);
   }
   return next;
 }
 
-export function persistRiskSnapshot(risk: RiskState): void {
+export function persistRiskSnapshot(risk: RiskState, code?: string): void {
   const existing = loadBotState().lastHardStop;
   const nextStop =
     risk.haltReason && (!existing || existing.reason !== risk.haltReason)
-      ? { at: Date.now(), reason: risk.haltReason }
+      ? {
+          at: Date.now(),
+          reason: risk.haltReason,
+          code: code ?? existing?.code ?? inferHardStopCode(risk.haltReason),
+        }
       : existing;
   saveBotState({
     risk: {
