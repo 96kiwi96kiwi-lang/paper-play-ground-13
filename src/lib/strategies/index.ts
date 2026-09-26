@@ -145,6 +145,31 @@ function flipBlocked(book: GridBook, nextSide: Side, nextLevel: number): string 
   return null;
 }
 
+/**
+ * Align stackedBuys with the live book.
+ * A stop / take-profit / flatten outside the grid can zero the position while
+ * leaving stackedBuys at the cap, which then blocks every new buy.
+ * Conversely, a restored position with stack 0 would skip scale-in accounting.
+ * Last-fill clocks are kept so anti-whipsaw still applies.
+ */
+export function reconcileGridInventory(symbol: string, hasPosition: boolean): boolean {
+  const book = gridBooks.get(symbol);
+  if (!book) return false;
+  const stacked = book.stackedBuys ?? 0;
+
+  if (!hasPosition && stacked > 0) {
+    book.stackedBuys = 0;
+    return true;
+  }
+
+  if (hasPosition && stacked <= 0 && !book.reserved) {
+    book.stackedBuys = 1;
+    return true;
+  }
+
+  return false;
+}
+
 /** Signed level index: negative = below mid (buy rungs), positive = above mid (sell rungs). */
 export function gridLevelIndex(price: number, mid: number, spacingPct: number): number {
   if (mid <= 0 || spacingPct <= 0) return 0;
@@ -168,6 +193,7 @@ function priceAtLevel(mid: number, spacingPct: number, level: number): number {
  * - Rebalances (recenters) when price walks off the book, keeping last-fill
  *   clocks and remapping lastLevel onto the new mid so scale-in / flip guards survive
  * - Unconfirmed reservations older than reservationTtlMs are rolled back
+ * - stackedBuys is reconciled with hasPosition so an external flatten cannot lock the cap
  */
 export function gridStrategy(ctx: StrategyContext): StrategySignal {
   const cfg = TRADING_CONFIG.grid;
@@ -183,12 +209,16 @@ export function gridStrategy(ctx: StrategyContext): StrategySignal {
 
   if (!book) {
     book = rebuildGrid(ctx.symbol, midHint, spacingPct);
+    reconcileGridInventory(ctx.symbol, ctx.hasPosition);
     return { action: "hold", reason: `Grid seeded mid=${book.mid.toFixed(4)} spacing=${spacingPct.toFixed(2)}%` };
   }
 
   if (Math.abs(book.spacingPct - spacingPct) > 1e-6) {
     book = rebuildGrid(ctx.symbol, midHint, spacingPct);
   }
+
+  reconcileGridInventory(ctx.symbol, ctx.hasPosition);
+  book = gridBooks.get(ctx.symbol) ?? book;
 
   const driftPct = ((ctx.currentPrice - book.mid) / book.mid) * 100;
   if (Math.abs(driftPct) >= cfg.rebalanceThresholdPct) {
