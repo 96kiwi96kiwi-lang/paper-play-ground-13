@@ -172,12 +172,22 @@ function sanitizeGridBooks(raw: unknown): Record<string, GridBook> {
     if (!Number.isFinite(spacingPct) || spacingPct <= 0) continue;
     const lastSide = book.lastSide === "buy" || book.lastSide === "sell" ? book.lastSide : undefined;
     const lastLevelNum = book.lastLevel != null ? Number(book.lastLevel) : undefined;
+    const lastFillPriceNum = book.lastFillPrice != null ? Number(book.lastFillPrice) : undefined;
+    const lastFillAtNum = book.lastFillAt != null ? Number(book.lastFillAt) : undefined;
     out[symbol] = {
       mid,
       spacingPct,
       builtAt: Number.isFinite(builtAt) && builtAt > 0 ? builtAt : Date.now(),
       lastSide,
       lastLevel: lastLevelNum != null && Number.isFinite(lastLevelNum) ? lastLevelNum : undefined,
+      lastFillPrice:
+        lastFillPriceNum != null && Number.isFinite(lastFillPriceNum) && lastFillPriceNum > 0
+          ? lastFillPriceNum
+          : undefined,
+      lastFillAt:
+        lastFillAtNum != null && Number.isFinite(lastFillAtNum) && lastFillAtNum > 0
+          ? lastFillAtNum
+          : undefined,
     };
   }
   return out;
