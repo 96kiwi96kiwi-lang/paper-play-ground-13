@@ -28,7 +28,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hardening – min submit interval (burst guard) | ✅ Done |
 | Hardening – max concurrent open orders | ✅ Done |
 | Hardening – per-symbol open cap + max notional | ✅ Done |
-| Hardening – pair allowlist + max gross exposure | ✅ Done (this push) |
+| Hardening – pair allowlist + max gross exposure | ✅ Done |
+| Hardening – multi-level grid + last-fill guard | ✅ Done (this push) |
 
 ## Architecture
 
@@ -115,7 +116,7 @@ This does **not** dump positions. It tells you the loop died.
 ## Risk rules (shared paper + live)
 
 | Rule                    | Value   |
-|-------------------------|---------|----------|
+|-------------------------|---------|
 | Trade size              | 15 %    |
 | Max position per coin   | 20 %    |
 | Stop-loss               | –4 %    |
@@ -136,12 +137,14 @@ This does **not** dump positions. It tells you the loop died.
 | Max gross exposure      | 8000 USD |
 | Allowed pairs           | BTC/ETH/SOL/BNB USDT |
 
-## Grid (Hour 7)
+## Grid (Hour 7+)
 
 - Even percent spacing around a mid price (`TRADING_CONFIG.grid`)
 - Spacing is floored at `takerFeePct * 2 * minNetEdgeMultiplier` so levels stay fee-aware
+- Signals use the **nearest crossed level** (±L across `levels/2`), not only the first rung
+- Same side+level is not re-fired until price walks to another rung (last-fill guard)
 - Sells that would not cover round-trip fees are skipped
-- Book recenters when price drifts ≥ `rebalanceThresholdPct` from mid
+- Book recenters when price drifts ≥ `rebalanceThresholdPct` from mid (clears last-fill)
 
 ## Warning
 
