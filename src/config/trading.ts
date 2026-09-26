@@ -35,7 +35,7 @@ export const TRADING_CONFIG = {
     maxDailyTrades: 12,
   },
 
-  // Grid strategy (Hour 7)
+  // Grid strategy (Hour 7+)
   grid: {
     levels: 8,
     spacingPct: 0.8, // percent between adjacent levels
@@ -43,6 +43,10 @@ export const TRADING_CONFIG = {
     minNetEdgeMultiplier: 2.2, // spacing must cover >2x round-trip fee
     rebalanceThresholdPct: 6, // recenter when price walks this far off mid
     recenterLookback: 40,
+    /** Do not flip buy↔sell until this many ms after the last grid fill. */
+    minHoldMs: 3 * 60 * 1000,
+    /** Require price to walk this many extra rungs before flipping side. */
+    minLevelsBeforeFlip: 2,
   },
 
   // Order lifecycle
