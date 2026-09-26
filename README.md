@@ -31,7 +31,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hardening – pair allowlist + max gross exposure | ✅ Done |
 | Hardening – multi-level grid + last-fill guard | ✅ Done |
 | Hardening – persist grid mid + last-fill | ✅ Done |
-| Hardening – persist lastSubmitAt (burst guard) | ✅ Done (this push) |
+| Hardening – persist lastSubmitAt (burst guard) | ✅ Done |
+| Hardening – grid anti-whipsaw + lastFillPrice persist | ✅ Done (this push) |
 
 ## Architecture
 
@@ -60,7 +61,7 @@ Watchdog: lastHeartbeat older than 3× botTickMs → health.ok=false + alert
 4. Leave the dashboard in Paper. Virtual balance starts at $10 000 USDT.
 5. Prices come from CoinGecko. No exchange orders are sent.
 
-Dashboard LocalStorage is UI convenience only. Risk / halt snapshots, the paper cash+positions book, the last ~200 clientOrderIds, the last bot heartbeat, grid mid/last-fill books, and the last accepted submit timestamp are written under `data/bot-state.json` so a restart does not wipe the last halt reason, reset virtual inventory, allow a retry to double-submit the same intent, re-fire the same grid rung, or skip the min-submit burst guard.
+Dashboard LocalStorage is UI convenience only. Risk / halt snapshots, the paper cash+positions book, the last ~200 clientOrderIds, the last bot heartbeat, grid mid/last-fill books (including lastFillPrice / lastFillAt), and the last accepted submit timestamp are written under `data/bot-state.json` so a restart does not wipe the last halt reason, reset virtual inventory, allow a retry to double-submit the same intent, re-fire the same grid rung, skip the min-submit burst guard, or flip grid side before the anti-whipsaw hold expires.
 
 Use `createServerOrderManager(adapter)` on the server so those persist hooks are wired automatically.
 
@@ -148,9 +149,10 @@ This does **not** dump positions. It tells you the loop died.
 - Spacing is floored at `takerFeePct * 2 * minNetEdgeMultiplier` so levels stay fee-aware
 - Signals use the **nearest crossed level** (±L across `levels/2`), not only the first rung
 - Same side+level is not re-fired until price walks to another rung (last-fill guard)
-- Sells that would not cover round-trip fees are skipped
+- Flipping buy↔sell waits `minHoldMs` (3 min) and `minLevelsBeforeFlip` (2 rungs) to cut whipsaws
+- Sells that would not cover round-trip fees are skipped (uses position avg or lastFillPrice)
 - Book recenters when price drifts ≥ `rebalanceThresholdPct` from mid (clears last-fill)
-- Mid + last-fill are written to `data/bot-state.json` on each `markBotTick` and restored on boot so a restart does not re-seed and double-buy the same level
+- Mid + last-fill (side, level, price, time) are written to `data/bot-state.json` on each `markBotTick` and restored on boot so a restart does not re-seed and double-buy the same level or skip the hold clock
 
 ## Warning
 
