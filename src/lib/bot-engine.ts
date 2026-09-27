@@ -105,6 +105,7 @@ export function botTick(input: BotTickInput): BotTickResult {
  * Full path: strategy → risk → OrderManager → adapter (Paper or KuCoin).
  * Same interface regardless of exchange. No UI changes.
  * Grid rung reservations are confirmed only after an accepted submit.
+ * Sells are clamped to booked inventory so OrderManager never shorts.
  */
 export async function executeBotTick(
   input: BotTickInput,
@@ -116,7 +117,23 @@ export async function executeBotTick(
   }
 
   const sizeUsd = tick.suggestedSizeUsd ?? 0;
-  const amount = input.currentPrice > 0 ? sizeUsd / input.currentPrice : 0;
+  let amount = input.currentPrice > 0 ? sizeUsd / input.currentPrice : 0;
+
+  if (tick.action === "sell") {
+    const held = manager.positionAmount(input.symbol);
+    if (held <= 1e-12) {
+      if (input.strategy === "grid") releaseGridReservation(input.symbol);
+      return {
+        tick: {
+          ...tick,
+          shouldExecute: false,
+          riskAllowed: false,
+          riskReason: `Inventory: no long position in ${input.symbol}`,
+        },
+      };
+    }
+    amount = Math.min(amount, held);
+  }
 
   try {
     const submit = await manager.submit(
