@@ -27,6 +27,8 @@ type ClientGridBook = {
   spacingPct: number;
   lastSide?: "buy" | "sell";
   lastLevel?: number;
+  lastFillPrice?: number;
+  lastFillAgeMs: number | null;
   stackedBuys: number;
   reserved: boolean;
 };
@@ -37,6 +39,15 @@ type ClientPaperBook = {
   total: number;
   positionCount: number;
 };
+
+function formatFillAge(ageMs: number | null): string {
+  if (ageMs == null) return "no fill";
+  const sec = Math.round(ageMs / 1000);
+  if (sec < 90) return `${sec}s ago`;
+  const min = Math.round(sec / 60);
+  if (min < 90) return `${min}m ago`;
+  return `${Math.round(min / 60)}h ago`;
+}
 
 export function LiveModeBanner({ mode }: { mode: "paper" | "live" }) {
   if (mode !== "live") return null;
@@ -211,11 +222,12 @@ export function ModeSwitch() {
             <li
               key={g.symbol}
               className="truncate"
-              title={`${g.symbol} mid=${g.mid} space=${g.spacingPct}% stack=${g.stackedBuys}`}
+              title={`${g.symbol} mid=${g.mid} space=${g.spacingPct}% stack=${g.stackedBuys} fill=${g.lastFillPrice ?? "-"} ${formatFillAge(g.lastFillAgeMs)}`}
             >
               Grid {g.symbol.split("/")[0]} mid={g.mid.toFixed(2)} stack={g.stackedBuys}
               {g.lastSide ? ` last=${g.lastSide}` : ""}
               {g.lastLevel != null ? ` L${g.lastLevel}` : ""}
+              {` ${formatFillAge(g.lastFillAgeMs)}`}
               {g.reserved ? " (reserved)" : ""}
             </li>
           ))}
