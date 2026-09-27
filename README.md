@@ -47,7 +47,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hardening – Paper/Live cluster shows persisted alert ring | ✅ Done |
 | Hardening – health + UI show persisted grid books | ✅ Done |
 | Hardening – persist sanitized grid books on hydrate | ✅ Done |
-| Hardening – dashboard CLEAR HALT (typed confirm) | ✅ Done (this push) |
+| Hardening – dashboard CLEAR HALT (typed confirm) | ✅ Done |
+| Hardening – health + UI show UTC daily trade cap | ✅ Done (this push) |
 
 ## Architecture
 
@@ -66,7 +67,7 @@ Persist: data/bot-state.json (atomic tmp+rename; risk snapshot + last hard-stop 
 Alerts:  console + optional HARD_STOP_WEBHOOK_URL
 Live gate: inspectKucoinKeyPermissions() — Withdraw on the key blocks LIVE
 Watchdog: lastHeartbeat older than 3× botTickMs → health.ok=false + alert
-Health: lastHardStop + haltReason + last 10 recentAlerts + grid mid/stack survive restart and show on the Paper/Live cluster
+Health: lastHardStop + haltReason + last 10 recentAlerts + grid mid/stack + UTC daily cap survive restart and show on the Paper/Live cluster
 Submit: createServerOrderManager applies persisted halt/counters before every order
 Clear:  dashboard types CLEAR HALT → requestClearHalt → clearOperatorHalt() stamps lastHardStop.clearedAt
 Hydrate: restorePersistedGridBooks remaps lastLevel / expires reservations, then writes the sanitized books back to disk
@@ -111,9 +112,10 @@ On first halt:
 - `emitHardStopAlert` appends to the persisted `recentAlerts` ring (max 50)
 - If `HARD_STOP_WEBHOOK_URL` is set, a JSON POST is attempted
 - In live mode, visible open orders are canceled (positions are not market-dumped)
-- `getHealth()` exposes `haltReason`, `lastHardStop`, the last 10 `recentAlerts`, and restored `gridBooks` after restart
+- `getHealth()` exposes `haltReason`, `lastHardStop`, the last 10 `recentAlerts`, restored `gridBooks`, and UTC daily cap after restart
 - `fetchExchangeHealth` forwards those fields (no secrets) to the Paper/Live cluster
 - The dashboard lists the last 5 alerts and treats `haltReason` as the live halt — `lastHardStop.reason` after `clearedAt` is history only
+- `getHealth()` / Paper/Live cluster also show UTC daily cap used/max/remaining from persisted `tradesToday` (rolls to 0 on a new UTC day)
 - Grid rows show mid, stack, last side/level, and whether a reservation is open
 - The next `createServerOrderManager().submit` reapplies that halt even if the caller forgot it on the RiskState
 
