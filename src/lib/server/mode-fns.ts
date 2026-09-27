@@ -33,6 +33,15 @@ export const fetchExchangeHealth = createServerFn({ method: "GET" }).handler(asy
       code: a.code,
       mode: a.mode,
     })),
+    gridBooks: (health.gridBooks ?? []).map((g) => ({
+      symbol: g.symbol,
+      mid: g.mid,
+      spacingPct: g.spacingPct,
+      lastSide: g.lastSide,
+      lastLevel: g.lastLevel,
+      stackedBuys: g.stackedBuys,
+      reserved: g.reserved,
+    })),
   };
 });
 

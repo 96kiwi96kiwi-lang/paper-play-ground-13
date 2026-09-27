@@ -20,6 +20,16 @@ type ClientAlert = {
   mode?: string;
 };
 
+type ClientGridBook = {
+  symbol: string;
+  mid: number;
+  spacingPct: number;
+  lastSide?: "buy" | "sell";
+  lastLevel?: number;
+  stackedBuys: number;
+  reserved: boolean;
+};
+
 export function LiveModeBanner({ mode }: { mode: "paper" | "live" }) {
   if (mode !== "live") return null;
   return (
@@ -40,6 +50,7 @@ export function ModeSwitch() {
   const [haltReason, setHaltReason] = useState<string | null>(null);
   const [clearedAt, setClearedAt] = useState<number | null>(null);
   const [alerts, setAlerts] = useState<ClientAlert[]>([]);
+  const [gridBooks, setGridBooks] = useState<ClientGridBook[]>([]);
 
   const refresh = async () => {
     try {
@@ -55,6 +66,7 @@ export function ModeSwitch() {
       setHaltReason(health.haltReason ?? null);
       setClearedAt(health.lastHardStop?.clearedAt ?? null);
       setAlerts(Array.isArray(health.recentAlerts) ? health.recentAlerts.slice(-5) : []);
+      setGridBooks(Array.isArray(health.gridBooks) ? health.gridBooks.slice(0, 4) : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load mode");
     }
@@ -147,6 +159,22 @@ export function ModeSwitch() {
         <span className="text-[10px] text-muted-foreground max-w-[18rem] truncate">
           Halt cleared
         </span>
+      )}
+      {gridBooks.length > 0 && (
+        <ol className="text-[10px] text-muted-foreground max-w-[18rem] space-y-0.5">
+          {gridBooks.map((g) => (
+            <li
+              key={g.symbol}
+              className="truncate"
+              title={`${g.symbol} mid=${g.mid} space=${g.spacingPct}% stack=${g.stackedBuys}`}
+            >
+              Grid {g.symbol.split("/")[0]} mid={g.mid.toFixed(2)} stack={g.stackedBuys}
+              {g.lastSide ? ` last=${g.lastSide}` : ""}
+              {g.lastLevel != null ? ` L${g.lastLevel}` : ""}
+              {g.reserved ? " (reserved)" : ""}
+            </li>
+          ))}
+        </ol>
       )}
       {alerts.length > 0 && (
         <ol className="text-[10px] text-muted-foreground max-w-[18rem] space-y-0.5">
