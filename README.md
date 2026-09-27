@@ -46,7 +46,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hardening – persist recent hard-stop alerts | ✅ Done |
 | Hardening – Paper/Live cluster shows persisted alert ring | ✅ Done |
 | Hardening – health + UI show persisted grid books | ✅ Done |
-| Hardening – persist sanitized grid books on hydrate | ✅ Done (this push) |
+| Hardening – persist sanitized grid books on hydrate | ✅ Done |
+| Hardening – dashboard CLEAR HALT (typed confirm) | ✅ Done (this push) |
 
 ## Architecture
 
@@ -67,7 +68,7 @@ Live gate: inspectKucoinKeyPermissions() — Withdraw on the key blocks LIVE
 Watchdog: lastHeartbeat older than 3× botTickMs → health.ok=false + alert
 Health: lastHardStop + haltReason + last 10 recentAlerts + grid mid/stack survive restart and show on the Paper/Live cluster
 Submit: createServerOrderManager applies persisted halt/counters before every order
-Clear:  clearOperatorHalt() stamps lastHardStop.clearedAt so a restart does not restore the halt
+Clear:  dashboard types CLEAR HALT → requestClearHalt → clearOperatorHalt() stamps lastHardStop.clearedAt
 Hydrate: restorePersistedGridBooks remaps lastLevel / expires reservations, then writes the sanitized books back to disk
 ```
 
@@ -116,7 +117,7 @@ On first halt:
 - Grid rows show mid, stack, last side/level, and whether a reservation is open
 - The next `createServerOrderManager().submit` reapplies that halt even if the caller forgot it on the RiskState
 
-To resume after review, call `clearOperatorHalt(note)` on the server (or `clearHalt` on an in-memory RiskState plus `clearPersistedHalt`). That:
+To resume after review, use the Paper/Live cluster **Clear halt** button and type `CLEAR HALT` (calls `requestClearHalt` → `clearOperatorHalt`). You can still call `clearOperatorHalt(note)` on the server directly. That:
 - sets `risk.haltReason` to null
 - zeros losing-streak and network-error streak so those counters cannot instantly re-halt
 - stamps `lastHardStop.clearedAt` (history stays for the dashboard)
