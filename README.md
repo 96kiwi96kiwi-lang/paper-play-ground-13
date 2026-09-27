@@ -44,7 +44,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hardening – normalize lastLevel on hydrate + spacing rebuild | ✅ Done |
 | Hardening – no-short inventory guard on sells | ✅ Done |
 | Hardening – persist recent hard-stop alerts | ✅ Done |
-| Hardening – Paper/Live cluster shows persisted alert ring | ✅ Done (this push) |
+| Hardening – Paper/Live cluster shows persisted alert ring | ✅ Done |
+| Hardening – health + UI show persisted grid books | ✅ Done (this push) |
 
 ## Architecture
 
@@ -63,7 +64,7 @@ Persist: data/bot-state.json (atomic tmp+rename; risk snapshot + last hard-stop 
 Alerts:  console + optional HARD_STOP_WEBHOOK_URL
 Live gate: inspectKucoinKeyPermissions() — Withdraw on the key blocks LIVE
 Watchdog: lastHeartbeat older than 3× botTickMs → health.ok=false + alert
-Health: lastHardStop + haltReason + last 10 recentAlerts survive restart and show on the Paper/Live cluster
+Health: lastHardStop + haltReason + last 10 recentAlerts + grid mid/stack survive restart and show on the Paper/Live cluster
 Submit: createServerOrderManager applies persisted halt/counters before every order
 Clear:  clearOperatorHalt() stamps lastHardStop.clearedAt so a restart does not restore the halt
 ```
@@ -107,9 +108,10 @@ On first halt:
 - `emitHardStopAlert` appends to the persisted `recentAlerts` ring (max 50)
 - If `HARD_STOP_WEBHOOK_URL` is set, a JSON POST is attempted
 - In live mode, visible open orders are canceled (positions are not market-dumped)
-- `getHealth()` exposes `haltReason`, `lastHardStop`, and the last 10 `recentAlerts` after restart
-- `fetchExchangeHealth` forwards those alerts (no secrets) to the Paper/Live cluster
+- `getHealth()` exposes `haltReason`, `lastHardStop`, the last 10 `recentAlerts`, and restored `gridBooks` after restart
+- `fetchExchangeHealth` forwards those fields (no secrets) to the Paper/Live cluster
 - The dashboard lists the last 5 alerts and treats `haltReason` as the live halt — `lastHardStop.reason` after `clearedAt` is history only
+- Grid rows show mid, stack, last side/level, and whether a reservation is open
 - The next `createServerOrderManager().submit` reapplies that halt even if the caller forgot it on the RiskState
 
 To resume after review, call `clearOperatorHalt(note)` on the server (or `clearHalt` on an in-memory RiskState plus `clearPersistedHalt`). That:
@@ -154,7 +156,7 @@ This does **not** dump positions. It tells you the loop died.
 ## Risk rules (shared paper + live)
 
 | Rule                    | Value   |
-|-------------------------|---------|
+|-------------------------|---------|---------|
 | Trade size              | 15 %    |
 | Max position per coin   | 20 %    |
 | Stop-loss               | –4 %    |
@@ -190,6 +192,7 @@ This does **not** dump positions. It tells you the loop died.
 - Sells that would not cover round-trip fees are skipped
 - Book recenters when price drifts ≥ `rebalanceThresholdPct` from mid; off-book lastLevel is dropped
 - Mid + last-fill are written to `data/bot-state.json` on each `markBotTick` and restored on boot
+- `getHealth()` / Paper/Live cluster show mid, stack, last side/level, and reserved flag so an operator can see the book after restart
 
 ## Warning
 
