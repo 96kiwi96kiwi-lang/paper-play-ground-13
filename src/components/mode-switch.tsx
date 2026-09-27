@@ -40,6 +40,14 @@ type ClientPaperBook = {
   positionCount: number;
 };
 
+type ClientDailyCap = {
+  used: number;
+  max: number;
+  remaining: number;
+  dayKey: string;
+  exhausted: boolean;
+};
+
 function formatFillAge(ageMs: number | null): string {
   if (ageMs == null) return "no fill";
   const sec = Math.round(ageMs / 1000);
@@ -73,6 +81,7 @@ export function ModeSwitch() {
   const [alerts, setAlerts] = useState<ClientAlert[]>([]);
   const [gridBooks, setGridBooks] = useState<ClientGridBook[]>([]);
   const [paperBook, setPaperBook] = useState<ClientPaperBook | null>(null);
+  const [dailyCap, setDailyCap] = useState<ClientDailyCap | null>(null);
 
   const refresh = async () => {
     try {
@@ -90,6 +99,7 @@ export function ModeSwitch() {
       setAlerts(Array.isArray(health.recentAlerts) ? health.recentAlerts.slice(-5) : []);
       setGridBooks(Array.isArray(health.gridBooks) ? health.gridBooks.slice(0, 4) : []);
       setPaperBook(health.paperBook ?? null);
+      setDailyCap(health.dailyCap ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load mode");
     }
@@ -214,6 +224,15 @@ export function ModeSwitch() {
           title={`Paper cash=${paperBook.cash.toFixed(2)} used=${paperBook.used.toFixed(2)} equity=${paperBook.total.toFixed(2)} positions=${paperBook.positionCount}`}
         >
           Paper ${paperBook.total.toFixed(0)} cash={paperBook.cash.toFixed(0)} pos={paperBook.positionCount}
+        </span>
+      )}
+      {dailyCap && (
+        <span
+          className={`text-[10px] max-w-[18rem] truncate ${dailyCap.exhausted ? "text-amber-400" : "text-muted-foreground"}`}
+          title={`UTC ${dailyCap.dayKey} accepted submits ${dailyCap.used}/${dailyCap.max} remaining=${dailyCap.remaining}. Cap is not a hard-stop.`}
+        >
+          Cap {dailyCap.used}/{dailyCap.max}
+          {dailyCap.exhausted ? " exhausted" : ` left=${dailyCap.remaining}`}
         </span>
       )}
       {gridBooks.length > 0 && (
