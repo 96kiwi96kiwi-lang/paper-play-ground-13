@@ -41,7 +41,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hardening – grid inventory reconcile (stackedBuys vs position) | ✅ Done |
 | Hardening – operator clear-halt (persist + health) | ✅ Done |
 | Hardening – drop remapped lastLevel when rebalance walks off-book | ✅ Done |
-| Hardening – normalize lastLevel on hydrate + spacing rebuild | ✅ Done (this push) |
+| Hardening – normalize lastLevel on hydrate + spacing rebuild | ✅ Done |
+| Hardening – no-short inventory guard on sells | ✅ Done (this push) |
 
 ## Architecture
 
@@ -136,6 +137,8 @@ This does **not** dump positions. It tells you the loop died.
 - refuse a new submit if working orders on that symbol already ≥ `maxOpenOrdersPerSymbol` (2)
 - refuse when `amount * price` exceeds `maxOrderNotionalUsd` (2500) if a price is present
 - refuse a **buy** when booked cost basis + this order notional would exceed `maxGrossExposureUsd` (8000)
+- refuse a **sell** with no booked long, or a sell larger than held inventory (spot, no short)
+- `executeBotTick` clamps sell size to `manager.positionAmount(symbol)` before submit
 - refuse a new submit if the last *accepted* one was within `minSubmitIntervalMs` (8s)
 - that last-submit clock is persisted (`lastSubmitAt`) so a crash + immediate restart cannot burst two accepts
 - track status via `fetchOrder` / `fetchOpenOrders`
@@ -166,6 +169,7 @@ This does **not** dump positions. It tells you the loop died.
 | Max order notional      | 2500 USD |
 | Max gross exposure      | 8000 USD |
 | Allowed pairs           | BTC/ETH/SOL/BNB USDT |
+| Short selling           | blocked (spot inventory only) |
 
 ## Grid (Hour 7+)
 
