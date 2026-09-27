@@ -52,6 +52,15 @@ export const fetchExchangeHealth = createServerFn({ method: "GET" }).handler(asy
           positionCount: health.paperBook.positionCount,
         }
       : null,
+    dailyCap: health.dailyCap
+      ? {
+          used: health.dailyCap.used,
+          max: health.dailyCap.max,
+          remaining: health.dailyCap.remaining,
+          dayKey: health.dailyCap.dayKey,
+          exhausted: health.dailyCap.exhausted,
+        }
+      : null,
   };
 });
 
