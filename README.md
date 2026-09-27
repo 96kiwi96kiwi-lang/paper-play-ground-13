@@ -45,7 +45,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hardening – no-short inventory guard on sells | ✅ Done |
 | Hardening – persist recent hard-stop alerts | ✅ Done |
 | Hardening – Paper/Live cluster shows persisted alert ring | ✅ Done |
-| Hardening – health + UI show persisted grid books | ✅ Done (this push) |
+| Hardening – health + UI show persisted grid books | ✅ Done |
+| Hardening – persist sanitized grid books on hydrate | ✅ Done (this push) |
 
 ## Architecture
 
@@ -67,6 +68,7 @@ Watchdog: lastHeartbeat older than 3× botTickMs → health.ok=false + alert
 Health: lastHardStop + haltReason + last 10 recentAlerts + grid mid/stack survive restart and show on the Paper/Live cluster
 Submit: createServerOrderManager applies persisted halt/counters before every order
 Clear:  clearOperatorHalt() stamps lastHardStop.clearedAt so a restart does not restore the halt
+Hydrate: restorePersistedGridBooks remaps lastLevel / expires reservations, then writes the sanitized books back to disk
 ```
 
 ## Paper mode — quick start
@@ -156,7 +158,7 @@ This does **not** dump positions. It tells you the loop died.
 ## Risk rules (shared paper + live)
 
 | Rule                    | Value   |
-|-------------------------|---------|---------|
+|-------------------------|---------|
 | Trade size              | 15 %    |
 | Max position per coin   | 20 %    |
 | Stop-loss               | –4 %    |
@@ -188,6 +190,7 @@ This does **not** dump positions. It tells you the loop died.
 - At most `maxStackedBuys` (3) unclosed grid buys per symbol — further buys idle until a sell decrements the stack
 - A grid signal **reserves** the rung; `executeBotTick` confirms only after OrderManager accepts, and `releaseGridReservation` undoes the stack if the submit is rejected or throws
 - Unconfirmed reservations older than `reservationTtlMs` (2 min) are rolled back on the next grid tick and on hydrate
+- After hydrate, the sanitized books (dropped lastLevel, expired reservations) are written back to `data/bot-state.json` immediately — not only on the next `markBotTick`
 - `reconcileGridInventory` zeros the stack when the live book has no position and seeds stack=1 when a position exists with stack 0
 - Sells that would not cover round-trip fees are skipped
 - Book recenters when price drifts ≥ `rebalanceThresholdPct` from mid; off-book lastLevel is dropped
