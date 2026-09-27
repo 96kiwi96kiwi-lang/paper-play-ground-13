@@ -146,6 +146,26 @@ function flipBlocked(book: GridBook, nextSide: Side, nextLevel: number): string 
 }
 
 /**
+ * After a recenter, lastFillPrice mapped onto the new mid can land many rungs
+ * outside ±halfLevels. Keeping that phantom lastLevel blocks scale-in forever
+ * (`clamped >= lastLevel` when lastLevel is e.g. L-7 and the book only goes to L-4).
+ * Drop lastLevel in that case; keep lastFillAt / lastSide / stackedBuys so the
+ * time-based anti-whipsaw and inventory cap still apply.
+ */
+export function remapLastLevelAfterRebalance(
+  lastFillPrice: number | undefined,
+  newMid: number,
+  spacingPct: number,
+  halfLevels: number,
+): number | undefined {
+  if (!lastFillPrice || lastFillPrice <= 0 || newMid <= 0 || spacingPct <= 0) return undefined;
+  const remapped = gridLevelIndex(lastFillPrice, newMid, spacingPct);
+  if (!Number.isFinite(remapped)) return undefined;
+  if (Math.abs(remapped) > halfLevels) return undefined;
+  return remapped;
+}
+
+/**
  * Align stackedBuys with the live book.
  * A stop / take-profit / flatten outside the grid can zero the position while
  * leaving stackedBuys at the cap, which then blocks every new buy.
@@ -192,6 +212,7 @@ function priceAtLevel(mid: number, spacingPct: number, level: number): number {
  *   but only on a strictly lower rung than the last buy
  * - Rebalances (recenters) when price walks off the book, keeping last-fill
  *   clocks and remapping lastLevel onto the new mid so scale-in / flip guards survive
+ * - If the remapped lastLevel sits outside ±halfLevels, drop it so scale-in is not frozen
  * - Unconfirmed reservations older than reservationTtlMs are rolled back
  * - stackedBuys is reconciled with hasPosition so an external flatten cannot lock the cap
  */
@@ -221,20 +242,18 @@ export function gridStrategy(ctx: StrategyContext): StrategySignal {
   book = gridBooks.get(ctx.symbol) ?? book;
 
   const driftPct = ((ctx.currentPrice - book.mid) / book.mid) * 100;
+  const halfLevels = Math.max(1, Math.floor(cfg.levels / 2));
   if (Math.abs(driftPct) >= cfg.rebalanceThresholdPct) {
     const prevFillPrice = book.lastFillPrice;
     book = rebuildGrid(ctx.symbol, ctx.currentPrice, spacingPct);
-    if (prevFillPrice && prevFillPrice > 0) {
-      book.lastLevel = gridLevelIndex(prevFillPrice, book.mid, spacingPct);
-    }
-    const kept = book.lastLevel != null ? `L${book.lastLevel}` : "n/a";
+    book.lastLevel = remapLastLevelAfterRebalance(prevFillPrice, book.mid, spacingPct, halfLevels);
+    const kept = book.lastLevel != null ? `L${book.lastLevel}` : "off-book";
     return {
       action: "hold",
       reason: `Grid rebalanced mid=${book.mid.toFixed(4)} after ${driftPct.toFixed(2)}% drift (kept last-fill ${kept})`,
     };
   }
 
-  const halfLevels = Math.max(1, Math.floor(cfg.levels / 2));
   const level = gridLevelIndex(ctx.currentPrice, book.mid, spacingPct);
   const clamped = Math.max(-halfLevels, Math.min(halfLevels, level));
   const lowerBound = priceAtLevel(book.mid, spacingPct, -halfLevels);
