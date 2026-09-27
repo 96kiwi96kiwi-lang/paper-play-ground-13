@@ -39,6 +39,8 @@ export const fetchExchangeHealth = createServerFn({ method: "GET" }).handler(asy
       spacingPct: g.spacingPct,
       lastSide: g.lastSide,
       lastLevel: g.lastLevel,
+      lastFillPrice: g.lastFillPrice,
+      lastFillAgeMs: g.lastFillAgeMs,
       stackedBuys: g.stackedBuys,
       reserved: g.reserved,
     })),
