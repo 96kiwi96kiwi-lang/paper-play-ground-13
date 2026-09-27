@@ -17,6 +17,8 @@ import {
   persistSeenOrders,
   persistGridBooks,
   clearPersistedHalt,
+  loadRecentAlerts,
+  type PersistedAlert,
   type PersistedHardStop,
 } from "./persist";
 import { checkStaleHeartbeat, recordBotHeartbeat, type BotHeartbeat } from "./heartbeat";
@@ -36,6 +38,7 @@ export interface HealthResponse {
   heartbeatStale?: boolean;
   lastHardStop?: PersistedHardStop | null;
   haltReason?: string | null;
+  recentAlerts?: PersistedAlert[];
 }
 
 export interface BalanceResponse {
@@ -65,12 +68,13 @@ export function markBotTick(partial: { symbol?: string; action?: string; hardSto
   persistGridBooks(snapshotGridBooks());
 }
 
-function haltFields(): Pick<HealthResponse, "lastHardStop" | "haltReason"> {
+function haltFields(): Pick<HealthResponse, "lastHardStop" | "haltReason" | "recentAlerts"> {
   const state = loadBotState();
   const cleared = Boolean(state.lastHardStop?.clearedAt) && !state.risk?.haltReason;
   return {
     lastHardStop: state.lastHardStop,
     haltReason: cleared ? null : state.risk?.haltReason ?? state.lastHardStop?.reason ?? null,
+    recentAlerts: loadRecentAlerts().slice(-10),
   };
 }
 
