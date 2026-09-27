@@ -42,6 +42,14 @@ export const fetchExchangeHealth = createServerFn({ method: "GET" }).handler(asy
       stackedBuys: g.stackedBuys,
       reserved: g.reserved,
     })),
+    paperBook: health.paperBook
+      ? {
+          cash: health.paperBook.cash,
+          used: health.paperBook.used,
+          total: health.paperBook.total,
+          positionCount: health.paperBook.positionCount,
+        }
+      : null,
   };
 });
 
