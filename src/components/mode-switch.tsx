@@ -9,6 +9,7 @@ import { AlertTriangle, ShieldCheck } from "lucide-react";
 import {
   fetchExchangeHealth,
   fetchModeStatus,
+  requestClearHalt,
   requestSetMode,
 } from "@/lib/server/mode-fns";
 import type { ModeStatus } from "@/lib/server/trading-mode";
@@ -45,6 +46,8 @@ export function ModeSwitch() {
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [typed, setTyped] = useState("");
+  const [clearOpen, setClearOpen] = useState(false);
+  const [clearTyped, setClearTyped] = useState("");
   const [stale, setStale] = useState(false);
   const [ageSec, setAgeSec] = useState<number | null>(null);
   const [haltReason, setHaltReason] = useState<string | null>(null);
@@ -108,6 +111,21 @@ export function ModeSwitch() {
     }
   };
 
+  const confirmClearHalt = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await requestClearHalt({ data: { confirmed: true, note: "dashboard CLEAR HALT" } });
+      setClearOpen(false);
+      setClearTyped("");
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not clear halt");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const liveReady = Boolean(status?.hasCredentials);
 
   return (
@@ -154,6 +172,16 @@ export function ModeSwitch() {
         <span className="text-[10px] text-red-400 max-w-[18rem] truncate" title={haltReason}>
           Halt: {haltReason}
         </span>
+      )}
+      {haltReason && (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => setClearOpen(true)}
+          className="text-[10px] px-2 py-1 rounded-md border border-red-500/40 text-red-300 hover:bg-red-500/10 disabled:opacity-40"
+        >
+          Clear halt
+        </button>
       )}
       {!haltReason && clearedAt != null && (
         <span className="text-[10px] text-muted-foreground max-w-[18rem] truncate">
@@ -238,6 +266,56 @@ export function ModeSwitch() {
                 className="text-xs px-3 py-1.5 rounded-md bg-red-600 text-white disabled:opacity-40"
               >
                 {busy ? "Switching…" : "Confirm LIVE"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {clearOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="w-full max-w-md rounded-lg border border-amber-500/40 bg-card p-5 shadow-xl space-y-3">
+            <div className="flex items-center gap-2 text-amber-400">
+              <AlertTriangle className="size-5" />
+              <h2 className="text-sm font-semibold">Clear persisted halt?</h2>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              This stamps <span className="font-mono">clearedAt</span> so a restart will not restore
+              the halt. It does not enable live trading and does not reset daily PnL or drawdown —
+              those still halt if still breached.
+            </p>
+            {haltReason && (
+              <p className="text-xs text-red-300 truncate" title={haltReason}>
+                Current: {haltReason}
+              </p>
+            )}
+            <label className="block text-[11px] text-muted-foreground">
+              Type <span className="font-mono text-foreground">CLEAR HALT</span> to confirm
+              <input
+                value={clearTyped}
+                onChange={(e) => setClearTyped(e.target.value)}
+                className="mt-1 w-full rounded-md border border-border bg-input px-2 py-1.5 text-xs"
+                autoComplete="off"
+              />
+            </label>
+            <div className="flex justify-end gap-2 pt-1">
+              <button
+                type="button"
+                className="text-xs px-3 py-1.5 text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  setClearOpen(false);
+                  setClearTyped("");
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={busy || clearTyped.trim().toUpperCase() !== "CLEAR HALT"}
+                onClick={() => void confirmClearHalt()}
+                className="text-xs px-3 py-1.5 rounded-md bg-amber-600 text-black disabled:opacity-40"
+              >
+                {busy ? "Clearing…" : "Confirm clear"}
               </button>
             </div>
           </div>
