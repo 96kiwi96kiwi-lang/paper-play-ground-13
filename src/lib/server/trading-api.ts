@@ -7,7 +7,7 @@
 
 import { TRADING_CONFIG } from "@/config/trading";
 import * as kucoin from "@/lib/exchange/kucoin";
-import { snapshotGridBooks } from "@/lib/strategies";
+import { snapshotGridBooks, type GridBook } from "@/lib/strategies";
 import { assertLiveAllowed, getRuntimeMode, type TradingRuntimeMode } from "./trading-mode";
 import {
   loadBotState,
@@ -28,6 +28,18 @@ import type { UnifiedOrder } from "@/lib/exchange/types";
 
 export type Mode = TradingRuntimeMode;
 
+export type HealthGridBook = {
+  symbol: string;
+  mid: number;
+  spacingPct: number;
+  lastSide?: GridBook["lastSide"];
+  lastLevel?: number;
+  lastFillPrice?: number;
+  lastFillAt?: number;
+  stackedBuys: number;
+  reserved: boolean;
+};
+
 export interface HealthResponse {
   ok: boolean;
   mode: Mode;
@@ -39,6 +51,7 @@ export interface HealthResponse {
   lastHardStop?: PersistedHardStop | null;
   haltReason?: string | null;
   recentAlerts?: PersistedAlert[];
+  gridBooks?: HealthGridBook[];
 }
 
 export interface BalanceResponse {
@@ -78,6 +91,22 @@ function haltFields(): Pick<HealthResponse, "lastHardStop" | "haltReason" | "rec
   };
 }
 
+function gridFields(): HealthGridBook[] {
+  restorePersistedGridBooks();
+  const books = snapshotGridBooks();
+  return Object.entries(books).map(([symbol, book]) => ({
+    symbol,
+    mid: book.mid,
+    spacingPct: book.spacingPct,
+    lastSide: book.lastSide,
+    lastLevel: book.lastLevel,
+    lastFillPrice: book.lastFillPrice,
+    lastFillAt: book.lastFillAt,
+    stackedBuys: book.stackedBuys ?? 0,
+    reserved: Boolean(book.reserved),
+  }));
+}
+
 /**
  * Operator acknowledgement of a persisted hard-stop.
  * Does not enable live trading. Daily PnL / drawdown can halt again if still breached.
@@ -102,6 +131,7 @@ export async function getHealth(): Promise<HealthResponse> {
   const mode = getMode();
   const watch = await checkStaleHeartbeat();
   const halt = haltFields();
+  const gridBooks = gridFields();
 
   if (mode === "paper") {
     return {
@@ -115,6 +145,7 @@ export async function getHealth(): Promise<HealthResponse> {
       heartbeatAgeMs: watch.ageMs,
       heartbeatStale: watch.stale,
       ...halt,
+      gridBooks,
     };
   }
 
@@ -130,6 +161,7 @@ export async function getHealth(): Promise<HealthResponse> {
     heartbeatAgeMs: watch.ageMs,
     heartbeatStale: watch.stale,
     ...halt,
+    gridBooks,
   };
 }
 
