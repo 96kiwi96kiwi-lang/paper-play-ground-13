@@ -13,6 +13,13 @@ import {
 } from "@/lib/server/mode-fns";
 import type { ModeStatus } from "@/lib/server/trading-mode";
 
+type ClientAlert = {
+  at: number;
+  reason: string;
+  code?: string;
+  mode?: string;
+};
+
 export function LiveModeBanner({ mode }: { mode: "paper" | "live" }) {
   if (mode !== "live") return null;
   return (
@@ -31,6 +38,8 @@ export function ModeSwitch() {
   const [stale, setStale] = useState(false);
   const [ageSec, setAgeSec] = useState<number | null>(null);
   const [haltReason, setHaltReason] = useState<string | null>(null);
+  const [clearedAt, setClearedAt] = useState<number | null>(null);
+  const [alerts, setAlerts] = useState<ClientAlert[]>([]);
 
   const refresh = async () => {
     try {
@@ -41,7 +50,11 @@ export function ModeSwitch() {
       setAgeSec(
         health.heartbeatAgeMs != null ? Math.round(health.heartbeatAgeMs / 1000) : null,
       );
-      setHaltReason(health.haltReason ?? health.lastHardStop?.reason ?? null);
+      // Use haltReason from health only. lastHardStop.reason survives a clear
+      // for history and must not keep the cluster in Halt after operator ack.
+      setHaltReason(health.haltReason ?? null);
+      setClearedAt(health.lastHardStop?.clearedAt ?? null);
+      setAlerts(Array.isArray(health.recentAlerts) ? health.recentAlerts.slice(-5) : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load mode");
     }
@@ -129,6 +142,21 @@ export function ModeSwitch() {
         <span className="text-[10px] text-red-400 max-w-[18rem] truncate" title={haltReason}>
           Halt: {haltReason}
         </span>
+      )}
+      {!haltReason && clearedAt != null && (
+        <span className="text-[10px] text-muted-foreground max-w-[18rem] truncate">
+          Halt cleared
+        </span>
+      )}
+      {alerts.length > 0 && (
+        <ol className="text-[10px] text-muted-foreground max-w-[18rem] space-y-0.5">
+          {alerts.slice().reverse().map((a) => (
+            <li key={`${a.at}-${a.code ?? a.reason}`} className="truncate" title={a.reason}>
+              {a.code ? `${a.code}: ` : ""}
+              {a.reason}
+            </li>
+          ))}
+        </ol>
       )}
       {error && <span className="text-[10px] text-red-400 max-w-[18rem] truncate">{error}</span>}
       {status?.keyAuditMessage && mode === "paper" && (
