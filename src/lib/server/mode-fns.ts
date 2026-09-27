@@ -5,7 +5,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { getModeStatus, setRuntimeMode, type ModeStatus } from "./trading-mode";
-import { getHealth, markBotTick } from "./trading-api";
+import { clearOperatorHalt, getHealth, markBotTick } from "./trading-api";
 import { registerHardStopMonitoring } from "./register-monitoring";
 
 registerHardStopMonitoring();
@@ -69,4 +69,21 @@ export const requestSetMode = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }): Promise<ModeStatus> => {
     return setRuntimeMode(data.mode, { confirmed: data.confirmed });
+  });
+
+/**
+ * Operator acknowledgement of a persisted hard-stop.
+ * Does not enable live mode. Daily PnL / drawdown can halt again if still breached.
+ */
+export const requestClearHalt = createServerFn({ method: "POST" })
+  .validator((data: unknown) => {
+    const body = (data ?? {}) as { note?: string; confirmed?: boolean };
+    if (!body.confirmed) {
+      throw new Error("Clearing a halt requires explicit confirmation.");
+    }
+    const note = typeof body.note === "string" ? body.note.trim().slice(0, 160) : "";
+    return { note: note || "dashboard", confirmed: true as const };
+  })
+  .handler(async ({ data }) => {
+    return clearOperatorHalt(data.note);
   });
