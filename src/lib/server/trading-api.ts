@@ -7,6 +7,7 @@
 
 import { TRADING_CONFIG } from "@/config/trading";
 import * as kucoin from "@/lib/exchange/kucoin";
+import { utcDayKey } from "@/lib/risk";
 import { snapshotGridBooks, type GridBook } from "@/lib/strategies";
 import { assertLiveAllowed, getRuntimeMode, type TradingRuntimeMode } from "./trading-mode";
 import {
@@ -49,6 +50,15 @@ export type HealthPaperBook = {
   positionCount: number;
 };
 
+/** UTC daily submit cap — persisted on risk.tradesToday, not a hard-stop. */
+export type HealthDailyCap = {
+  used: number;
+  max: number;
+  remaining: number;
+  dayKey: string;
+  exhausted: boolean;
+};
+
 export interface HealthResponse {
   ok: boolean;
   mode: Mode;
@@ -62,6 +72,7 @@ export interface HealthResponse {
   recentAlerts?: PersistedAlert[];
   gridBooks?: HealthGridBook[];
   paperBook?: HealthPaperBook | null;
+  dailyCap?: HealthDailyCap;
 }
 
 export interface BalanceResponse {
@@ -89,6 +100,21 @@ export function markBotTick(partial: { symbol?: string; action?: string; hardSto
   restorePersistedGridBooks();
   recordBotHeartbeat(partial);
   persistGridBooks(snapshotGridBooks());
+}
+
+function dailyCapFields(now = Date.now()): HealthDailyCap {
+  const state = loadBotState();
+  const today = utcDayKey(now);
+  const sameDay = state.risk?.tradesDayKey === today;
+  const used = sameDay ? Math.max(0, Math.floor(Number(state.risk?.tradesToday) || 0)) : 0;
+  const max = TRADING_CONFIG.risk.maxDailyTrades;
+  return {
+    used,
+    max,
+    remaining: Math.max(0, max - used),
+    dayKey: today,
+    exhausted: used >= max,
+  };
 }
 
 function paperBookFields(): HealthPaperBook | null {
@@ -174,6 +200,7 @@ export async function getHealth(): Promise<HealthResponse> {
       ...halt,
       gridBooks,
       paperBook: paperBookFields(),
+      dailyCap: dailyCapFields(),
     };
   }
 
@@ -191,6 +218,7 @@ export async function getHealth(): Promise<HealthResponse> {
     ...halt,
     gridBooks,
     paperBook: paperBookFields(),
+    dailyCap: dailyCapFields(),
   };
 }
 
