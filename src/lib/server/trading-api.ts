@@ -36,6 +36,7 @@ export type HealthGridBook = {
   lastLevel?: number;
   lastFillPrice?: number;
   lastFillAt?: number;
+  lastFillAgeMs: number | null;
   stackedBuys: number;
   reserved: boolean;
 };
@@ -115,7 +116,7 @@ function haltFields(): Pick<HealthResponse, "lastHardStop" | "haltReason" | "rec
   };
 }
 
-function gridFields(): HealthGridBook[] {
+function gridFields(now = Date.now()): HealthGridBook[] {
   restorePersistedGridBooks();
   const books = snapshotGridBooks();
   return Object.entries(books).map(([symbol, book]) => ({
@@ -126,6 +127,8 @@ function gridFields(): HealthGridBook[] {
     lastLevel: book.lastLevel,
     lastFillPrice: book.lastFillPrice,
     lastFillAt: book.lastFillAt,
+    lastFillAgeMs:
+      book.lastFillAt && book.lastFillAt > 0 ? Math.max(0, now - book.lastFillAt) : null,
     stackedBuys: book.stackedBuys ?? 0,
     reserved: Boolean(book.reserved),
   }));
