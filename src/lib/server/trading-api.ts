@@ -40,6 +40,14 @@ export type HealthGridBook = {
   reserved: boolean;
 };
 
+/** Sanitized paper inventory for health / Paper-Live cluster. No secrets. */
+export type HealthPaperBook = {
+  cash: number;
+  used: number;
+  total: number;
+  positionCount: number;
+};
+
 export interface HealthResponse {
   ok: boolean;
   mode: Mode;
@@ -52,6 +60,7 @@ export interface HealthResponse {
   haltReason?: string | null;
   recentAlerts?: PersistedAlert[];
   gridBooks?: HealthGridBook[];
+  paperBook?: HealthPaperBook | null;
 }
 
 export interface BalanceResponse {
@@ -79,6 +88,21 @@ export function markBotTick(partial: { symbol?: string; action?: string; hardSto
   restorePersistedGridBooks();
   recordBotHeartbeat(partial);
   persistGridBooks(snapshotGridBooks());
+}
+
+function paperBookFields(): HealthPaperBook | null {
+  const stored = loadPaperPortfolio();
+  if (!stored) return null;
+  const used = Object.values(stored.positions).reduce(
+    (sum, pos) => sum + pos.amount * pos.avgEntry,
+    0,
+  );
+  return {
+    cash: stored.cash,
+    used,
+    total: stored.cash + used,
+    positionCount: Object.keys(stored.positions).length,
+  };
 }
 
 function haltFields(): Pick<HealthResponse, "lastHardStop" | "haltReason" | "recentAlerts"> {
@@ -146,6 +170,7 @@ export async function getHealth(): Promise<HealthResponse> {
       heartbeatStale: watch.stale,
       ...halt,
       gridBooks,
+      paperBook: paperBookFields(),
     };
   }
 
@@ -162,6 +187,7 @@ export async function getHealth(): Promise<HealthResponse> {
     heartbeatStale: watch.stale,
     ...halt,
     gridBooks,
+    paperBook: paperBookFields(),
   };
 }
 
