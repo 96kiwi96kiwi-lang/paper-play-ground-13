@@ -39,7 +39,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hardening – grid stacked-buy cap + reservation rollback | ✅ Done |
 | Hardening – expire unconfirmed grid reservations (TTL) | ✅ Done |
 | Hardening – grid inventory reconcile (stackedBuys vs position) | ✅ Done |
-| Hardening – operator clear-halt (persist + health) | ✅ Done (this push) |
+| Hardening – operator clear-halt (persist + health) | ✅ Done |
+| Hardening – drop remapped lastLevel when rebalance walks off-book | ✅ Done (this push) |
 
 ## Architecture
 
@@ -144,7 +145,7 @@ This does **not** dump positions. It tells you the loop died.
 ## Risk rules (shared paper + live)
 
 | Rule                    | Value   |
-|-------------------------|---------| 
+|-------------------------|---------|
 | Trade size              | 15 %    |
 | Max position per coin   | 20 %    |
 | Stop-loss               | –4 %    |
@@ -177,7 +178,7 @@ This does **not** dump positions. It tells you the loop died.
 - Unconfirmed reservations older than `reservationTtlMs` (2 min) are rolled back on the next grid tick and on hydrate, so a crash mid-submit cannot lock the rung or inflate `stackedBuys` forever
 - `reconcileGridInventory` zeros the stack when the live book has no position (stop / take-profit / flatten outside the grid) and seeds stack=1 when a position exists with stack 0
 - Sells that would not cover round-trip fees are skipped (uses position avg or lastFillPrice)
-- Book recenters when price drifts ≥ `rebalanceThresholdPct` from mid (clears last-fill clocks only via remap; keeps stackedBuys)
+- Book recenters when price drifts ≥ `rebalanceThresholdPct` from mid. lastFillAt / lastSide / stackedBuys stay. lastLevel is remapped onto the new mid **only if it still sits inside ±halfLevels**; otherwise it is dropped (`off-book`) so scale-in is not frozen against a phantom L-7 on a ±4 book
 - Mid + last-fill (side, level, price, time, stackedBuys, reserved) are written to `data/bot-state.json` on each `markBotTick` and restored on boot so a restart does not re-seed and double-buy the same level or skip the hold clock
 
 ## Warning
