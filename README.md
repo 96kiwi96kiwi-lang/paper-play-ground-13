@@ -43,7 +43,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hardening – drop remapped lastLevel when rebalance walks off-book | ✅ Done |
 | Hardening – normalize lastLevel on hydrate + spacing rebuild | ✅ Done |
 | Hardening – no-short inventory guard on sells | ✅ Done |
-| Hardening – persist recent hard-stop alerts | ✅ Done (this push) |
+| Hardening – persist recent hard-stop alerts | ✅ Done |
+| Hardening – Paper/Live cluster shows persisted alert ring | ✅ Done (this push) |
 
 ## Architecture
 
@@ -107,6 +108,8 @@ On first halt:
 - If `HARD_STOP_WEBHOOK_URL` is set, a JSON POST is attempted
 - In live mode, visible open orders are canceled (positions are not market-dumped)
 - `getHealth()` exposes `haltReason`, `lastHardStop`, and the last 10 `recentAlerts` after restart
+- `fetchExchangeHealth` forwards those alerts (no secrets) to the Paper/Live cluster
+- The dashboard lists the last 5 alerts and treats `haltReason` as the live halt — `lastHardStop.reason` after `clearedAt` is history only
 - The next `createServerOrderManager().submit` reapplies that halt even if the caller forgot it on the RiskState
 
 To resume after review, call `clearOperatorHalt(note)` on the server (or `clearHalt` on an in-memory RiskState plus `clearPersistedHalt`). That:
@@ -151,7 +154,7 @@ This does **not** dump positions. It tells you the loop died.
 ## Risk rules (shared paper + live)
 
 | Rule                    | Value   |
-|-------------------------|---------| 
+|-------------------------|---------|
 | Trade size              | 15 %    |
 | Max position per coin   | 20 %    |
 | Stop-loss               | –4 %    |
