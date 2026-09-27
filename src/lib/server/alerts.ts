@@ -1,32 +1,48 @@
 /**
  * Basic monitoring / alerts on hard-stop.
- * Logs loudly and persists last alert. Optional webhook via HARD_STOP_WEBHOOK_URL.
+ * Logs loudly and persists the alert ring. Optional webhook via HARD_STOP_WEBHOOK_URL.
  */
 
-import { saveBotState, sanitizeHardStop, type PersistedHardStop } from "./persist";
+import {
+  loadRecentAlerts,
+  persistRecentAlerts,
+  saveBotState,
+  sanitizeHardStop,
+  type PersistedAlert,
+  type PersistedHardStop,
+} from "./persist";
 
-export type HardStopAlert = {
-  at: number;
-  reason: string;
-  code?: string;
-  mode?: string;
-};
+export type HardStopAlert = PersistedAlert;
 
 const recent: HardStopAlert[] = [];
 const MAX = 50;
 let lastFingerprint = "";
+let hydrated = false;
+
+function hydrateRecent(): void {
+  if (hydrated) return;
+  hydrated = true;
+  const stored = loadRecentAlerts();
+  if (!stored.length) return;
+  recent.splice(0, recent.length, ...stored.slice(-MAX));
+  const last = recent[recent.length - 1];
+  if (last) lastFingerprint = `${last.reason}|${last.code ?? ""}`;
+}
 
 export function getRecentAlerts(): HardStopAlert[] {
+  hydrateRecent();
   return [...recent];
 }
 
 export async function emitHardStopAlert(alert: HardStopAlert): Promise<void> {
+  hydrateRecent();
   const fp = `${alert.reason}|${alert.code ?? ""}`;
   if (fp === lastFingerprint) return;
   lastFingerprint = fp;
 
   recent.push(alert);
   if (recent.length > MAX) recent.splice(0, recent.length - MAX);
+  persistRecentAlerts(recent);
 
   console.error(
     `[ALERT][HARD-STOP] ${new Date(alert.at).toISOString()} ${alert.code ?? "-"} ${alert.reason} mode=${alert.mode ?? "?"}`,
