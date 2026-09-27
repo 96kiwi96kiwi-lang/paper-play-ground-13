@@ -111,6 +111,26 @@ export function clearRiskLog(): void {
   riskLog.length = 0;
 }
 
+/**
+ * Operator acknowledgement of a halt.
+ * Clears haltReason and count-based streaks that would instantly re-fire.
+ * Does not reset daily PnL or drawdown — those still hard-stop if still breached.
+ * Does not enable live mode.
+ */
+export function clearHalt(state: RiskState): RiskState {
+  state.haltReason = null;
+  state.losingStreak = 0;
+  state.networkErrorStreak = 0;
+  logDecision({
+    allowed: true,
+    hardStop: false,
+    reason: "Operator cleared halt",
+    code: "manual",
+    snapshot: snap(state),
+  });
+  return state;
+}
+
 export function isNetworkError(err: unknown): boolean {
   if (!err) return false;
   const msg = err instanceof Error ? err.message : String(err);

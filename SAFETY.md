@@ -26,7 +26,8 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] On halt in LIVE mode the server cancels visible open orders (does not market-dump positions)
 - [ ] You know how to inspect `data/bot-state.json` and server logs after a halt
 - [ ] Optional `HARD_STOP_WEBHOOK_URL` is set if you want an external ping
-- [ ] You will not clear `haltReason` without reviewing why it fired
+- [ ] You will not clear a halt without reviewing why it fired
+- [ ] Resume only via `clearOperatorHalt()` (or `clearPersistedHalt`) — do not just delete `haltReason` from the JSON; `lastHardStop.reason` used to restore it
 - [ ] Health reports last tick age; a stale heartbeat (no tick for ~135s) fails health and fires a watchdog alert
 
 ## Capital

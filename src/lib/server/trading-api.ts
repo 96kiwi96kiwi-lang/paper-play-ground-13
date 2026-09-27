@@ -16,6 +16,7 @@ import {
   loadSeenOrders,
   persistSeenOrders,
   persistGridBooks,
+  clearPersistedHalt,
   type PersistedHardStop,
 } from "./persist";
 import { checkStaleHeartbeat, recordBotHeartbeat, type BotHeartbeat } from "./heartbeat";
@@ -66,9 +67,28 @@ export function markBotTick(partial: { symbol?: string; action?: string; hardSto
 
 function haltFields(): Pick<HealthResponse, "lastHardStop" | "haltReason"> {
   const state = loadBotState();
+  const cleared = Boolean(state.lastHardStop?.clearedAt) && !state.risk?.haltReason;
   return {
     lastHardStop: state.lastHardStop,
-    haltReason: state.risk?.haltReason ?? state.lastHardStop?.reason ?? null,
+    haltReason: cleared ? null : state.risk?.haltReason ?? state.lastHardStop?.reason ?? null,
+  };
+}
+
+/**
+ * Operator acknowledgement of a persisted hard-stop.
+ * Does not enable live trading. Daily PnL / drawdown can halt again if still breached.
+ */
+export function clearOperatorHalt(note?: string): {
+  ok: true;
+  haltReason: string | null;
+  lastHardStop: PersistedHardStop | null;
+} {
+  const state = clearPersistedHalt(note);
+  const cleared = Boolean(state.lastHardStop?.clearedAt) && !state.risk?.haltReason;
+  return {
+    ok: true,
+    haltReason: cleared ? null : state.risk?.haltReason ?? null,
+    lastHardStop: state.lastHardStop,
   };
 }
 

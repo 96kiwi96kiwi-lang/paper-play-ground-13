@@ -23,6 +23,9 @@ export type PersistedHardStop = {
   at: number;
   reason: string;
   code?: string;
+  /** Set when an operator acknowledges the halt. History stays; halt does not restore. */
+  clearedAt?: number;
+  clearNote?: string;
 };
 
 export type PersistedBotState = {
@@ -114,10 +117,14 @@ export function sanitizeHardStop(raw: unknown): PersistedHardStop | null {
   if (!Number.isFinite(at) || at <= 0) return null;
   if (typeof reason !== "string" || !reason.trim()) return null;
   const code = (raw as PersistedHardStop).code;
+  const clearedAtRaw = Number((raw as PersistedHardStop).clearedAt);
+  const clearNote = (raw as PersistedHardStop).clearNote;
   return {
     at,
     reason: reason.trim(),
     code: typeof code === "string" && code.trim() ? code.trim() : undefined,
+    clearedAt: Number.isFinite(clearedAtRaw) && clearedAtRaw > 0 ? clearedAtRaw : undefined,
+    clearNote: typeof clearNote === "string" && clearNote.trim() ? clearNote.trim() : undefined,
   };
 }
 
@@ -226,6 +233,23 @@ function inferHardStopCode(reason: string): string | undefined {
   return undefined;
 }
 
+function emptyRiskSlice(): NonNullable<PersistedBotState["risk"]> {
+  return {
+    portfolioValue: 0,
+    cash: 0,
+    openPositionsCount: 0,
+    dailyPnlPct: 0,
+    drawdownPct: 0,
+    losingStreak: 0,
+    cooldownUntil: null,
+    haltReason: null,
+    networkErrorStreak: 0,
+    lastPrices: {},
+    tradesToday: 0,
+    tradesDayKey: undefined,
+  };
+}
+
 /** Write via sibling .tmp + rename so a crash cannot leave a half-written JSON file. */
 function writeStateAtomic(state: PersistedBotState): void {
   mkdirSync(dirname(STATE_PATH), { recursive: true });
@@ -264,11 +288,11 @@ export function saveBotState(patch: Partial<PersistedBotState>): PersistedBotSta
 export function persistRiskSnapshot(risk: RiskState, code?: string): void {
   const existing = loadBotState().lastHardStop;
   const nextStop =
-    risk.haltReason && (!existing || existing.reason !== risk.haltReason)
+    risk.haltReason && (!existing || existing.reason !== risk.haltReason || existing.clearedAt)
       ? {
           at: Date.now(),
           reason: risk.haltReason,
-          code: code ?? existing?.code ?? inferHardStopCode(risk.haltReason),
+          code: code ?? inferHardStopCode(risk.haltReason),
         }
       : existing;
   saveBotState({
@@ -296,7 +320,7 @@ export function recordPersistedHardStop(reason: string, code?: string): void {
   if (!trimmed) return;
   const current = loadBotState();
   const existing = current.lastHardStop;
-  const same = existing && existing.reason === trimmed;
+  const same = existing && existing.reason === trimmed && !existing.clearedAt;
   const nextStop: PersistedHardStop = same && existing
     ? existing
     : {
@@ -323,18 +347,48 @@ export function recordPersistedHardStop(reason: string, code?: string): void {
   });
 }
 
+/**
+ * Operator clear: drop haltReason, zero count-streaks that would re-fire,
+ * stamp lastHardStop.clearedAt so applyPersistedHalt will not restore the halt.
+ * Daily PnL / drawdown are left as-is and can halt again if still breached.
+ */
+export function clearPersistedHalt(note?: string): PersistedBotState {
+  const current = loadBotState();
+  const existing = current.lastHardStop;
+  const nextStop: PersistedHardStop | null = existing
+    ? {
+        ...existing,
+        clearedAt: Date.now(),
+        clearNote: note?.trim() || existing.clearNote,
+      }
+    : null;
+  const risk = current.risk ? { ...current.risk } : emptyRiskSlice();
+  risk.haltReason = null;
+  risk.losingStreak = 0;
+  risk.networkErrorStreak = 0;
+  console.info(
+    `[persist] operator cleared halt was=${existing?.reason ?? "none"} note=${note?.trim() || "-"}`,
+  );
+  return saveBotState({ lastHardStop: nextStop, risk });
+}
+
 export function loadHaltReason(): string | null {
   const state = loadBotState();
+  if (state.lastHardStop?.clearedAt && !state.risk?.haltReason) return null;
   return state.risk?.haltReason ?? state.lastHardStop?.reason ?? null;
 }
 
 /**
  * Overlay disk halt + counters onto an in-memory RiskState.
  * A process restart must not resume trading after a hard-stop or reset the UTC trade cap.
+ * A cleared halt (clearedAt set, haltReason null) must not come back from lastHardStop.reason.
  */
 export function applyPersistedHalt(state: RiskState): RiskState {
   const saved = loadBotState();
-  const reason = saved.risk?.haltReason ?? saved.lastHardStop?.reason ?? null;
+  const haltCleared = Boolean(saved.lastHardStop?.clearedAt) && !saved.risk?.haltReason;
+  const reason = haltCleared
+    ? null
+    : saved.risk?.haltReason ?? saved.lastHardStop?.reason ?? null;
   if (reason && !state.haltReason) {
     state.haltReason = reason;
   }

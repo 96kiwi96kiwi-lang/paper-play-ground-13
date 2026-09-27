@@ -37,7 +37,9 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hardening – atomic bot-state write + lastHardStop code | ✅ Done |
 | Hardening – restore halt + risk counters on server submit | ✅ Done |
 | Hardening – grid stacked-buy cap + reservation rollback | ✅ Done |
-| Hardening – expire unconfirmed grid reservations (TTL) | ✅ Done (this push) |
+| Hardening – expire unconfirmed grid reservations (TTL) | ✅ Done |
+| Hardening – grid inventory reconcile (stackedBuys vs position) | ✅ Done |
+| Hardening – operator clear-halt (persist + health) | ✅ Done (this push) |
 
 ## Architecture
 
@@ -58,6 +60,7 @@ Live gate: inspectKucoinKeyPermissions() — Withdraw on the key blocks LIVE
 Watchdog: lastHeartbeat older than 3× botTickMs → health.ok=false + alert
 Health: lastHardStop + haltReason survive restart and show on the Paper/Live cluster
 Submit: createServerOrderManager applies persisted halt/counters before every order
+Clear:  clearOperatorHalt() stamps lastHardStop.clearedAt so a restart does not restore the halt
 ```
 
 ## Paper mode — quick start
@@ -101,6 +104,14 @@ On first halt:
 - `getHealth()` / the dashboard Paper/Live cluster expose `haltReason` and `lastHardStop` after restart
 - The next `createServerOrderManager().submit` reapplies that halt even if the caller forgot it on the RiskState
 
+To resume after review, call `clearOperatorHalt(note)` on the server (or `clearHalt` on an in-memory RiskState plus `clearPersistedHalt`). That:
+- sets `risk.haltReason` to null
+- zeros losing-streak and network-error streak so those counters cannot instantly re-halt
+- stamps `lastHardStop.clearedAt` (history stays for the dashboard)
+- does **not** enable live mode and does **not** reset daily PnL / drawdown — those still halt if still breached
+
+Editing `haltReason` out of `data/bot-state.json` by hand is not enough: `applyPersistedHalt` used to restore it from `lastHardStop.reason`. After a proper clear, that restore is skipped.
+
 The daily trade cap (default 12 accepted submits per UTC day) is **not** a hard-stop. It only refuses further `submit` calls until the next UTC day. The counter is persisted so a restart cannot reset the cap.
 
 ## Heartbeat watchdog
@@ -133,7 +144,7 @@ This does **not** dump positions. It tells you the loop died.
 ## Risk rules (shared paper + live)
 
 | Rule                    | Value   |
-|-------------------------|---------|
+|-------------------------|---------| 
 | Trade size              | 15 %    |
 | Max position per coin   | 20 %    |
 | Stop-loss               | –4 %    |
@@ -164,8 +175,9 @@ This does **not** dump positions. It tells you the loop died.
 - At most `maxStackedBuys` (3) unclosed grid buys per symbol — further buys idle until a sell decrements the stack
 - A grid signal **reserves** the rung; `executeBotTick` confirms only after OrderManager accepts, and `releaseGridReservation` undoes the stack if the submit is rejected or throws
 - Unconfirmed reservations older than `reservationTtlMs` (2 min) are rolled back on the next grid tick and on hydrate, so a crash mid-submit cannot lock the rung or inflate `stackedBuys` forever
+- `reconcileGridInventory` zeros the stack when the live book has no position (stop / take-profit / flatten outside the grid) and seeds stack=1 when a position exists with stack 0
 - Sells that would not cover round-trip fees are skipped (uses position avg or lastFillPrice)
-- Book recenters when price drifts ≥ `rebalanceThresholdPct` from mid (clears last-fill, keeps stackedBuys)
+- Book recenters when price drifts ≥ `rebalanceThresholdPct` from mid (clears last-fill clocks only via remap; keeps stackedBuys)
 - Mid + last-fill (side, level, price, time, stackedBuys, reserved) are written to `data/bot-state.json` on each `markBotTick` and restored on boot so a restart does not re-seed and double-buy the same level or skip the hold clock
 
 ## Warning
