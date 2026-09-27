@@ -12,6 +12,7 @@
  * Notional cap: refuse when amount * price exceeds maxOrderNotionalUsd (if price known).
  * Pair allowlist: refuse symbols not in TRADING_CONFIG.pairs.
  * Gross exposure: refuse buys that would push booked cost + order notional over maxGrossExposureUsd.
+ * Inventory: refuse a sell larger than the booked position (spot, no shorting).
  */
 
 import { TRADING_CONFIG, type Pair } from "@/config/trading";
@@ -146,6 +147,10 @@ export class OrderManager {
     return this.lastSubmitAt;
   }
 
+  positionAmount(symbol: string): number {
+    return this.portfolio.positions[symbol]?.amount ?? 0;
+  }
+
   countWorkingOrders() {
     let n = 0;
     for (const order of this.seen.values()) {
@@ -276,6 +281,22 @@ export class OrderManager {
       const nextGross = this.bookedGrossExposureUsd() + orderNotional;
       if (nextGross > maxGross) {
         const reason = `Gross exposure cap: ${nextGross.toFixed(2)} USD would exceed max ${maxGross}`;
+        events.push({ stage: "rejected", reason });
+        this.eventsLog.push(...events);
+        return { ok: false, reason, events, portfolio: this.getPortfolio() };
+      }
+    }
+
+    if (normalized.side === "sell") {
+      const held = this.positionAmount(normalized.symbol);
+      if (held <= 1e-12) {
+        const reason = `Inventory: no long position in ${normalized.symbol} (spot, no short)`;
+        events.push({ stage: "rejected", reason });
+        this.eventsLog.push(...events);
+        return { ok: false, reason, events, portfolio: this.getPortfolio() };
+      }
+      if (normalized.amount > held + 1e-12) {
+        const reason = `Inventory: sell ${normalized.amount} exceeds held ${held} ${normalized.symbol}`;
         events.push({ stage: "rejected", reason });
         this.eventsLog.push(...events);
         return { ok: false, reason, events, portfolio: this.getPortfolio() };
