@@ -31,6 +31,13 @@ type ClientGridBook = {
   reserved: boolean;
 };
 
+type ClientPaperBook = {
+  cash: number;
+  used: number;
+  total: number;
+  positionCount: number;
+};
+
 export function LiveModeBanner({ mode }: { mode: "paper" | "live" }) {
   if (mode !== "live") return null;
   return (
@@ -54,6 +61,7 @@ export function ModeSwitch() {
   const [clearedAt, setClearedAt] = useState<number | null>(null);
   const [alerts, setAlerts] = useState<ClientAlert[]>([]);
   const [gridBooks, setGridBooks] = useState<ClientGridBook[]>([]);
+  const [paperBook, setPaperBook] = useState<ClientPaperBook | null>(null);
 
   const refresh = async () => {
     try {
@@ -70,6 +78,7 @@ export function ModeSwitch() {
       setClearedAt(health.lastHardStop?.clearedAt ?? null);
       setAlerts(Array.isArray(health.recentAlerts) ? health.recentAlerts.slice(-5) : []);
       setGridBooks(Array.isArray(health.gridBooks) ? health.gridBooks.slice(0, 4) : []);
+      setPaperBook(health.paperBook ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load mode");
     }
@@ -186,6 +195,14 @@ export function ModeSwitch() {
       {!haltReason && clearedAt != null && (
         <span className="text-[10px] text-muted-foreground max-w-[18rem] truncate">
           Halt cleared
+        </span>
+      )}
+      {paperBook && (
+        <span
+          className="text-[10px] text-muted-foreground max-w-[18rem] truncate"
+          title={`Paper cash=${paperBook.cash.toFixed(2)} used=${paperBook.used.toFixed(2)} equity=${paperBook.total.toFixed(2)} positions=${paperBook.positionCount}`}
+        >
+          Paper ${paperBook.total.toFixed(0)} cash={paperBook.cash.toFixed(0)} pos={paperBook.positionCount}
         </span>
       )}
       {gridBooks.length > 0 && (
