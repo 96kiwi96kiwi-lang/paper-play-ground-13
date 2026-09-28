@@ -59,6 +59,14 @@ export type HealthDailyCap = {
   exhausted: boolean;
 };
 
+/** Burst-guard clock + leftover working orders from the persisted ledger. */
+export type HealthOrderWatch = {
+  lastSubmitAt: number;
+  lastSubmitAgeMs: number | null;
+  seenOrderCount: number;
+  workingOrderCount: number;
+};
+
 export interface HealthResponse {
   ok: boolean;
   mode: Mode;
@@ -73,6 +81,7 @@ export interface HealthResponse {
   gridBooks?: HealthGridBook[];
   paperBook?: HealthPaperBook | null;
   dailyCap?: HealthDailyCap;
+  orderWatch?: HealthOrderWatch;
 }
 
 export interface BalanceResponse {
@@ -114,6 +123,23 @@ function dailyCapFields(now = Date.now()): HealthDailyCap {
     remaining: Math.max(0, max - used),
     dayKey: today,
     exhausted: used >= max,
+  };
+}
+
+function isWorkingStatus(status: string): boolean {
+  return status === "open" || status === "partially_filled" || status === "pending";
+}
+
+function orderWatchFields(now = Date.now()): HealthOrderWatch {
+  const state = loadBotState();
+  const lastSubmitAt = Number(state.lastSubmitAt) || 0;
+  const seen = Array.isArray(state.seenOrders) ? state.seenOrders : [];
+  const workingOrderCount = seen.filter((o) => isWorkingStatus(String(o.status))).length;
+  return {
+    lastSubmitAt,
+    lastSubmitAgeMs: lastSubmitAt > 0 ? Math.max(0, now - lastSubmitAt) : null,
+    seenOrderCount: seen.length,
+    workingOrderCount,
   };
 }
 
@@ -178,13 +204,22 @@ export function clearOperatorHalt(note?: string): {
   };
 }
 
+function baseHealthFields(now = Date.now()) {
+  return {
+    ...haltFields(),
+    gridBooks: gridFields(now),
+    paperBook: paperBookFields(),
+    dailyCap: dailyCapFields(now),
+    orderWatch: orderWatchFields(now),
+  };
+}
+
 /** Health check – safe for both modes */
 export async function getHealth(): Promise<HealthResponse> {
   restorePersistedGridBooks();
   const mode = getMode();
   const watch = await checkStaleHeartbeat();
-  const halt = haltFields();
-  const gridBooks = gridFields();
+  const extra = baseHealthFields();
 
   if (mode === "paper") {
     return {
@@ -197,10 +232,7 @@ export async function getHealth(): Promise<HealthResponse> {
       heartbeat: watch.heartbeat,
       heartbeatAgeMs: watch.ageMs,
       heartbeatStale: watch.stale,
-      ...halt,
-      gridBooks,
-      paperBook: paperBookFields(),
-      dailyCap: dailyCapFields(),
+      ...extra,
     };
   }
 
@@ -215,10 +247,7 @@ export async function getHealth(): Promise<HealthResponse> {
     heartbeat: watch.heartbeat,
     heartbeatAgeMs: watch.ageMs,
     heartbeatStale: watch.stale,
-    ...halt,
-    gridBooks,
-    paperBook: paperBookFields(),
-    dailyCap: dailyCapFields(),
+    ...extra,
   };
 }
 

@@ -61,6 +61,14 @@ export const fetchExchangeHealth = createServerFn({ method: "GET" }).handler(asy
           exhausted: health.dailyCap.exhausted,
         }
       : null,
+    orderWatch: health.orderWatch
+      ? {
+          lastSubmitAt: health.orderWatch.lastSubmitAt,
+          lastSubmitAgeMs: health.orderWatch.lastSubmitAgeMs,
+          seenOrderCount: health.orderWatch.seenOrderCount,
+          workingOrderCount: health.orderWatch.workingOrderCount,
+        }
+      : null,
   };
 });
 
