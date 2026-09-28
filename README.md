@@ -55,7 +55,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hardening – health + UI show persisted risk snapshot | ✅ Done |
 | Hardening – health + UI show grid reservation TTL + book age | ✅ Done |
 | Hardening – health + UI show gross exposure vs cap + pairs | ✅ Done |
-| Hardening – health + UI show paper position lots | ✅ Done (this push) |
+| Hardening – health + UI show paper position lots | ✅ Done |
+| Hardening – grid sell sizes one stacked rung (not 0 / not flatten) | ✅ Done (this push) |
 
 ## Architecture
 
@@ -160,6 +161,8 @@ This does **not** dump positions. It tells you the loop died.
 - refuse a **buy** when booked cost basis + this order notional would exceed `maxGrossExposureUsd` (8000)
 - refuse a **sell** with no booked long, or a sell larger than held inventory (spot, no short)
 - `executeBotTick` clamps sell size to `manager.positionAmount(symbol)` before submit
+- sell size defaults to held inventory when risk does not suggest a USD size (risk only sizes buys)
+- grid sells unwind **one stacked rung** (`held / stackedBefore`), not the whole position
 - refuse a new submit if the last *accepted* one was within `minSubmitIntervalMs` (8s)
 - that last-submit clock is persisted (`lastSubmitAt`) so a crash + immediate restart cannot burst two accepts
 - track status via `fetchOrder` / `fetchOpenOrders`
@@ -170,7 +173,7 @@ This does **not** dump positions. It tells you the loop died.
 ## Risk rules (shared paper + live)
 
 | Rule                    | Value   |
-|-------------------------|---------|
+|-------------------------|---------| 
 | Trade size              | 15 %    |
 | Max position per coin   | 20 %    |
 | Stop-loss               | –4 %    |
@@ -191,6 +194,7 @@ This does **not** dump positions. It tells you the loop died.
 | Max gross exposure      | 8000 USD |
 | Allowed pairs           | BTC/ETH/SOL/BNB USDT |
 | Short selling           | blocked (spot inventory only) |
+| Grid sell size          | one stacked rung |
 
 ## Grid (Hour 7+)
 
@@ -207,6 +211,8 @@ This does **not** dump positions. It tells you the loop died.
 - After hydrate, the sanitized books (dropped lastLevel, expired reservations) are written back to `data/bot-state.json` immediately — not only on the next `markBotTick`
 - `reconcileGridInventory` zeros the stack when the live book has no position and seeds stack=1 when a position exists with stack 0
 - Sells that would not cover round-trip fees are skipped
+- A grid sell sizes to **one ladder rung** (`held / pre-reservation stack`) so stacked inventory is not flattened on the first take-profit
+- Non-grid sells with no risk USD size use the full booked long
 - Book recenters when price drifts ≥ `rebalanceThresholdPct` from mid; off-book lastLevel is dropped
 - Mid + last-fill are written to `data/bot-state.json` on each `markBotTick` and restored on boot
 - `getHealth()` / Paper/Live cluster show mid, stack, last side/level, last-fill age, book age, and reserved TTL so an operator can see the book after restart

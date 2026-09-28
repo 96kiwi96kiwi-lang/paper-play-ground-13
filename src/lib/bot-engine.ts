@@ -6,6 +6,7 @@
 import type { StrategyId } from "@/config/trading";
 import {
   confirmGridReservation,
+  getGridBook,
   releaseGridReservation,
   runStrategy,
   type StrategyContext,
@@ -102,10 +103,24 @@ export function botTick(input: BotTickInput): BotTickResult {
 }
 
 /**
+ * Grid markFill decrements stackedBuys before the submit is accepted.
+ * Reconstruct the pre-reservation stack so one sell unwinds one rung.
+ */
+export function gridSellRungAmount(symbol: string, held: number): number {
+  if (held <= 1e-12) return 0;
+  const book = getGridBook(symbol);
+  const stackedAfter = book?.stackedBuys ?? 0;
+  const reservedSell = Boolean(book?.reserved && book.lastSide === "sell");
+  const stackedBefore = reservedSell ? stackedAfter + 1 : Math.max(1, stackedAfter);
+  return held / stackedBefore;
+}
+
+/**
  * Full path: strategy → risk → OrderManager → adapter (Paper or KuCoin).
  * Same interface regardless of exchange. No UI changes.
  * Grid rung reservations are confirmed only after an accepted submit.
  * Sells are clamped to booked inventory so OrderManager never shorts.
+ * evaluateRisk does not size sells — default to held inventory, grid sells one rung.
  */
 export async function executeBotTick(
   input: BotTickInput,
@@ -117,7 +132,7 @@ export async function executeBotTick(
   }
 
   const sizeUsd = tick.suggestedSizeUsd ?? 0;
-  let amount = input.currentPrice > 0 ? sizeUsd / input.currentPrice : 0;
+  let amount = input.currentPrice > 0 && sizeUsd > 0 ? sizeUsd / input.currentPrice : 0;
 
   if (tick.action === "sell") {
     const held = manager.positionAmount(input.symbol);
@@ -132,7 +147,24 @@ export async function executeBotTick(
         },
       };
     }
+    if (amount <= 1e-12) amount = held;
     amount = Math.min(amount, held);
+    if (input.strategy === "grid") {
+      const rung = gridSellRungAmount(input.symbol, held);
+      if (rung > 1e-12) amount = Math.min(amount, rung);
+    }
+  }
+
+  if (amount <= 1e-12) {
+    if (input.strategy === "grid") releaseGridReservation(input.symbol);
+    return {
+      tick: {
+        ...tick,
+        shouldExecute: false,
+        riskAllowed: false,
+        riskReason: "Order size is zero after inventory / grid rung clamp",
+      },
+    };
   }
 
   try {
