@@ -65,6 +65,9 @@ export type HealthOrderWatch = {
   lastSubmitAgeMs: number | null;
   seenOrderCount: number;
   workingOrderCount: number;
+  minSubmitIntervalMs: number;
+  burstCooldownMs: number;
+  burstReady: boolean;
 };
 
 export interface HealthResponse {
@@ -135,11 +138,17 @@ function orderWatchFields(now = Date.now()): HealthOrderWatch {
   const lastSubmitAt = Number(state.lastSubmitAt) || 0;
   const seen = Array.isArray(state.seenOrders) ? state.seenOrders : [];
   const workingOrderCount = seen.filter((o) => isWorkingStatus(String(o.status))).length;
+  const minSubmitIntervalMs = TRADING_CONFIG.orders.minSubmitIntervalMs;
+  const elapsed = lastSubmitAt > 0 ? Math.max(0, now - lastSubmitAt) : minSubmitIntervalMs;
+  const burstCooldownMs = lastSubmitAt > 0 ? Math.max(0, minSubmitIntervalMs - elapsed) : 0;
   return {
     lastSubmitAt,
     lastSubmitAgeMs: lastSubmitAt > 0 ? Math.max(0, now - lastSubmitAt) : null,
     seenOrderCount: seen.length,
     workingOrderCount,
+    minSubmitIntervalMs,
+    burstCooldownMs,
+    burstReady: burstCooldownMs === 0,
   };
 }
 
