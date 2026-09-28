@@ -31,6 +31,9 @@ type ClientGridBook = {
   lastFillAgeMs: number | null;
   stackedBuys: number;
   reserved: boolean;
+  bookAgeMs?: number | null;
+  reservationRemainingMs?: number;
+  reservationTtlMs?: number;
 };
 
 type ClientPaperBook = {
@@ -305,19 +308,28 @@ export function ModeSwitch() {
       )}
       {gridBooks.length > 0 && (
         <ol className="text-[10px] text-muted-foreground max-w-[18rem] space-y-0.5">
-          {gridBooks.map((g) => (
-            <li
-              key={g.symbol}
-              className="truncate"
-              title={`${g.symbol} mid=${g.mid} space=${g.spacingPct}% stack=${g.stackedBuys} fill=${g.lastFillPrice ?? "-"} ${formatFillAge(g.lastFillAgeMs)}`}
-            >
-              Grid {g.symbol.split("/")[0]} mid={g.mid.toFixed(2)} stack={g.stackedBuys}
-              {g.lastSide ? ` last=${g.lastSide}` : ""}
-              {g.lastLevel != null ? ` L${g.lastLevel}` : ""}
-              {` ${formatFillAge(g.lastFillAgeMs)}`}
-              {g.reserved ? " (reserved)" : ""}
-            </li>
-          ))}
+          {gridBooks.map((g) => {
+            const reservedLeft = g.reservationRemainingMs ?? 0;
+            const reservedLabel =
+              g.reserved && reservedLeft > 0
+                ? ` reserved ${Math.ceil(reservedLeft / 1000)}s`
+                : g.reserved
+                  ? " reserved (expire)"
+                  : "";
+            return (
+              <li
+                key={g.symbol}
+                className={`truncate ${g.reserved && reservedLeft > 0 ? "text-amber-400" : ""}`}
+                title={`${g.symbol} mid=${g.mid} space=${g.spacingPct}% stack=${g.stackedBuys} fill=${g.lastFillPrice ?? "-"} ${formatFillAge(g.lastFillAgeMs)} book=${formatFillAge(g.bookAgeMs ?? null)} reserved=${g.reserved} ttl-left=${Math.ceil(reservedLeft / 1000)}s/${Math.round((g.reservationTtlMs ?? 0) / 1000)}s`}
+              >
+                Grid {g.symbol.split("/")[0]} mid={g.mid.toFixed(2)} stack={g.stackedBuys}
+                {g.lastSide ? ` last=${g.lastSide}` : ""}
+                {g.lastLevel != null ? ` L${g.lastLevel}` : ""}
+                {` ${formatFillAge(g.lastFillAgeMs)}`}
+                {reservedLabel}
+              </li>
+            );
+          })}
         </ol>
       )}
       {alerts.length > 0 && (
