@@ -54,7 +54,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hardening – health + UI show burst-guard cooldown | ✅ Done |
 | Hardening – health + UI show persisted risk snapshot | ✅ Done |
 | Hardening – health + UI show grid reservation TTL + book age | ✅ Done |
-| Hardening – health + UI show gross exposure vs cap + pairs | ✅ Done (this push) |
+| Hardening – health + UI show gross exposure vs cap + pairs | ✅ Done |
+| Hardening – health + UI show paper position lots | ✅ Done (this push) |
 
 ## Architecture
 
@@ -73,7 +74,7 @@ Persist: data/bot-state.json (atomic tmp+rename; risk snapshot + last hard-stop 
 Alerts:  console + optional HARD_STOP_WEBHOOK_URL
 Live gate: inspectKucoinKeyPermissions() — Withdraw on the key blocks LIVE
 Watchdog: lastHeartbeat older than 3× botTickMs → health.ok=false + alert
-Health: lastHardStop + haltReason + last 10 recentAlerts + grid mid/stack + reservation TTL remaining + book age + UTC daily cap + booked exposure vs maxGrossExposureUsd + pair allowlist survive restart and show on the Paper/Live cluster
+Health: lastHardStop + haltReason + last 10 recentAlerts + grid mid/stack + reservation TTL remaining + book age + UTC daily cap + booked exposure vs maxGrossExposureUsd + pair allowlist + paper position lots survive restart and show on the Paper/Live cluster
 Submit: createServerOrderManager applies persisted halt/counters before every order
 Clear:  dashboard types CLEAR HALT → requestClearHalt → clearOperatorHalt() stamps lastHardStop.clearedAt
 Hydrate: restorePersistedGridBooks remaps lastLevel / expires reservations, then writes the sanitized books back to disk
@@ -124,6 +125,7 @@ On first halt:
 - `getHealth()` / Paper/Live cluster also show UTC daily cap used/max/remaining from persisted `tradesToday` (rolls to 0 on a new UTC day)
 - Grid rows show mid, stack, last side/level, last-fill age, book age, reserved flag, and reservation seconds remaining vs `reservationTtlMs`
 - Booked paper cost basis vs `maxGrossExposureUsd` and the pair allowlist show on health / the cluster (amber at ≥80%)
+- Persisted paper lots (symbol, amount, avg entry, cost) show under the paper equity line on health / the cluster
 - The next `createServerOrderManager().submit` reapplies that halt even if the caller forgot it on the RiskState
 
 To resume after review, use the Paper/Live cluster **Clear halt** button and type `CLEAR HALT` (calls `requestClearHalt` → `clearOperatorHalt`). You can still call `clearOperatorHalt(note)` on the server directly. That:
@@ -168,7 +170,7 @@ This does **not** dump positions. It tells you the loop died.
 ## Risk rules (shared paper + live)
 
 | Rule                    | Value   |
-|-------------------------|---------| 
+|-------------------------|---------|
 | Trade size              | 15 %    |
 | Max position per coin   | 20 %    |
 | Stop-loss               | –4 %    |
