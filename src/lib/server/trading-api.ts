@@ -82,6 +82,10 @@ export type HealthOrderWatch = {
   minSubmitIntervalMs: number;
   burstCooldownMs: number;
   burstReady: boolean;
+  maxConcurrentOpenOrders: number;
+  maxOpenOrdersPerSymbol: number;
+  workingSlotsLeft: number;
+  workingAtCap: boolean;
 };
 
 /** Persisted risk counters for the dashboard. No secrets. */
@@ -183,6 +187,9 @@ function orderWatchFields(now = Date.now()): HealthOrderWatch {
   const minSubmitIntervalMs = TRADING_CONFIG.orders.minSubmitIntervalMs;
   const elapsed = lastSubmitAt > 0 ? Math.max(0, now - lastSubmitAt) : minSubmitIntervalMs;
   const burstCooldownMs = lastSubmitAt > 0 ? Math.max(0, minSubmitIntervalMs - elapsed) : 0;
+  const maxConcurrentOpenOrders = TRADING_CONFIG.orders.maxConcurrentOpenOrders;
+  const maxOpenOrdersPerSymbol = TRADING_CONFIG.orders.maxOpenOrdersPerSymbol;
+  const workingSlotsLeft = Math.max(0, maxConcurrentOpenOrders - workingOrderCount);
   return {
     lastSubmitAt,
     lastSubmitAgeMs: lastSubmitAt > 0 ? Math.max(0, now - lastSubmitAt) : null,
@@ -191,6 +198,10 @@ function orderWatchFields(now = Date.now()): HealthOrderWatch {
     minSubmitIntervalMs,
     burstCooldownMs,
     burstReady: burstCooldownMs === 0,
+    maxConcurrentOpenOrders,
+    maxOpenOrdersPerSymbol,
+    workingSlotsLeft,
+    workingAtCap: workingSlotsLeft === 0,
   };
 }
 
