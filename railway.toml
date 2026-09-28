@@ -1,0 +1,8 @@
+# Railway: use npm (not bun) so install matches package.json after script-only edits.
+[build]
+buildCommand = "npm install && npm run build"
+
+[deploy]
+startCommand = "npm run start"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
