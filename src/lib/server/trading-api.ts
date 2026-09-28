@@ -88,6 +88,18 @@ export type HealthRiskWatch = {
   stateAgeMs: number | null;
 };
 
+/** Booked cost basis vs maxGrossExposureUsd + pair allowlist. No secrets. */
+export type HealthExposureWatch = {
+  usedUsd: number;
+  maxGrossUsd: number;
+  remainingUsd: number;
+  usedPct: number;
+  nearLimit: boolean;
+  atLimit: boolean;
+  maxOrderNotionalUsd: number;
+  pairs: string[];
+};
+
 export interface HealthResponse {
   ok: boolean;
   mode: Mode;
@@ -104,6 +116,7 @@ export interface HealthResponse {
   dailyCap?: HealthDailyCap;
   orderWatch?: HealthOrderWatch;
   riskWatch?: HealthRiskWatch | null;
+  exposureWatch?: HealthExposureWatch;
 }
 
 export interface BalanceResponse {
@@ -183,6 +196,24 @@ function paperBookFields(): HealthPaperBook | null {
     used,
     total: stored.cash + used,
     positionCount: Object.keys(stored.positions).length,
+  };
+}
+
+function exposureWatchFields(): HealthExposureWatch {
+  const paper = paperBookFields();
+  const usedUsd = paper ? Math.max(0, paper.used) : 0;
+  const maxGrossUsd = TRADING_CONFIG.orders.maxGrossExposureUsd;
+  const remainingUsd = Math.max(0, maxGrossUsd - usedUsd);
+  const usedPct = maxGrossUsd > 0 ? (usedUsd / maxGrossUsd) * 100 : 0;
+  return {
+    usedUsd,
+    maxGrossUsd,
+    remainingUsd,
+    usedPct,
+    nearLimit: usedPct >= 80,
+    atLimit: remainingUsd <= 0,
+    maxOrderNotionalUsd: TRADING_CONFIG.orders.maxOrderNotionalUsd,
+    pairs: [...TRADING_CONFIG.pairs],
   };
 }
 
@@ -272,6 +303,7 @@ function baseHealthFields(now = Date.now()) {
     dailyCap: dailyCapFields(now),
     orderWatch: orderWatchFields(now),
     riskWatch: riskWatchFields(now),
+    exposureWatch: exposureWatchFields(),
   };
 }
 

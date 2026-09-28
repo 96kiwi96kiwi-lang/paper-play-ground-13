@@ -88,6 +88,18 @@ export const fetchExchangeHealth = createServerFn({ method: "GET" }).handler(asy
           stateAgeMs: health.riskWatch.stateAgeMs,
         }
       : null,
+    exposureWatch: health.exposureWatch
+      ? {
+          usedUsd: health.exposureWatch.usedUsd,
+          maxGrossUsd: health.exposureWatch.maxGrossUsd,
+          remainingUsd: health.exposureWatch.remainingUsd,
+          usedPct: health.exposureWatch.usedPct,
+          nearLimit: health.exposureWatch.nearLimit,
+          atLimit: health.exposureWatch.atLimit,
+          maxOrderNotionalUsd: health.exposureWatch.maxOrderNotionalUsd,
+          pairs: health.exposureWatch.pairs,
+        }
+      : null,
   };
 });
 
