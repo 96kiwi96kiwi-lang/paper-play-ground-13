@@ -48,6 +48,13 @@ type ClientDailyCap = {
   exhausted: boolean;
 };
 
+type ClientOrderWatch = {
+  lastSubmitAt: number;
+  lastSubmitAgeMs: number | null;
+  seenOrderCount: number;
+  workingOrderCount: number;
+};
+
 function formatFillAge(ageMs: number | null): string {
   if (ageMs == null) return "no fill";
   const sec = Math.round(ageMs / 1000);
@@ -55,6 +62,11 @@ function formatFillAge(ageMs: number | null): string {
   const min = Math.round(sec / 60);
   if (min < 90) return `${min}m ago`;
   return `${Math.round(min / 60)}h ago`;
+}
+
+function formatSubmitAge(ageMs: number | null): string {
+  if (ageMs == null) return "no submit";
+  return formatFillAge(ageMs).replace("no fill", "no submit");
 }
 
 export function LiveModeBanner({ mode }: { mode: "paper" | "live" }) {
@@ -82,6 +94,7 @@ export function ModeSwitch() {
   const [gridBooks, setGridBooks] = useState<ClientGridBook[]>([]);
   const [paperBook, setPaperBook] = useState<ClientPaperBook | null>(null);
   const [dailyCap, setDailyCap] = useState<ClientDailyCap | null>(null);
+  const [orderWatch, setOrderWatch] = useState<ClientOrderWatch | null>(null);
 
   const refresh = async () => {
     try {
@@ -100,6 +113,7 @@ export function ModeSwitch() {
       setGridBooks(Array.isArray(health.gridBooks) ? health.gridBooks.slice(0, 4) : []);
       setPaperBook(health.paperBook ?? null);
       setDailyCap(health.dailyCap ?? null);
+      setOrderWatch(health.orderWatch ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load mode");
     }
@@ -233,6 +247,14 @@ export function ModeSwitch() {
         >
           Cap {dailyCap.used}/{dailyCap.max}
           {dailyCap.exhausted ? " exhausted" : ` left=${dailyCap.remaining}`}
+        </span>
+      )}
+      {orderWatch && (
+        <span
+          className={`text-[10px] max-w-[18rem] truncate ${orderWatch.workingOrderCount > 0 ? "text-amber-400" : "text-muted-foreground"}`}
+          title={`Last accepted submit ${formatSubmitAge(orderWatch.lastSubmitAgeMs)}. Seen ledger ${orderWatch.seenOrderCount}. Working open/partial/pending ${orderWatch.workingOrderCount}. Burst guard uses lastSubmitAt after restart.`}
+        >
+          Orders work={orderWatch.workingOrderCount} seen={orderWatch.seenOrderCount} last={formatSubmitAge(orderWatch.lastSubmitAgeMs)}
         </span>
       )}
       {gridBooks.length > 0 && (
