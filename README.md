@@ -56,7 +56,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hardening – health + UI show grid reservation TTL + book age | ✅ Done |
 | Hardening – health + UI show gross exposure vs cap + pairs | ✅ Done |
 | Hardening – health + UI show paper position lots | ✅ Done |
-| Hardening – grid sell sizes one stacked rung (not 0 / not flatten) | ✅ Done (this push) |
+| Hardening – grid sell sizes one stacked rung (not 0 / not flatten) | ✅ Done |
+| Hardening – min order notional + flatten dust leftover | ✅ Done (this push) |
 
 ## Architecture
 
@@ -158,6 +159,8 @@ This does **not** dump positions. It tells you the loop died.
 - refuse a new submit if local working orders already ≥ `maxConcurrentOpenOrders` (4)
 - refuse a new submit if working orders on that symbol already ≥ `maxOpenOrdersPerSymbol` (2)
 - refuse when `amount * price` exceeds `maxOrderNotionalUsd` (2500) if a price is present
+- refuse when `amount * price` is below `minOrderNotionalUsd` (12) if a price is present
+- grid sells flatten the book when the leftover (or the rung itself) would be below min notional
 - refuse a **buy** when booked cost basis + this order notional would exceed `maxGrossExposureUsd` (8000)
 - refuse a **sell** with no booked long, or a sell larger than held inventory (spot, no short)
 - `executeBotTick` clamps sell size to `manager.positionAmount(symbol)` before submit
@@ -173,7 +176,7 @@ This does **not** dump positions. It tells you the loop died.
 ## Risk rules (shared paper + live)
 
 | Rule                    | Value   |
-|-------------------------|---------| 
+|-------------------------|---------|
 | Trade size              | 15 %    |
 | Max position per coin   | 20 %    |
 | Stop-loss               | –4 %    |
@@ -191,6 +194,7 @@ This does **not** dump positions. It tells you the loop died.
 | Max concurrent open orders | 4    |
 | Max open orders per symbol | 2    |
 | Max order notional      | 2500 USD |
+| Min order notional      | 12 USD |
 | Max gross exposure      | 8000 USD |
 | Allowed pairs           | BTC/ETH/SOL/BNB USDT |
 | Short selling           | blocked (spot inventory only) |
