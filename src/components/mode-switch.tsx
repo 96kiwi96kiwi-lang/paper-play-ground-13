@@ -67,6 +67,10 @@ type ClientOrderWatch = {
   minSubmitIntervalMs?: number;
   burstCooldownMs?: number;
   burstReady?: boolean;
+  maxConcurrentOpenOrders?: number;
+  maxOpenOrdersPerSymbol?: number;
+  workingSlotsLeft?: number;
+  workingAtCap?: boolean;
 };
 
 type ClientRiskWatch = {
@@ -155,8 +159,6 @@ export function ModeSwitch() {
       setAgeSec(
         health.heartbeatAgeMs != null ? Math.round(health.heartbeatAgeMs / 1000) : null,
       );
-      // Use haltReason from health only. lastHardStop.reason survives a clear
-      // for history and must not keep the cluster in Halt after operator ack.
       setHaltReason(health.haltReason ?? null);
       setClearedAt(health.lastHardStop?.clearedAt ?? null);
       setAlerts(Array.isArray(health.recentAlerts) ? health.recentAlerts.slice(-5) : []);
@@ -224,6 +226,7 @@ export function ModeSwitch() {
 
   const liveReady = Boolean(status?.hasCredentials);
   const burstCooling = Boolean(orderWatch && (orderWatch.burstCooldownMs ?? 0) > 0);
+  const workingAtCap = Boolean(orderWatch?.workingAtCap);
   const riskHot = Boolean(
     riskWatch &&
       (riskWatch.cooldownRemainingMs > 0 ||
@@ -346,11 +349,11 @@ export function ModeSwitch() {
       {orderWatch && (
         <span
           className={`text-[10px] max-w-[18rem] truncate ${
-            orderWatch.workingOrderCount > 0 || burstCooling ? "text-amber-400" : "text-muted-foreground"
+            orderWatch.workingOrderCount > 0 || burstCooling || workingAtCap ? "text-amber-400" : "text-muted-foreground"
           }`}
-          title={`Last accepted submit ${formatSubmitAge(orderWatch.lastSubmitAgeMs)}. Seen ledger ${orderWatch.seenOrderCount}. Working open/partial/pending ${orderWatch.workingOrderCount}. Burst guard ${formatBurstCooldown(orderWatch.burstCooldownMs)} of ${Math.round((orderWatch.minSubmitIntervalMs ?? 8000) / 1000)}s (persisted lastSubmitAt).`}
+          title={`Last accepted submit ${formatSubmitAge(orderWatch.lastSubmitAgeMs)}. Seen ledger ${orderWatch.seenOrderCount}. Working open/partial/pending ${orderWatch.workingOrderCount}/${orderWatch.maxConcurrentOpenOrders ?? 4} (slots left ${orderWatch.workingSlotsLeft ?? "?"}). Per-symbol cap ${orderWatch.maxOpenOrdersPerSymbol ?? 2}. Burst guard ${formatBurstCooldown(orderWatch.burstCooldownMs)} of ${Math.round((orderWatch.minSubmitIntervalMs ?? 8000) / 1000)}s (persisted lastSubmitAt).`}
         >
-          Orders work={orderWatch.workingOrderCount} seen={orderWatch.seenOrderCount} last={formatSubmitAge(orderWatch.lastSubmitAgeMs)} burst={formatBurstCooldown(orderWatch.burstCooldownMs)}
+          Orders work={orderWatch.workingOrderCount}/{orderWatch.maxConcurrentOpenOrders ?? 4}{workingAtCap ? " full" : ""} seen={orderWatch.seenOrderCount} last={formatSubmitAge(orderWatch.lastSubmitAgeMs)} burst={formatBurstCooldown(orderWatch.burstCooldownMs)}
         </span>
       )}
       {gridBooks.length > 0 && (
