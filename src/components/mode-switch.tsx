@@ -58,6 +58,18 @@ type ClientOrderWatch = {
   burstReady?: boolean;
 };
 
+type ClientRiskWatch = {
+  dailyPnlPct: number;
+  drawdownPct: number;
+  losingStreak: number;
+  networkErrorStreak: number;
+  cooldownUntil: number | null;
+  cooldownRemainingMs: number;
+  openPositionsCount: number;
+  savedAt: number;
+  stateAgeMs: number | null;
+};
+
 function formatFillAge(ageMs: number | null): string {
   if (ageMs == null) return "no fill";
   const sec = Math.round(ageMs / 1000);
@@ -75,6 +87,11 @@ function formatSubmitAge(ageMs: number | null): string {
 function formatBurstCooldown(ms: number | undefined): string {
   if (!ms || ms <= 0) return "ready";
   return `${Math.ceil(ms / 1000)}s`;
+}
+
+function formatPct(n: number): string {
+  const sign = n > 0 ? "+" : "";
+  return `${sign}${n.toFixed(1)}%`;
 }
 
 export function LiveModeBanner({ mode }: { mode: "paper" | "live" }) {
@@ -103,6 +120,7 @@ export function ModeSwitch() {
   const [paperBook, setPaperBook] = useState<ClientPaperBook | null>(null);
   const [dailyCap, setDailyCap] = useState<ClientDailyCap | null>(null);
   const [orderWatch, setOrderWatch] = useState<ClientOrderWatch | null>(null);
+  const [riskWatch, setRiskWatch] = useState<ClientRiskWatch | null>(null);
 
   const refresh = async () => {
     try {
@@ -122,6 +140,7 @@ export function ModeSwitch() {
       setPaperBook(health.paperBook ?? null);
       setDailyCap(health.dailyCap ?? null);
       setOrderWatch(health.orderWatch ?? null);
+      setRiskWatch(health.riskWatch ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load mode");
     }
@@ -180,6 +199,13 @@ export function ModeSwitch() {
 
   const liveReady = Boolean(status?.hasCredentials);
   const burstCooling = Boolean(orderWatch && (orderWatch.burstCooldownMs ?? 0) > 0);
+  const riskHot = Boolean(
+    riskWatch &&
+      (riskWatch.cooldownRemainingMs > 0 ||
+        riskWatch.losingStreak >= 3 ||
+        riskWatch.drawdownPct <= -10 ||
+        riskWatch.dailyPnlPct <= -5),
+  );
 
   return (
     <>
@@ -247,6 +273,15 @@ export function ModeSwitch() {
           title={`Paper cash=${paperBook.cash.toFixed(2)} used=${paperBook.used.toFixed(2)} equity=${paperBook.total.toFixed(2)} positions=${paperBook.positionCount}`}
         >
           Paper ${paperBook.total.toFixed(0)} cash={paperBook.cash.toFixed(0)} pos={paperBook.positionCount}
+        </span>
+      )}
+      {riskWatch && (
+        <span
+          className={`text-[10px] max-w-[18rem] truncate ${riskHot ? "text-amber-400" : "text-muted-foreground"}`}
+          title={`Persisted risk. Daily PnL ${formatPct(riskWatch.dailyPnlPct)} drawdown ${formatPct(riskWatch.drawdownPct)} lose-streak ${riskWatch.losingStreak} net-err ${riskWatch.networkErrorStreak} cooldown ${formatBurstCooldown(riskWatch.cooldownRemainingMs)} open=${riskWatch.openPositionsCount} state ${formatSubmitAge(riskWatch.stateAgeMs)}.`}
+        >
+          Risk pnl={formatPct(riskWatch.dailyPnlPct)} dd={formatPct(riskWatch.drawdownPct)} lose={riskWatch.losingStreak}
+          {riskWatch.cooldownRemainingMs > 0 ? ` cd=${formatBurstCooldown(riskWatch.cooldownRemainingMs)}` : ""}
         </span>
       )}
       {dailyCap && (
