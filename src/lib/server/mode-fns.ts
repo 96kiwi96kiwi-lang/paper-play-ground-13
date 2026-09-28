@@ -43,6 +43,9 @@ export const fetchExchangeHealth = createServerFn({ method: "GET" }).handler(asy
       lastFillAgeMs: g.lastFillAgeMs,
       stackedBuys: g.stackedBuys,
       reserved: g.reserved,
+      bookAgeMs: g.bookAgeMs ?? null,
+      reservationRemainingMs: g.reservationRemainingMs ?? 0,
+      reservationTtlMs: g.reservationTtlMs ?? 0,
     })),
     paperBook: health.paperBook
       ? {
