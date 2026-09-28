@@ -72,6 +72,19 @@ export const fetchExchangeHealth = createServerFn({ method: "GET" }).handler(asy
           burstReady: health.orderWatch.burstReady,
         }
       : null,
+    riskWatch: health.riskWatch
+      ? {
+          dailyPnlPct: health.riskWatch.dailyPnlPct,
+          drawdownPct: health.riskWatch.drawdownPct,
+          losingStreak: health.riskWatch.losingStreak,
+          networkErrorStreak: health.riskWatch.networkErrorStreak,
+          cooldownUntil: health.riskWatch.cooldownUntil,
+          cooldownRemainingMs: health.riskWatch.cooldownRemainingMs,
+          openPositionsCount: health.riskWatch.openPositionsCount,
+          savedAt: health.riskWatch.savedAt,
+          stateAgeMs: health.riskWatch.stateAgeMs,
+        }
+      : null,
   };
 });
 
