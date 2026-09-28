@@ -1,6 +1,6 @@
 /**
  * Server factory for OrderManager.
- * Hydrates paper book, seen clientOrderIds, lastSubmitAt, and risk halt
+ * Hydrates paper book, seen clientOrderIds, lastSubmitAt, lastReject, and risk halt
  * from bot-state.json so a restart cannot burst-submit or trade through a halt.
  */
 
@@ -13,6 +13,7 @@ import {
   loadLastSubmitAt,
   loadPaperPortfolio,
   loadSeenOrders,
+  persistLastReject,
   persistLastSubmitAt,
   persistPaperPortfolio,
   persistRiskSnapshot,
@@ -38,6 +39,14 @@ export function createServerOrderManager(adapter: ExchangeAdapter): OrderManager
     applyPersistedHalt(riskState);
     const result = await submit(intent, riskState);
     persistRiskSnapshot(riskState);
+    if (!result.ok) {
+      persistLastReject({
+        at: Date.now(),
+        reason: result.reason,
+        symbol: intent.symbol,
+        side: intent.side,
+      });
+    }
     return result;
   };
 
