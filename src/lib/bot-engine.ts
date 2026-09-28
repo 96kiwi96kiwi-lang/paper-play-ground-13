@@ -3,7 +3,7 @@
  * Works in both paper and live modes.
  */
 
-import type { StrategyId } from "@/config/trading";
+import { TRADING_CONFIG, type StrategyId } from "@/config/trading";
 import {
   confirmGridReservation,
   getGridBook,
@@ -121,6 +121,7 @@ export function gridSellRungAmount(symbol: string, held: number): number {
  * Grid rung reservations are confirmed only after an accepted submit.
  * Sells are clamped to booked inventory so OrderManager never shorts.
  * evaluateRisk does not size sells — default to held inventory, grid sells one rung.
+ * Dust leftover below minOrderNotionalUsd is flattened into the same sell.
  */
 export async function executeBotTick(
   input: BotTickInput,
@@ -153,6 +154,20 @@ export async function executeBotTick(
       const rung = gridSellRungAmount(input.symbol, held);
       if (rung > 1e-12) amount = Math.min(amount, rung);
     }
+    const minN = TRADING_CONFIG.orders.minOrderNotionalUsd;
+    const maxN = TRADING_CONFIG.orders.maxOrderNotionalUsd;
+    const px = input.currentPrice;
+    if (px > 0) {
+      const sellNotional = amount * px;
+      const heldNotional = held * px;
+      const leftoverNotional = Math.max(0, held - amount) * px;
+      // Do not leave an unsellable dust crumb; flatten when leftover or rung is dust.
+      if (leftoverNotional > 0 && leftoverNotional < minN && heldNotional <= maxN) {
+        amount = held;
+      } else if (sellNotional < minN && heldNotional >= minN && heldNotional <= maxN) {
+        amount = held;
+      }
+    }
   }
 
   if (amount <= 1e-12) {
@@ -174,6 +189,7 @@ export async function executeBotTick(
         side: tick.action,
         amount,
         type: "market",
+        price: input.currentPrice > 0 ? input.currentPrice : undefined,
         reason: tick.reason,
       },
       input.riskState,
