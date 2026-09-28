@@ -36,11 +36,19 @@ type ClientGridBook = {
   reservationTtlMs?: number;
 };
 
+type ClientPaperPosition = {
+  symbol: string;
+  amount: number;
+  avgEntry: number;
+  costUsd: number;
+};
+
 type ClientPaperBook = {
   cash: number;
   used: number;
   total: number;
   positionCount: number;
+  positions?: ClientPaperPosition[];
 };
 
 type ClientDailyCap = {
@@ -291,6 +299,19 @@ export function ModeSwitch() {
         >
           Paper ${paperBook.total.toFixed(0)} cash={paperBook.cash.toFixed(0)} pos={paperBook.positionCount}
         </span>
+      )}
+      {paperBook && (paperBook.positions ?? []).length > 0 && (
+        <ol className="text-[10px] text-muted-foreground max-w-[18rem] space-y-0.5">
+          {(paperBook.positions ?? []).slice(0, 4).map((pos) => (
+            <li
+              key={pos.symbol}
+              className="truncate"
+              title={`${pos.symbol} amt=${pos.amount} avg=${pos.avgEntry} cost=${pos.costUsd.toFixed(2)}`}
+            >
+              Pos {pos.symbol.split("/")[0]} {pos.amount.toPrecision(4)} @ {pos.avgEntry.toFixed(2)} (${pos.costUsd.toFixed(0)})
+            </li>
+          ))}
+        </ol>
       )}
       {exposureWatch && (
         <span
