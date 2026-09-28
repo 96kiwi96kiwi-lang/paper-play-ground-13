@@ -53,6 +53,12 @@ export const fetchExchangeHealth = createServerFn({ method: "GET" }).handler(asy
           used: health.paperBook.used,
           total: health.paperBook.total,
           positionCount: health.paperBook.positionCount,
+          positions: (health.paperBook.positions ?? []).map((pos) => ({
+            symbol: pos.symbol,
+            amount: pos.amount,
+            avgEntry: pos.avgEntry,
+            costUsd: pos.costUsd,
+          })),
         }
       : null,
     dailyCap: health.dailyCap
