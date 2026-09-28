@@ -1,19 +1,19 @@
 /**
  * Server factory for OrderManager.
  * Hydrates paper book, seen clientOrderIds, lastSubmitAt, lastReject, and risk halt
- * from bot-state.json so a restart cannot burst-submit or trade through a halt.
+ * from disk so a restart cannot burst-submit or trade through a halt.
  */
 
 import { TRADING_CONFIG } from "@/config/trading";
 import type { ExchangeAdapter } from "@/lib/exchange/types";
 import { OrderManager } from "@/lib/orders/order-manager";
 import type { RiskState } from "@/lib/risk";
+import { persistLastReject } from "./last-reject";
 import {
   applyPersistedHalt,
   loadLastSubmitAt,
   loadPaperPortfolio,
   loadSeenOrders,
-  persistLastReject,
   persistLastSubmitAt,
   persistPaperPortfolio,
   persistRiskSnapshot,
