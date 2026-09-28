@@ -79,6 +79,10 @@ export const fetchExchangeHealth = createServerFn({ method: "GET" }).handler(asy
           minSubmitIntervalMs: health.orderWatch.minSubmitIntervalMs,
           burstCooldownMs: health.orderWatch.burstCooldownMs,
           burstReady: health.orderWatch.burstReady,
+          maxConcurrentOpenOrders: health.orderWatch.maxConcurrentOpenOrders,
+          maxOpenOrdersPerSymbol: health.orderWatch.maxOpenOrdersPerSymbol,
+          workingSlotsLeft: health.orderWatch.workingSlotsLeft,
+          workingAtCap: health.orderWatch.workingAtCap,
         }
       : null,
     riskWatch: health.riskWatch
