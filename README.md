@@ -48,7 +48,12 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 | Hardening – health + UI show persisted grid books | ✅ Done |
 | Hardening – persist sanitized grid books on hydrate | ✅ Done |
 | Hardening – dashboard CLEAR HALT (typed confirm) | ✅ Done |
-| Hardening – health + UI show UTC daily trade cap | ✅ Done (this push) |
+| Hardening – health + UI show UTC daily trade cap | ✅ Done |
+| Hardening – health + UI show persisted paper equity | ✅ Done |
+| Hardening – health + UI show last-submit age + working orders | ✅ Done |
+| Hardening – health + UI show burst-guard cooldown | ✅ Done |
+| Hardening – health + UI show persisted risk snapshot | ✅ Done |
+| Hardening – health + UI show grid reservation TTL + book age | ✅ Done (this push) |
 
 ## Architecture
 
@@ -67,7 +72,7 @@ Persist: data/bot-state.json (atomic tmp+rename; risk snapshot + last hard-stop 
 Alerts:  console + optional HARD_STOP_WEBHOOK_URL
 Live gate: inspectKucoinKeyPermissions() — Withdraw on the key blocks LIVE
 Watchdog: lastHeartbeat older than 3× botTickMs → health.ok=false + alert
-Health: lastHardStop + haltReason + last 10 recentAlerts + grid mid/stack + UTC daily cap survive restart and show on the Paper/Live cluster
+Health: lastHardStop + haltReason + last 10 recentAlerts + grid mid/stack + reservation TTL remaining + book age + UTC daily cap survive restart and show on the Paper/Live cluster
 Submit: createServerOrderManager applies persisted halt/counters before every order
 Clear:  dashboard types CLEAR HALT → requestClearHalt → clearOperatorHalt() stamps lastHardStop.clearedAt
 Hydrate: restorePersistedGridBooks remaps lastLevel / expires reservations, then writes the sanitized books back to disk
@@ -116,7 +121,7 @@ On first halt:
 - `fetchExchangeHealth` forwards those fields (no secrets) to the Paper/Live cluster
 - The dashboard lists the last 5 alerts and treats `haltReason` as the live halt — `lastHardStop.reason` after `clearedAt` is history only
 - `getHealth()` / Paper/Live cluster also show UTC daily cap used/max/remaining from persisted `tradesToday` (rolls to 0 on a new UTC day)
-- Grid rows show mid, stack, last side/level, and whether a reservation is open
+- Grid rows show mid, stack, last side/level, last-fill age, book age, reserved flag, and reservation seconds remaining vs `reservationTtlMs`
 - The next `createServerOrderManager().submit` reapplies that halt even if the caller forgot it on the RiskState
 
 To resume after review, use the Paper/Live cluster **Clear halt** button and type `CLEAR HALT` (calls `requestClearHalt` → `clearOperatorHalt`). You can still call `clearOperatorHalt(note)` on the server directly. That:
@@ -193,12 +198,14 @@ This does **not** dump positions. It tells you the loop died.
 - At most `maxStackedBuys` (3) unclosed grid buys per symbol — further buys idle until a sell decrements the stack
 - A grid signal **reserves** the rung; `executeBotTick` confirms only after OrderManager accepts, and `releaseGridReservation` undoes the stack if the submit is rejected or throws
 - Unconfirmed reservations older than `reservationTtlMs` (2 min) are rolled back on the next grid tick and on hydrate
+- `getHealth()` attaches `reservationRemainingMs`, `reservationTtlMs`, and `bookAgeMs` so operators can see how long a reservation has left and how stale the persisted book is
+- The Paper/Live cluster highlights an active reservation and shows seconds remaining (amber while the TTL is counting down)
 - After hydrate, the sanitized books (dropped lastLevel, expired reservations) are written back to `data/bot-state.json` immediately — not only on the next `markBotTick`
 - `reconcileGridInventory` zeros the stack when the live book has no position and seeds stack=1 when a position exists with stack 0
 - Sells that would not cover round-trip fees are skipped
 - Book recenters when price drifts ≥ `rebalanceThresholdPct` from mid; off-book lastLevel is dropped
 - Mid + last-fill are written to `data/bot-state.json` on each `markBotTick` and restored on boot
-- `getHealth()` / Paper/Live cluster show mid, stack, last side/level, and reserved flag so an operator can see the book after restart
+- `getHealth()` / Paper/Live cluster show mid, stack, last side/level, last-fill age, book age, and reserved TTL so an operator can see the book after restart
 
 ## Warning
 
