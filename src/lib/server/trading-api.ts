@@ -40,6 +40,11 @@ export type HealthGridBook = {
   lastFillAgeMs: number | null;
   stackedBuys: number;
   reserved: boolean;
+  /** Age of the current mid book (builtAt). */
+  bookAgeMs: number | null;
+  /** Remaining reservation TTL; 0 when not reserved or already expired. */
+  reservationRemainingMs: number;
+  reservationTtlMs: number;
 };
 
 /** Sanitized paper inventory for health / Paper-Live cluster. No secrets. */
@@ -214,19 +219,31 @@ function haltFields(): Pick<HealthResponse, "lastHardStop" | "haltReason" | "rec
 function gridFields(now = Date.now()): HealthGridBook[] {
   restorePersistedGridBooks();
   const books = snapshotGridBooks();
-  return Object.entries(books).map(([symbol, book]) => ({
-    symbol,
-    mid: book.mid,
-    spacingPct: book.spacingPct,
-    lastSide: book.lastSide,
-    lastLevel: book.lastLevel,
-    lastFillPrice: book.lastFillPrice,
-    lastFillAt: book.lastFillAt,
-    lastFillAgeMs:
-      book.lastFillAt && book.lastFillAt > 0 ? Math.max(0, now - book.lastFillAt) : null,
-    stackedBuys: book.stackedBuys ?? 0,
-    reserved: Boolean(book.reserved),
-  }));
+  const reservationTtlMs = TRADING_CONFIG.grid.reservationTtlMs;
+  return Object.entries(books).map(([symbol, book]) => {
+    const lastFillAgeMs =
+      book.lastFillAt && book.lastFillAt > 0 ? Math.max(0, now - book.lastFillAt) : null;
+    const reserved = Boolean(book.reserved);
+    const reservationRemainingMs =
+      reserved && lastFillAgeMs != null
+        ? Math.max(0, reservationTtlMs - lastFillAgeMs)
+        : 0;
+    return {
+      symbol,
+      mid: book.mid,
+      spacingPct: book.spacingPct,
+      lastSide: book.lastSide,
+      lastLevel: book.lastLevel,
+      lastFillPrice: book.lastFillPrice,
+      lastFillAt: book.lastFillAt,
+      lastFillAgeMs,
+      stackedBuys: book.stackedBuys ?? 0,
+      reserved,
+      bookAgeMs: book.builtAt && book.builtAt > 0 ? Math.max(0, now - book.builtAt) : null,
+      reservationRemainingMs,
+      reservationTtlMs,
+    };
+  });
 }
 
 /**
