@@ -70,6 +70,19 @@ export type HealthOrderWatch = {
   burstReady: boolean;
 };
 
+/** Persisted risk counters for the dashboard. No secrets. */
+export type HealthRiskWatch = {
+  dailyPnlPct: number;
+  drawdownPct: number;
+  losingStreak: number;
+  networkErrorStreak: number;
+  cooldownUntil: number | null;
+  cooldownRemainingMs: number;
+  openPositionsCount: number;
+  savedAt: number;
+  stateAgeMs: number | null;
+};
+
 export interface HealthResponse {
   ok: boolean;
   mode: Mode;
@@ -85,6 +98,7 @@ export interface HealthResponse {
   paperBook?: HealthPaperBook | null;
   dailyCap?: HealthDailyCap;
   orderWatch?: HealthOrderWatch;
+  riskWatch?: HealthRiskWatch | null;
 }
 
 export interface BalanceResponse {
@@ -167,6 +181,26 @@ function paperBookFields(): HealthPaperBook | null {
   };
 }
 
+function riskWatchFields(now = Date.now()): HealthRiskWatch | null {
+  const state = loadBotState();
+  const risk = state.risk;
+  if (!risk && !state.savedAt) return null;
+  const cooldownUntil = risk?.cooldownUntil ?? null;
+  const cooldownRemainingMs =
+    cooldownUntil != null && cooldownUntil > now ? cooldownUntil - now : 0;
+  return {
+    dailyPnlPct: Number(risk?.dailyPnlPct) || 0,
+    drawdownPct: Number(risk?.drawdownPct) || 0,
+    losingStreak: Math.max(0, Math.floor(Number(risk?.losingStreak) || 0)),
+    networkErrorStreak: Math.max(0, Math.floor(Number(risk?.networkErrorStreak) || 0)),
+    cooldownUntil,
+    cooldownRemainingMs,
+    openPositionsCount: Math.max(0, Math.floor(Number(risk?.openPositionsCount) || 0)),
+    savedAt: state.savedAt || 0,
+    stateAgeMs: state.savedAt > 0 ? Math.max(0, now - state.savedAt) : null,
+  };
+}
+
 function haltFields(): Pick<HealthResponse, "lastHardStop" | "haltReason" | "recentAlerts"> {
   const state = loadBotState();
   const cleared = Boolean(state.lastHardStop?.clearedAt) && !state.risk?.haltReason;
@@ -220,6 +254,7 @@ function baseHealthFields(now = Date.now()) {
     paperBook: paperBookFields(),
     dailyCap: dailyCapFields(now),
     orderWatch: orderWatchFields(now),
+    riskWatch: riskWatchFields(now),
   };
 }
 
