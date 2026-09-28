@@ -73,6 +73,17 @@ type ClientRiskWatch = {
   stateAgeMs: number | null;
 };
 
+type ClientExposureWatch = {
+  usedUsd: number;
+  maxGrossUsd: number;
+  remainingUsd: number;
+  usedPct: number;
+  nearLimit: boolean;
+  atLimit: boolean;
+  maxOrderNotionalUsd: number;
+  pairs: string[];
+};
+
 function formatFillAge(ageMs: number | null): string {
   if (ageMs == null) return "no fill";
   const sec = Math.round(ageMs / 1000);
@@ -124,6 +135,7 @@ export function ModeSwitch() {
   const [dailyCap, setDailyCap] = useState<ClientDailyCap | null>(null);
   const [orderWatch, setOrderWatch] = useState<ClientOrderWatch | null>(null);
   const [riskWatch, setRiskWatch] = useState<ClientRiskWatch | null>(null);
+  const [exposureWatch, setExposureWatch] = useState<ClientExposureWatch | null>(null);
 
   const refresh = async () => {
     try {
@@ -144,6 +156,7 @@ export function ModeSwitch() {
       setDailyCap(health.dailyCap ?? null);
       setOrderWatch(health.orderWatch ?? null);
       setRiskWatch(health.riskWatch ?? null);
+      setExposureWatch(health.exposureWatch ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load mode");
     }
@@ -209,6 +222,7 @@ export function ModeSwitch() {
         riskWatch.drawdownPct <= -10 ||
         riskWatch.dailyPnlPct <= -5),
   );
+  const exposureHot = Boolean(exposureWatch && (exposureWatch.nearLimit || exposureWatch.atLimit));
 
   return (
     <>
@@ -276,6 +290,16 @@ export function ModeSwitch() {
           title={`Paper cash=${paperBook.cash.toFixed(2)} used=${paperBook.used.toFixed(2)} equity=${paperBook.total.toFixed(2)} positions=${paperBook.positionCount}`}
         >
           Paper ${paperBook.total.toFixed(0)} cash={paperBook.cash.toFixed(0)} pos={paperBook.positionCount}
+        </span>
+      )}
+      {exposureWatch && (
+        <span
+          className={`text-[10px] max-w-[18rem] truncate ${exposureHot ? "text-amber-400" : "text-muted-foreground"}`}
+          title={`Booked cost basis ${exposureWatch.usedUsd.toFixed(0)} / max gross ${exposureWatch.maxGrossUsd}. Remaining ${exposureWatch.remainingUsd.toFixed(0)}. Max order notional ${exposureWatch.maxOrderNotionalUsd}. Pairs ${exposureWatch.pairs.join(", ")}.`}
+        >
+          Expo ${exposureWatch.usedUsd.toFixed(0)}/{exposureWatch.maxGrossUsd}
+          {exposureWatch.atLimit ? " full" : ` left=${exposureWatch.remainingUsd.toFixed(0)}`}
+          {` · ${exposureWatch.pairs.map((p) => p.split("/")[0]).join(" ")}`}
         </span>
       )}
       {riskWatch && (
