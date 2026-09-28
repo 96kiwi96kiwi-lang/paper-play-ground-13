@@ -103,6 +103,7 @@ export const fetchExchangeHealth = createServerFn({ method: "GET" }).handler(asy
           nearLimit: health.exposureWatch.nearLimit,
           atLimit: health.exposureWatch.atLimit,
           maxOrderNotionalUsd: health.exposureWatch.maxOrderNotionalUsd,
+          minOrderNotionalUsd: health.exposureWatch.minOrderNotionalUsd,
           pairs: health.exposureWatch.pairs,
         }
       : null,

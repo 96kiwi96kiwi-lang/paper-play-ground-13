@@ -97,7 +97,7 @@ export type HealthRiskWatch = {
   stateAgeMs: number | null;
 };
 
-/** Booked cost basis vs maxGrossExposureUsd + pair allowlist. No secrets. */
+/** Booked cost basis vs maxGrossExposureUsd + pair allowlist + notional floors. No secrets. */
 export type HealthExposureWatch = {
   usedUsd: number;
   maxGrossUsd: number;
@@ -106,6 +106,7 @@ export type HealthExposureWatch = {
   nearLimit: boolean;
   atLimit: boolean;
   maxOrderNotionalUsd: number;
+  minOrderNotionalUsd: number;
   pairs: string[];
 };
 
@@ -228,6 +229,7 @@ function exposureWatchFields(): HealthExposureWatch {
     nearLimit: usedPct >= 80,
     atLimit: remainingUsd <= 0,
     maxOrderNotionalUsd: TRADING_CONFIG.orders.maxOrderNotionalUsd,
+    minOrderNotionalUsd: TRADING_CONFIG.orders.minOrderNotionalUsd,
     pairs: [...TRADING_CONFIG.pairs],
   };
 }
