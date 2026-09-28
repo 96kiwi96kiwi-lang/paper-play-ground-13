@@ -53,6 +53,9 @@ type ClientOrderWatch = {
   lastSubmitAgeMs: number | null;
   seenOrderCount: number;
   workingOrderCount: number;
+  minSubmitIntervalMs?: number;
+  burstCooldownMs?: number;
+  burstReady?: boolean;
 };
 
 function formatFillAge(ageMs: number | null): string {
@@ -67,6 +70,11 @@ function formatFillAge(ageMs: number | null): string {
 function formatSubmitAge(ageMs: number | null): string {
   if (ageMs == null) return "no submit";
   return formatFillAge(ageMs).replace("no fill", "no submit");
+}
+
+function formatBurstCooldown(ms: number | undefined): string {
+  if (!ms || ms <= 0) return "ready";
+  return `${Math.ceil(ms / 1000)}s`;
 }
 
 export function LiveModeBanner({ mode }: { mode: "paper" | "live" }) {
@@ -171,6 +179,7 @@ export function ModeSwitch() {
   };
 
   const liveReady = Boolean(status?.hasCredentials);
+  const burstCooling = Boolean(orderWatch && (orderWatch.burstCooldownMs ?? 0) > 0);
 
   return (
     <>
@@ -251,10 +260,12 @@ export function ModeSwitch() {
       )}
       {orderWatch && (
         <span
-          className={`text-[10px] max-w-[18rem] truncate ${orderWatch.workingOrderCount > 0 ? "text-amber-400" : "text-muted-foreground"}`}
-          title={`Last accepted submit ${formatSubmitAge(orderWatch.lastSubmitAgeMs)}. Seen ledger ${orderWatch.seenOrderCount}. Working open/partial/pending ${orderWatch.workingOrderCount}. Burst guard uses lastSubmitAt after restart.`}
+          className={`text-[10px] max-w-[18rem] truncate ${
+            orderWatch.workingOrderCount > 0 || burstCooling ? "text-amber-400" : "text-muted-foreground"
+          }`}
+          title={`Last accepted submit ${formatSubmitAge(orderWatch.lastSubmitAgeMs)}. Seen ledger ${orderWatch.seenOrderCount}. Working open/partial/pending ${orderWatch.workingOrderCount}. Burst guard ${formatBurstCooldown(orderWatch.burstCooldownMs)} of ${Math.round((orderWatch.minSubmitIntervalMs ?? 8000) / 1000)}s (persisted lastSubmitAt).`}
         >
-          Orders work={orderWatch.workingOrderCount} seen={orderWatch.seenOrderCount} last={formatSubmitAge(orderWatch.lastSubmitAgeMs)}
+          Orders work={orderWatch.workingOrderCount} seen={orderWatch.seenOrderCount} last={formatSubmitAge(orderWatch.lastSubmitAgeMs)} burst={formatBurstCooldown(orderWatch.burstCooldownMs)}
         </span>
       )}
       {gridBooks.length > 0 && (
