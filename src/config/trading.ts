@@ -67,6 +67,8 @@ export const TRADING_CONFIG = {
     maxOpenOrdersPerSymbol: 2,
     /** Refuse when amount * price exceeds this USD notional (skipped if no price on the intent). */
     maxOrderNotionalUsd: 2_500,
+    /** Refuse when amount * price is below this USD notional (skipped if no price on the intent). */
+    minOrderNotionalUsd: 12,
     /** Refuse a buy when booked cost basis + this order notional would exceed this USD total. */
     maxGrossExposureUsd: 8_000,
   },
