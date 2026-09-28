@@ -47,12 +47,21 @@ export type HealthGridBook = {
   reservationTtlMs: number;
 };
 
+/** One persisted paper position (cost basis, no live mark). No secrets. */
+export type HealthPaperPosition = {
+  symbol: string;
+  amount: number;
+  avgEntry: number;
+  costUsd: number;
+};
+
 /** Sanitized paper inventory for health / Paper-Live cluster. No secrets. */
 export type HealthPaperBook = {
   cash: number;
   used: number;
   total: number;
   positionCount: number;
+  positions: HealthPaperPosition[];
 };
 
 /** UTC daily submit cap — persisted on risk.tradesToday, not a hard-stop. */
@@ -187,15 +196,21 @@ function orderWatchFields(now = Date.now()): HealthOrderWatch {
 function paperBookFields(): HealthPaperBook | null {
   const stored = loadPaperPortfolio();
   if (!stored) return null;
-  const used = Object.values(stored.positions).reduce(
-    (sum, pos) => sum + pos.amount * pos.avgEntry,
-    0,
-  );
+  const positions: HealthPaperPosition[] = Object.entries(stored.positions)
+    .filter(([, pos]) => pos && Number(pos.amount) > 0)
+    .map(([symbol, pos]) => {
+      const amount = Number(pos.amount) || 0;
+      const avgEntry = Number(pos.avgEntry) || 0;
+      return { symbol, amount, avgEntry, costUsd: amount * avgEntry };
+    })
+    .sort((a, b) => b.costUsd - a.costUsd);
+  const used = positions.reduce((sum, pos) => sum + pos.costUsd, 0);
   return {
     cash: stored.cash,
     used,
     total: stored.cash + used,
-    positionCount: Object.keys(stored.positions).length,
+    positionCount: positions.length,
+    positions,
   };
 }
 
