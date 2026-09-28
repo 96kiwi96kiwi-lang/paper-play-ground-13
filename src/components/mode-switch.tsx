@@ -89,6 +89,7 @@ type ClientExposureWatch = {
   nearLimit: boolean;
   atLimit: boolean;
   maxOrderNotionalUsd: number;
+  minOrderNotionalUsd?: number;
   pairs: string[];
 };
 
@@ -316,10 +317,11 @@ export function ModeSwitch() {
       {exposureWatch && (
         <span
           className={`text-[10px] max-w-[18rem] truncate ${exposureHot ? "text-amber-400" : "text-muted-foreground"}`}
-          title={`Booked cost basis ${exposureWatch.usedUsd.toFixed(0)} / max gross ${exposureWatch.maxGrossUsd}. Remaining ${exposureWatch.remainingUsd.toFixed(0)}. Max order notional ${exposureWatch.maxOrderNotionalUsd}. Pairs ${exposureWatch.pairs.join(", ")}.`}
+          title={`Booked cost basis ${exposureWatch.usedUsd.toFixed(0)} / max gross ${exposureWatch.maxGrossUsd}. Remaining ${exposureWatch.remainingUsd.toFixed(0)}. Order notional ${exposureWatch.minOrderNotionalUsd ?? 12}–${exposureWatch.maxOrderNotionalUsd}. Pairs ${exposureWatch.pairs.join(", ")}.`}
         >
           Expo ${exposureWatch.usedUsd.toFixed(0)}/{exposureWatch.maxGrossUsd}
           {exposureWatch.atLimit ? " full" : ` left=${exposureWatch.remainingUsd.toFixed(0)}`}
+          {` · min=${exposureWatch.minOrderNotionalUsd ?? 12}`}
           {` · ${exposureWatch.pairs.map((p) => p.split("/")[0]).join(" ")}`}
         </span>
       )}
