@@ -5,6 +5,7 @@
  * Hour 5: daily loss, max drawdown, and losing streak HARD-STOP the bot.
  * Network errors, partial fills, and price gaps are first-class risk events.
  * Daily trade cap refuses further submits without setting haltReason.
+ * minCashReserveUsd refuses buys that would drain cash below the reserve.
  */
 
 import { TRADING_CONFIG } from "@/config/trading";
@@ -17,6 +18,7 @@ export type HardStopReason =
   | "price_gap"
   | "network_errors"
   | "daily_trade_cap"
+  | "cash_reserve"
   | "manual"
   | string;
 
@@ -325,8 +327,18 @@ export function evaluateRisk(
   }
 
   if (side === "buy") {
+    const reserve = risk.minCashReserveUsd;
+    const spendable = Math.max(0, state.cash - reserve);
+    if (spendable < 10) {
+      return finish({
+        allowed: false,
+        code: "cash_reserve",
+        reason: `Cash reserve floor ($${reserve}) — spendable $${spendable.toFixed(2)}`,
+      });
+    }
+
     const target = state.portfolioValue * risk.tradeSizePct;
-    const maxByCash = state.cash * 0.98;
+    const maxByCash = spendable * 0.98;
     const size = Math.min(target, maxByCash, state.portfolioValue * risk.maxPositionPct);
 
     if (size < 10) {

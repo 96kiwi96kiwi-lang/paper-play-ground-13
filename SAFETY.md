@@ -29,6 +29,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] You will not clear a halt without reviewing why it fired
 - [ ] Resume only via `clearOperatorHalt()` (or `clearPersistedHalt`) — do not just delete `haltReason` from the JSON; `lastHardStop.reason` used to restore it
 - [ ] Health reports last tick age; a stale heartbeat (no tick for ~135s) fails health and fires a watchdog alert
+- [ ] `minCashReserveUsd` is sized so buys cannot empty the account cash sleeve
 
 ## Capital
 
