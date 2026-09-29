@@ -9,9 +9,15 @@ import { emitHardStopAlert } from "./alerts";
 import { flattenOpenOrdersOnHalt } from "./flatten-on-halt";
 import { loadGridBooks, persistGridBooks, recordPersistedHardStop } from "./persist";
 import { getRuntimeMode } from "./trading-mode";
+import { acquireWorkerLease } from "./worker-lease";
 
 let registered = false;
 let gridHydrated = false;
+let leaseOwnerId: string | null = null;
+
+function thisWorkerId(): string {
+  return process.env.WORKER_ID?.trim() || `pid-${process.pid}`;
+}
 
 /**
  * Load grid books from disk once.
@@ -26,8 +32,30 @@ export function restorePersistedGridBooks(): void {
   persistGridBooks(snapshotGridBooks());
 }
 
+/** Try to become the single trading worker. Safe to call repeatedly. */
+export function claimWorkerLease(): { ok: boolean; ownerId: string; reason?: string } {
+  const ownerId = thisWorkerId();
+  const result = acquireWorkerLease(ownerId);
+  if (result.ok) {
+    leaseOwnerId = ownerId;
+    if (result.stolen) {
+      console.warn(`[lease] stole expired lease as ${ownerId}`);
+    }
+    return { ok: true, ownerId };
+  }
+  return { ok: false, ownerId, reason: result.reason };
+}
+
+export function getClaimedWorkerId(): string | null {
+  return leaseOwnerId;
+}
+
 export function registerHardStopMonitoring(): void {
   restorePersistedGridBooks();
+  const claim = claimWorkerLease();
+  if (!claim.ok) {
+    console.warn(`[lease] this process is standby: ${claim.reason}`);
+  }
   if (registered) return;
   registered = true;
   onHardStop(({ reason, code }) => {
