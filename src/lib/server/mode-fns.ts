@@ -111,6 +111,15 @@ export const fetchExchangeHealth = createServerFn({ method: "GET" }).handler(asy
           pairs: health.exposureWatch.pairs,
         }
       : null,
+    lastReject: health.lastReject
+      ? {
+          at: health.lastReject.at,
+          reason: health.lastReject.reason,
+          symbol: health.lastReject.symbol,
+          side: health.lastReject.side,
+          ageMs: health.lastReject.ageMs,
+        }
+      : null,
   };
 });
 
