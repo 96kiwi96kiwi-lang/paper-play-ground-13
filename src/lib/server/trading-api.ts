@@ -27,6 +27,7 @@ import { checkStaleHeartbeat, recordBotHeartbeat, type BotHeartbeat } from "./he
 import { restorePersistedGridBooks } from "./register-monitoring";
 import type { PortfolioSnapshot } from "@/lib/orders/order-manager";
 import type { UnifiedOrder } from "@/lib/exchange/types";
+import { currentWorkerId, describeWorkerLease } from "./worker-lease";
 
 export type Mode = TradingRuntimeMode;
 
@@ -115,6 +116,16 @@ export type HealthLastReject = {
   ageMs: number | null;
 };
 
+export type HealthWorkerWatch = {
+  thisWorkerId: string;
+  holderId: string | null;
+  held: boolean;
+  expired: boolean;
+  ageMs: number | null;
+  ttlMs: number;
+  maySubmit: boolean;
+};
+
 export interface HealthResponse {
   ok: boolean;
   mode: Mode;
@@ -133,6 +144,7 @@ export interface HealthResponse {
   riskWatch?: HealthRiskWatch | null;
   exposureWatch?: HealthExposureWatch;
   lastReject?: HealthLastReject | null;
+  workerWatch?: HealthWorkerWatch;
 }
 
 export interface BalanceResponse {
@@ -264,6 +276,21 @@ function lastRejectFields(now = Date.now()): HealthLastReject | null {
   };
 }
 
+function workerWatchFields(now = Date.now()): HealthWorkerWatch {
+  const snap = describeWorkerLease(now);
+  const thisId = currentWorkerId();
+  const holderId = snap.lease?.ownerId ?? null;
+  return {
+    thisWorkerId: thisId,
+    holderId,
+    held: snap.held,
+    expired: snap.expired,
+    ageMs: snap.ageMs,
+    ttlMs: snap.ttlMs,
+    maySubmit: snap.held && holderId === thisId,
+  };
+}
+
 function haltFields(): Pick<HealthResponse, "lastHardStop" | "haltReason" | "recentAlerts"> {
   const state = loadBotState();
   const cleared = Boolean(state.lastHardStop?.clearedAt) && !state.risk?.haltReason;
@@ -324,6 +351,7 @@ function baseHealthFields(now = Date.now()) {
     riskWatch: riskWatchFields(now),
     exposureWatch: exposureWatchFields(),
     lastReject: lastRejectFields(now),
+    workerWatch: workerWatchFields(now),
   };
 }
 
