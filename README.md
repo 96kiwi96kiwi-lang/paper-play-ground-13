@@ -8,7 +8,7 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 
 ## Current status
 
-Hour 1–8 plus hardening are in place. This push surfaces the last refused submit (`data/last-reject.json`) on `getHealth()` / `fetchExchangeHealth` so a risk or cap block is visible after restart. It is **not** a hard-stop and contains no secrets.
+Hour 1–8 plus hardening are in place. The dashboard ModeSwitch now shows the last refused submit from `getHealth()` / `fetchExchangeHealth` (`data/last-reject.json`: reason, side, symbol, age). It is **not** a hard-stop and contains no secrets.
 
 See the file history for the full phase table. Default remains paper. Live keys stay on the server.
 
