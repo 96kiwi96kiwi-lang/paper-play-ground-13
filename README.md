@@ -8,7 +8,7 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 
 ## Current status
 
-Hour 1–8 plus hardening are in place. OrderManager refuses buys that would push one pair's booked cost + order notional over `risk.maxPositionPct` of cash+booked portfolio (skipped if price unknown). Same last-reject / health path as the other submit floors. It is **not** a hard-stop and contains no secrets.
+Hour 1–8 plus hardening are in place. OrderManager refuses market submits without `quotedAt` or when quote age exceeds `orders.maxPriceAgeMs` (default 90s). Per-symbol `maxPositionPct` still applies on buys when price is known. Same last-reject / health path as the other submit floors. These floors are **not** hard-stops and contain no secrets.
 
 See the file history for the full phase table. Default remains paper. Live keys stay on the server.
 

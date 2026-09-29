@@ -71,6 +71,8 @@ export const TRADING_CONFIG = {
     minOrderNotionalUsd: 12,
     /** Refuse a buy when booked cost basis + this order notional would exceed this USD total. */
     maxGrossExposureUsd: 8_000,
+    /** Refuse market submits whose quote timestamp is older than this (ms). */
+    maxPriceAgeMs: 90_000,
   },
 
   // Bot timing

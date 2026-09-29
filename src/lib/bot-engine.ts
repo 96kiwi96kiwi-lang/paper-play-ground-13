@@ -190,6 +190,7 @@ export async function executeBotTick(
         amount,
         type: "market",
         price: input.currentPrice > 0 ? input.currentPrice : undefined,
+        quotedAt: input.history.at(-1)?.t ?? Date.now(),
         reason: tick.reason,
       },
       input.riskState,
