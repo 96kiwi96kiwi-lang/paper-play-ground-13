@@ -10,6 +10,7 @@
  * Concurrent cap: refuse submit while local working orders ≥ maxConcurrentOpenOrders.
  * Per-symbol cap: refuse while working orders on that pair ≥ maxOpenOrdersPerSymbol.
  * Notional cap: refuse when amount * price exceeds maxOrderNotionalUsd (if price known).
+ * Min notional: refuse when amount * price is below minOrderNotionalUsd (if price known).
  * Pair allowlist: refuse symbols not in TRADING_CONFIG.pairs.
  * Gross exposure: refuse buys that would push booked cost + order notional over maxGrossExposureUsd.
  * Inventory: refuse a sell larger than the booked position (spot, no shorting).
@@ -271,6 +272,14 @@ export class OrderManager {
         : null;
     if (orderNotional != null && orderNotional > maxNotional) {
       const reason = `Notional cap: ${orderNotional.toFixed(2)} USD exceeds max ${maxNotional}`;
+      events.push({ stage: "rejected", reason });
+      this.eventsLog.push(...events);
+      return { ok: false, reason, events, portfolio: this.getPortfolio() };
+    }
+
+    const minNotional = TRADING_CONFIG.orders.minOrderNotionalUsd;
+    if (orderNotional != null && orderNotional < minNotional) {
+      const reason = `Min notional: ${orderNotional.toFixed(2)} USD is below min ${minNotional}`;
       events.push({ stage: "rejected", reason });
       this.eventsLog.push(...events);
       return { ok: false, reason, events, portfolio: this.getPortfolio() };
