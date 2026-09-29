@@ -6,6 +6,7 @@
 import { TRADING_CONFIG } from "@/config/trading";
 import type { ExchangeAdapter, Side, UnifiedOrder } from "@/lib/exchange/types";
 import { applyHardStops, evaluateRisk, type RiskState } from "@/lib/risk";
+import { cashReserveBuyReason } from "./cash-reserve";
 import { staleMarketQuoteReason } from "./stale-quote";
 
 export type OrderIntent = {
@@ -119,8 +120,8 @@ export class OrderManager {
     }
 
     const px = intent.price && intent.price > 0 ? intent.price : undefined;
-    if (px != null) {
-      const notional = intent.amount * px;
+    const notional = px != null ? intent.amount * px : undefined;
+    if (px != null && notional != null) {
       if (notional > cfg.maxOrderNotionalUsd) {
         return this.fail(
           `Notional ${notional.toFixed(2)} exceeds max ${cfg.maxOrderNotionalUsd}`,
@@ -151,6 +152,14 @@ export class OrderManager {
         }
       }
     }
+
+    const reserveReason = cashReserveBuyReason(
+      intent.side,
+      this.cash,
+      notional,
+      TRADING_CONFIG.risk.minCashReserveUsd,
+    );
+    if (reserveReason) return this.fail(reserveReason);
 
     if (intent.side === "sell") {
       const held = this.positionAmount(intent.symbol);
