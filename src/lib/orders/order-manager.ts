@@ -7,6 +7,7 @@ import { TRADING_CONFIG } from "@/config/trading";
 import type { ExchangeAdapter, Side, UnifiedOrder } from "@/lib/exchange/types";
 import { applyHardStops, evaluateRisk, type RiskState } from "@/lib/risk";
 import { cashReserveBuyReason } from "./cash-reserve";
+import { selectStaleOpenOrders } from "./stale-open";
 import { staleMarketQuoteReason } from "./stale-quote";
 
 export type OrderIntent = {
@@ -77,6 +78,33 @@ export class OrderManager {
 
   seenOrders(): UnifiedOrder[] {
     return [...this.seen];
+  }
+
+  /**
+   * Cancel resting working orders older than orders.staleOpenOrderMs.
+   * Does not flatten positions. Adapter cancel failures are logged and skipped.
+   */
+  async cancelStaleOpenOrders(now = Date.now()): Promise<{ canceled: number; failed: number }> {
+    const maxAge = TRADING_CONFIG.orders.staleOpenOrderMs;
+    const stale = selectStaleOpenOrders(this.seen, now, maxAge);
+    let canceled = 0;
+    let failed = 0;
+    for (const order of stale) {
+      try {
+        await this.adapter.cancelOrder(order.id, order.symbol);
+        this.remember({
+          ...order,
+          status: "canceled",
+          remaining: order.remaining ?? Math.max(0, order.amount - (order.filled ?? 0)),
+        });
+        canceled += 1;
+      } catch (err) {
+        failed += 1;
+        const msg = err instanceof Error ? err.message : String(err);
+        console.info(`[orders] stale cancel failed ${order.id} ${order.symbol}: ${msg}`);
+      }
+    }
+    return { canceled, failed };
   }
 
   async submit(intent: OrderIntent, riskState: RiskState): Promise<SubmitResult> {
