@@ -5,7 +5,7 @@
  * Live enablement is gated by src/lib/server/trading-mode.ts (assertLiveAllowed).
  */
 
-import ccxt from "ccxt";
+import ccxt, { type Order } from "ccxt";
 import { TRADING_CONFIG } from "@/config/trading";
 
 export type Balance = {
@@ -36,9 +36,9 @@ export type OrderResult = {
   timestamp: number;
 };
 
-let exchange: ccxt.kucoin | null = null;
+let exchange: InstanceType<typeof ccxt.kucoin> | null = null;
 
-function getExchange(): ccxt.kucoin {
+function getExchange(): InstanceType<typeof ccxt.kucoin> {
   if (exchange) return exchange;
 
   const apiKey = process.env.KUCOIN_API_KEY ?? "";
@@ -65,7 +65,7 @@ function getExchange(): ccxt.kucoin {
 }
 
 function toOrderResult(
-  order: ccxt.Order,
+  order: Order,
   fallback: { symbol: string; side: "buy" | "sell"; type: "market" | "limit"; amount: number },
 ): OrderResult {
   return {

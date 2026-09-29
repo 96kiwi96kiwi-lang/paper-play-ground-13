@@ -11,7 +11,7 @@ import {
   fetchModeStatus,
   requestClearHalt,
   requestSetMode,
-} from "@/lib/server/mode-fns";
+} from "@/lib/mode-fns";
 import type { ModeStatus } from "@/lib/server/trading-mode";
 
 type ClientAlert = {

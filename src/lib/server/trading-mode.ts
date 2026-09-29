@@ -65,6 +65,10 @@ export async function setRuntimeMode(
     return getModeStatus();
   }
 
+  // No authenticated operator boundary exists yet. Fail closed even if keys
+  // and a client-supplied confirmation are present.
+  assertLiveDeploymentEnabled();
+
   if (!opts.confirmed) {
     throw new Error("Live mode requires explicit confirmation.");
   }
@@ -90,7 +94,12 @@ export async function setRuntimeMode(
   return getModeStatus();
 }
 
+export function assertLiveDeploymentEnabled(): void {
+  throw new Error("LIVE_MODE_DISABLED_PENDING_OPERATOR_AUTH");
+}
+
 export function assertLiveAllowed(): void {
+  assertLiveDeploymentEnabled();
   if (runtimeMode !== "live") {
     throw new Error("Live trading is disabled. Current mode is paper.");
   }

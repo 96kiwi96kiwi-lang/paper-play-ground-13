@@ -8,13 +8,13 @@ import { getModeStatus, setRuntimeMode, type ModeStatus } from "./server/trading
 import { clearOperatorHalt, getHealth, markBotTick } from "./server/trading-api";
 import { registerHardStopMonitoring } from "./server/register-monitoring";
 
-registerHardStopMonitoring();
 
 export const fetchModeStatus = createServerFn({ method: "GET" }).handler(async (): Promise<ModeStatus> => {
   return getModeStatus();
 });
 
 export const fetchExchangeHealth = createServerFn({ method: "GET" }).handler(async () => {
+  registerHardStopMonitoring();
   const health = await getHealth();
   return {
     ok: health.ok,
