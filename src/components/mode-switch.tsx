@@ -97,6 +97,14 @@ type ClientExposureWatch = {
   pairs: string[];
 };
 
+type ClientLastReject = {
+  at: number;
+  reason: string;
+  symbol?: string;
+  side?: string;
+  ageMs: number | null;
+};
+
 function formatFillAge(ageMs: number | null): string {
   if (ageMs == null) return "no fill";
   const sec = Math.round(ageMs / 1000);
@@ -149,6 +157,7 @@ export function ModeSwitch() {
   const [orderWatch, setOrderWatch] = useState<ClientOrderWatch | null>(null);
   const [riskWatch, setRiskWatch] = useState<ClientRiskWatch | null>(null);
   const [exposureWatch, setExposureWatch] = useState<ClientExposureWatch | null>(null);
+  const [lastReject, setLastReject] = useState<ClientLastReject | null>(null);
 
   const refresh = async () => {
     try {
@@ -168,6 +177,7 @@ export function ModeSwitch() {
       setOrderWatch(health.orderWatch ?? null);
       setRiskWatch(health.riskWatch ?? null);
       setExposureWatch(health.exposureWatch ?? null);
+      setLastReject(health.lastReject ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load mode");
     }
@@ -354,6 +364,14 @@ export function ModeSwitch() {
           title={`Last accepted submit ${formatSubmitAge(orderWatch.lastSubmitAgeMs)}. Seen ledger ${orderWatch.seenOrderCount}. Working open/partial/pending ${orderWatch.workingOrderCount}/${orderWatch.maxConcurrentOpenOrders ?? 4} (slots left ${orderWatch.workingSlotsLeft ?? "?"}). Per-symbol cap ${orderWatch.maxOpenOrdersPerSymbol ?? 2}. Burst guard ${formatBurstCooldown(orderWatch.burstCooldownMs)} of ${Math.round((orderWatch.minSubmitIntervalMs ?? 8000) / 1000)}s (persisted lastSubmitAt).`}
         >
           Orders work={orderWatch.workingOrderCount}/{orderWatch.maxConcurrentOpenOrders ?? 4}{workingAtCap ? " full" : ""} seen={orderWatch.seenOrderCount} last={formatSubmitAge(orderWatch.lastSubmitAgeMs)} burst={formatBurstCooldown(orderWatch.burstCooldownMs)}
+        </span>
+      )}
+      {lastReject && (
+        <span
+          className="text-[10px] text-amber-400/90 max-w-[18rem] truncate"
+          title={`Last refused submit ${formatSubmitAge(lastReject.ageMs)}. ${lastReject.side ?? ""} ${lastReject.symbol ?? ""} — ${lastReject.reason}. Not a hard-stop; persisted in data/last-reject.json.`}
+        >
+          Reject {lastReject.side ?? ""}{lastReject.symbol ? ` ${lastReject.symbol.split("/")[0]}` : ""} {formatSubmitAge(lastReject.ageMs)}: {lastReject.reason}
         </span>
       )}
       {gridBooks.length > 0 && (
