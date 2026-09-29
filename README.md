@@ -10,6 +10,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 
 Hour 1–8 plus hardening are in place. OrderManager refuses market submits without `quotedAt` or when quote age exceeds `orders.maxPriceAgeMs` (default 90s). Per-symbol `maxPositionPct` still applies on buys when price is known. Buys that would leave **book cash** (OrderManager snapshot, not only `riskState.cash`) below `risk.minCashReserveUsd` (default $500) are refused — that is not a halt. Same last-reject / health path as the other submit floors. These floors are **not** hard-stops and contain no secrets.
 
+`cancelStaleOpenOrders` now uses `orders.staleOpenOrderMs` (default 15m): working limit / open / partial orders older than that window are canceled through the adapter. Market fills are ignored. Positions are not flattened. Vitest covers the selector and cancel path in `tests/stale-open-orders.test.ts` (no exchange, no secrets).
+
 `applyHardStops` still latches daily-loss, max-drawdown, losing-streak, network-error, and price-gap halts. `evaluateRisk` refuses after a halt and also refuses at `risk.maxDailyTrades` **without** setting `haltReason`. Vitest covers those floors in `tests/risk-hard-stops.test.ts` (no exchange, no secrets).
 
 A file lease at `data/worker-lease.json` elects one process as the trading worker (TTL 90s, steal on expiry). A second process logs standby and **cannot submit** — `createServerOrderManager` renews the lease and refuses with `Standby worker cannot submit` when another live owner holds it. Optional `WORKER_ID` / `WORKER_LEASE_PATH` / `WORKER_LEASE_TTL_MS` — no secrets. Health includes `workerWatch` (holder, age, this process maySubmit).
