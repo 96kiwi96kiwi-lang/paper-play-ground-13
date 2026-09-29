@@ -4,6 +4,8 @@ import { join } from "node:path";
 import { afterEach, expect, test } from "vitest";
 import {
   acquireWorkerLease,
+  assertWorkerMaySubmit,
+  currentWorkerId,
   describeWorkerLease,
   releaseWorkerLease,
   renewWorkerLease,
@@ -17,6 +19,7 @@ setWorkerLeasePathForTests(path);
 afterEach(() => {
   releaseWorkerLease("a");
   releaseWorkerLease("b");
+  releaseWorkerLease(currentWorkerId());
 });
 
 test("first acquirer wins", () => {
@@ -54,6 +57,19 @@ test("describe reports unheld when empty", () => {
   const snap = describeWorkerLease(1_000, 10_000);
   expect(snap.held).toBe(false);
   expect(snap.lease).toBeNull();
+});
+
+test("assertWorkerMaySubmit refuses while another owner holds a live lease", () => {
+  acquireWorkerLease("other-replica", { now: Date.now(), ttlMs: 60_000 });
+  const gate = assertWorkerMaySubmit({ ttlMs: 60_000 });
+  expect(gate.ok).toBe(false);
+  expect(gate.reason).toMatch(/Standby worker cannot submit/);
+});
+
+test("assertWorkerMaySubmit allows this process when the lease is free", () => {
+  const gate = assertWorkerMaySubmit({ ttlMs: 60_000 });
+  expect(gate.ok).toBe(true);
+  expect(gate.ownerId).toBe(currentWorkerId());
 });
 
 // cleanup temp dir after this file

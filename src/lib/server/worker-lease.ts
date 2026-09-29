@@ -40,6 +40,10 @@ export function defaultLeaseTtlMs(): number {
   return Number.isFinite(raw) && raw >= 5_000 ? raw : DEFAULT_TTL_MS;
 }
 
+export function currentWorkerId(): string {
+  return process.env.WORKER_ID?.trim() || `pid-${process.pid}`;
+}
+
 function nowMs(): number {
   return Date.now();
 }
@@ -158,4 +162,21 @@ export function describeWorkerLease(now = nowMs(), ttlMs = defaultLeaseTtlMs()) 
     lease,
     ttlMs,
   };
+}
+
+/**
+ * Renew (or steal expired) as this process. Refuse if another live owner holds it.
+ * Used as the last gate before OrderManager talks to an adapter.
+ */
+export function assertWorkerMaySubmit(opts?: { now?: number; ttlMs?: number }): {
+  ok: boolean;
+  reason?: string;
+  ownerId: string;
+} {
+  const ownerId = currentWorkerId();
+  const result = renewWorkerLease(ownerId, opts);
+  if (!result.ok) {
+    return { ok: false, ownerId, reason: `Standby worker cannot submit: ${result.reason}` };
+  }
+  return { ok: true, ownerId };
 }
