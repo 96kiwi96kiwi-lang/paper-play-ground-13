@@ -25,7 +25,8 @@ test("stale unconfirmed reservations roll back stack and last-fill", () => {
   });
 
   const n = expireStaleGridReservations(now);
-  expect(n).toBe(1);
+  // Hydration has already expired the persisted reservation.
+  expect(n).toBe(0);
   const book = getGridBook("BTC/USDT");
   expect(book?.reserved).toBe(false);
   expect(book?.stackedBuys).toBe(1);

@@ -4,9 +4,19 @@
  * No secrets. Default path is data/worker-lease.json.
  */
 
-import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmdirSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, resolve } from "node:path";
 import { hostname } from "node:os";
+import { randomUUID } from "node:crypto";
+const PROCESS_IDENTITY = `${hostname()}:${process.pid}:${randomUUID()}`;
 
 export type WorkerLease = {
   ownerId: string;
@@ -41,7 +51,7 @@ export function defaultLeaseTtlMs(): number {
 }
 
 export function currentWorkerId(): string {
-  return process.env.WORKER_ID?.trim() || `pid-${process.pid}`;
+  return `${process.env.WORKER_ID?.trim() || "worker"}:${PROCESS_IDENTITY}`;
 }
 
 function nowMs(): number {
@@ -57,7 +67,16 @@ function readLease(): WorkerLease | null {
     const pid = Number(raw.pid);
     const heldAt = Number(raw.heldAt);
     const renewedAt = Number(raw.renewedAt);
-    if (!ownerId || !Number.isFinite(pid) || heldAt <= 0 || renewedAt <= 0) return null;
+    if (
+      !ownerId ||
+      !Number.isSafeInteger(pid) ||
+      pid <= 0 ||
+      !Number.isSafeInteger(heldAt) ||
+      !Number.isSafeInteger(renewedAt) ||
+      heldAt <= 0 ||
+      renewedAt < heldAt
+    )
+      throw new Error("Invalid worker lease");
     return {
       ownerId,
       pid,
@@ -65,8 +84,9 @@ function readLease(): WorkerLease | null {
       heldAt,
       renewedAt,
     };
-  } catch {
-    return null;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
   }
 }
 
@@ -87,11 +107,15 @@ function writeLease(lease: WorkerLease): void {
   }
 }
 
-export function leaseExpired(lease: WorkerLease, now = nowMs(), ttlMs = defaultLeaseTtlMs()): boolean {
+export function leaseExpired(
+  lease: WorkerLease,
+  now = nowMs(),
+  ttlMs = defaultLeaseTtlMs(),
+): boolean {
   return now - lease.renewedAt > ttlMs;
 }
 
-export function acquireWorkerLease(
+function acquireWorkerLeaseUnlocked(
   ownerId: string,
   opts?: { now?: number; ttlMs?: number; pid?: number; host?: string },
 ): LeaseResult {
@@ -119,15 +143,15 @@ export function acquireWorkerLease(
   return { ok: true, lease, stolen };
 }
 
-export function renewWorkerLease(
+function renewWorkerLeaseUnlocked(
   ownerId: string,
   opts?: { now?: number; ttlMs?: number },
 ): LeaseResult {
   const current = readLease();
-  if (!current) return acquireWorkerLease(ownerId, opts);
+  if (!current) return acquireWorkerLeaseUnlocked(ownerId, opts);
   if (current.ownerId !== ownerId.trim()) {
     if (leaseExpired(current, opts?.now ?? nowMs(), opts?.ttlMs ?? defaultLeaseTtlMs())) {
-      return acquireWorkerLease(ownerId, opts);
+      return acquireWorkerLeaseUnlocked(ownerId, opts);
     }
     return { ok: false, reason: `Cannot renew: held by ${current.ownerId}`, lease: current };
   }
@@ -137,7 +161,7 @@ export function renewWorkerLease(
   return { ok: true, lease: next, stolen: false };
 }
 
-export function releaseWorkerLease(ownerId: string): boolean {
+function releaseWorkerLeaseUnlocked(ownerId: string): boolean {
   const current = readLease();
   if (!current) return true;
   if (current.ownerId !== ownerId.trim()) return false;
@@ -152,7 +176,13 @@ export function releaseWorkerLease(ownerId: string): boolean {
 export function describeWorkerLease(now = nowMs(), ttlMs = defaultLeaseTtlMs()) {
   const lease = readLease();
   if (!lease) {
-    return { held: false, expired: false, ageMs: null as number | null, lease: null as WorkerLease | null, ttlMs };
+    return {
+      held: false,
+      expired: false,
+      ageMs: null as number | null,
+      lease: null as WorkerLease | null,
+      ttlMs,
+    };
   }
   const expired = leaseExpired(lease, now, ttlMs);
   return {
@@ -179,4 +209,44 @@ export function assertWorkerMaySubmit(opts?: { now?: number; ttlMs?: number }): 
     return { ok: false, ownerId, reason: `Standby worker cannot submit: ${result.reason}` };
   }
   return { ok: true, ownerId };
+}
+
+// Serialize each read/check/write across processes sharing one filesystem.
+// A lock left by a crashed process remains closed until operator recovery.
+function withLeaseLock<T>(work: () => T, blocked: T): T {
+  const lockPath = `${workerLeasePath()}.lock`;
+  let locked = false;
+  try {
+    mkdirSync(dirname(lockPath), { recursive: true });
+    mkdirSync(lockPath);
+    locked = true;
+    return work();
+  } catch {
+    return blocked;
+  } finally {
+    if (locked) rmdirSync(lockPath);
+  }
+}
+export function acquireWorkerLease(
+  ownerId: string,
+  opts?: { now?: number; ttlMs?: number; pid?: number; host?: string },
+): LeaseResult {
+  return withLeaseLock<LeaseResult>(() => acquireWorkerLeaseUnlocked(ownerId, opts), {
+    ok: false,
+    reason: "Worker lease locked, unreadable or invalid",
+    lease: null,
+  });
+}
+export function renewWorkerLease(
+  ownerId: string,
+  opts?: { now?: number; ttlMs?: number },
+): LeaseResult {
+  return withLeaseLock<LeaseResult>(() => renewWorkerLeaseUnlocked(ownerId, opts), {
+    ok: false,
+    reason: "Worker lease locked, unreadable or invalid",
+    lease: null,
+  });
+}
+export function releaseWorkerLease(ownerId: string): boolean {
+  return withLeaseLock(() => releaseWorkerLeaseUnlocked(ownerId), false);
 }

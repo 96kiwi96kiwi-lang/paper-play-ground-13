@@ -22,7 +22,7 @@ function baseState(over: Partial<RiskState> = {}): RiskState {
     cooldownUntil: null,
     haltReason: null,
     tradesToday: 0,
-    tradesDayKey: "2026-09-29",
+    tradesDayKey: new Date().toISOString().slice(0, 10),
     ...over,
   };
 }
