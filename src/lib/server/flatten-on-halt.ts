@@ -1,14 +1,20 @@
 /**
- * On hard-stop in LIVE mode, cancel leftover open orders.
- * Does not place sells / does not withdraw. Paper is a no-op.
+ * On hard-stop: cancel leftover open orders.
+ * Live: KuCoin cancel-all when credentials exist.
+ * Paper: mark every persisted working order canceled on disk.
+ * Does not place sells / does not withdraw.
  */
 
 import * as kucoin from "@/lib/exchange/kucoin";
 import { getRuntimeMode } from "./trading-mode";
+import { cancelAllWorkingSeenOrdersOnDisk } from "./stale-seen";
 
 export async function flattenOpenOrdersOnHalt(reason: string): Promise<void> {
   if (getRuntimeMode() !== "live") {
-    console.info("[flatten] skip — not live", reason);
+    const sweep = cancelAllWorkingSeenOrdersOnDisk();
+    console.info(
+      `[flatten] paper cancel-all working=${sweep.canceled} remaining=${sweep.remainingWorking} reason=${reason}`,
+    );
     return;
   }
   if (!kucoin.hasCredentials()) {
