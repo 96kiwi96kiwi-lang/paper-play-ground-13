@@ -9,7 +9,7 @@ import { applyHardStops, evaluateRisk, type RiskState } from "@/lib/risk";
 import { cashReserveBuyReason } from "./cash-reserve";
 import { duplicateClientOrderIdReason } from "./client-order-id";
 import { sellDustRemainderReason } from "./sell-dust";
-import { selectStaleOpenOrders } from "./stale-open";
+import { selectStaleOpenOrders, selectWorkingOrders } from "./stale-open";
 import { staleMarketQuoteReason } from "./stale-quote";
 
 export type OrderIntent = {
@@ -88,10 +88,22 @@ export class OrderManager {
    */
   async cancelStaleOpenOrders(now = Date.now()): Promise<{ canceled: number; failed: number }> {
     const maxAge = TRADING_CONFIG.orders.staleOpenOrderMs;
-    const stale = selectStaleOpenOrders(this.seen, now, maxAge);
+    return this.cancelSelected(selectStaleOpenOrders(this.seen, now, maxAge));
+  }
+
+  /**
+   * Cancel every working order (halt path). Does not flatten positions.
+   */
+  async cancelAllWorkingOrders(): Promise<{ canceled: number; failed: number }> {
+    return this.cancelSelected(selectWorkingOrders(this.seen));
+  }
+
+  private async cancelSelected(
+    selected: UnifiedOrder[],
+  ): Promise<{ canceled: number; failed: number }> {
     let canceled = 0;
     let failed = 0;
-    for (const order of stale) {
+    for (const order of selected) {
       try {
         await this.adapter.cancelOrder(order.id, order.symbol);
         this.remember({
@@ -103,7 +115,7 @@ export class OrderManager {
       } catch (err) {
         failed += 1;
         const msg = err instanceof Error ? err.message : String(err);
-        console.info(`[orders] stale cancel failed ${order.id} ${order.symbol}: ${msg}`);
+        console.info(`[orders] cancel failed ${order.id} ${order.symbol}: ${msg}`);
       }
     }
     return { canceled, failed };

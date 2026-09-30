@@ -23,3 +23,17 @@ export function selectStaleOpenOrders(
     return now - ts >= maxAgeMs;
   });
 }
+
+/**
+ * Every cancelable working order, regardless of age.
+ * Used on hard-stop so paper books do not keep resting limits after a halt.
+ */
+export function selectWorkingOrders(orders: UnifiedOrder[]): UnifiedOrder[] {
+  return orders.filter((order) => {
+    if (!isWorking(String(order.status))) return false;
+    if (order.type === "market" && order.filled > 0 && (order.remaining ?? 0) <= 0) {
+      return false;
+    }
+    return true;
+  });
+}
