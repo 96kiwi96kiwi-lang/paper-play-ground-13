@@ -1,8 +1,10 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, expect, test } from "vitest";
+import { afterEach, beforeEach, expect, test } from "vitest";
 import {
+  workerLeasePath,
   acquireWorkerLease,
   assertWorkerMaySubmit,
   currentWorkerId,
@@ -12,14 +14,14 @@ import {
   setWorkerLeasePathForTests,
 } from "@/lib/server/worker-lease";
 
-const dir = mkdtempSync(join(tmpdir(), "ppg-lease-"));
-const path = join(dir, "worker-lease.json");
-setWorkerLeasePathForTests(path);
-
+let dir: string;
+beforeEach(() => {
+  dir = mkdtempSync(join(tmpdir(), "ppg-lease-"));
+  setWorkerLeasePathForTests(join(dir, "worker-lease.json"));
+});
 afterEach(() => {
-  releaseWorkerLease("a");
-  releaseWorkerLease("b");
-  releaseWorkerLease(currentWorkerId());
+  setWorkerLeasePathForTests(null);
+  rmSync(dir, { recursive: true, force: true });
 });
 
 test("first acquirer wins", () => {
@@ -72,9 +74,47 @@ test("assertWorkerMaySubmit allows this process when the lease is free", () => {
   expect(gate.ownerId).toBe(currentWorkerId());
 });
 
-// cleanup temp dir after this file
-test("cleanup temp lease dir", () => {
-  setWorkerLeasePathForTests(null);
-  rmSync(dir, { recursive: true, force: true });
-  expect(true).toBe(true);
+test("a held filesystem lock blocks acquisition and renewal", () => {
+  mkdirSync(`${workerLeasePath()}.lock`);
+  expect(acquireWorkerLease("worker-a").ok).toBe(false);
+  expect(renewWorkerLease("worker-a").ok).toBe(false);
+});
+test("malformed stored lease cannot be replaced with a new owner", () => {
+  writeFileSync(workerLeasePath(), "not-json");
+  expect(acquireWorkerLease("worker-a").ok).toBe(false);
+});
+test("invalid numeric lease fields fail closed", () => {
+  writeFileSync(
+    workerLeasePath(),
+    JSON.stringify({ ownerId: "other", pid: 10, heldAt: "NaN", renewedAt: "NaN" }),
+  );
+  expect(acquireWorkerLease("worker-a").ok).toBe(false);
+});
+
+test("separate processes sharing a lease have exactly one winner", async () => {
+  const path = workerLeasePath();
+  const moduleUrl = new URL("../src/lib/server/worker-lease.ts", import.meta.url).href;
+  const run = () =>
+    new Promise<boolean>((resolve, reject) => {
+      const code = `import { acquireWorkerLease, currentWorkerId } from ${JSON.stringify(moduleUrl)}; console.log(JSON.stringify(acquireWorkerLease(currentWorkerId()).ok));`;
+      const child = spawn(
+        process.execPath,
+        ["--experimental-strip-types", "--input-type=module", "-e", code],
+        {
+          env: { ...process.env, WORKER_LEASE_PATH: path, WORKER_ID: "same-label" },
+          stdio: ["ignore", "pipe", "pipe"],
+        },
+      );
+      let output = "";
+      let errors = "";
+      child.stdout.on("data", (chunk) => (output += chunk));
+      child.stderr.on("data", (chunk) => (errors += chunk));
+      child.on("error", reject);
+      child.on("close", (code) => {
+        if (code !== 0) reject(new Error(errors));
+        else resolve(JSON.parse(output.trim()));
+      });
+    });
+  const winners = await Promise.all([run(), run(), run(), run()]);
+  expect(winners.filter(Boolean)).toHaveLength(1);
 });

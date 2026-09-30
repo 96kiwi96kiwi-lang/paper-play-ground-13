@@ -9,6 +9,7 @@ export function staleMarketQuoteReason(
   if (quotedAt == null || !Number.isFinite(quotedAt)) {
     return "Stale price: market submit requires quotedAt";
   }
+  if (quotedAt > now) return "Stale price: quote timestamp is in the future";
   const age = now - quotedAt;
   if (age > maxAgeMs) {
     return `Stale price: quote age ${age}ms exceeds max ${maxAgeMs}ms`;
