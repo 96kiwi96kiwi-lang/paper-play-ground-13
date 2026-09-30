@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, expect, test } from "vitest";
+import { TRADING_CONFIG } from "@/config/trading";
 import {
   describePaperLoop,
   paperServerLoopRequested,
@@ -10,7 +11,9 @@ import {
   stopPaperServerLoop,
 } from "@/lib/server/paper-loop";
 import { getBotHeartbeat } from "@/lib/server/heartbeat";
+import { loadSeenOrders, persistSeenOrders } from "@/lib/server/persist";
 import { setWorkerLeasePathForTests } from "@/lib/server/worker-lease";
+import type { UnifiedOrder } from "@/lib/exchange/types";
 
 let dir: string;
 const prevCwd = process.cwd();
@@ -48,6 +51,28 @@ test("housekeeping tick records a heartbeat without submitting", () => {
   const beat = getBotHeartbeat();
   expect(beat?.at).toBe(now);
   expect(beat?.action).toBe("hold");
+});
+
+test("housekeeping cancels stale persisted working limits without live calls", () => {
+  const now = 1_700_000_000_000;
+  const stale: UnifiedOrder = {
+    id: "stale-limit",
+    symbol: "BTC/USDT",
+    side: "buy",
+    type: "limit",
+    amount: 0.01,
+    price: 50_000,
+    status: "open",
+    filled: 0,
+    remaining: 0.01,
+    cost: 0,
+    timestamp: now - TRADING_CONFIG.orders.staleOpenOrderMs - 1,
+  };
+  persistSeenOrders([stale]);
+  const status = runPaperHousekeepingTick(now);
+  expect(status.lastStaleCanceled).toBe(1);
+  expect(status.reason).toMatch(/canceled 1 stale/);
+  expect(loadSeenOrders()[0]?.status).toBe("canceled");
 });
 
 test("start refuses to run when env is on but process stays paper-gated", () => {
