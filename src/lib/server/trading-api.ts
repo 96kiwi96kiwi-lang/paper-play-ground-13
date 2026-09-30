@@ -28,6 +28,7 @@ import { restorePersistedGridBooks } from "./register-monitoring";
 import type { PortfolioSnapshot } from "@/lib/orders/order-manager";
 import type { UnifiedOrder } from "@/lib/exchange/types";
 import { currentWorkerId, describeWorkerLease } from "./worker-lease";
+import { describePaperLoop, type PaperLoopStatus } from "./paper-loop";
 
 export type Mode = TradingRuntimeMode;
 
@@ -126,6 +127,8 @@ export type HealthWorkerWatch = {
   maySubmit: boolean;
 };
 
+export type HealthPaperLoop = PaperLoopStatus;
+
 export interface HealthResponse {
   ok: boolean;
   mode: Mode;
@@ -145,6 +148,7 @@ export interface HealthResponse {
   exposureWatch?: HealthExposureWatch;
   lastReject?: HealthLastReject | null;
   workerWatch?: HealthWorkerWatch;
+  paperLoop?: HealthPaperLoop;
 }
 
 export interface BalanceResponse {
@@ -352,6 +356,7 @@ function baseHealthFields(now = Date.now()) {
     exposureWatch: exposureWatchFields(),
     lastReject: lastRejectFields(now),
     workerWatch: workerWatchFields(now),
+    paperLoop: describePaperLoop(now),
   };
 }
 

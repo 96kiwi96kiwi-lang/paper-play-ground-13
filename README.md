@@ -20,6 +20,8 @@ Unconfirmed grid rung reservations older than `grid.reservationTtlMs` (default 2
 
 A file lease at `data/worker-lease.json` elects one process as the trading worker (TTL 90s, steal on expiry). A second process logs standby and **cannot submit** — `createServerOrderManager` renews the lease and refuses with `Standby worker cannot submit` when another live owner holds it. Optional `WORKER_ID` / `WORKER_LEASE_PATH` / `WORKER_LEASE_TTL_MS` — no secrets. Health includes `workerWatch` (holder, age, this process maySubmit).
 
+Set `PAPER_SERVER_LOOP=1` to run an opt-in **paper-only** server housekeeping loop (interval = `botTickMs`). It records a heartbeat and expires stale grid reservations. It does **not** invent quotes or place live orders. Health includes `paperLoop` (`enabled`, `running`, `reason`). Off by default so a dashboard-owned tick is unchanged until you opt in. Vitest: `tests/paper-loop.test.ts`.
+
 A root `Dockerfile` builds the production Node server for hosts that require a Dockerfile (e.g. Railway paper-hourly-worker). The image does not contain secrets and starts in paper. Mount a persistent volume at `/app/data` so the worker lease and `bot-state.json` survive restarts. Live keys, if ever used, stay in the host environment — never in the image.
 
 See the file history for the full phase table. Default remains paper. Live keys stay on the server. Live mode stays blocked until authenticated operator authorization exists.
@@ -30,7 +32,7 @@ UI → Bot engine → OrderManager → PaperExchange or KuCoin (keys server-side
 
 Persist: `data/bot-state.json` (atomic tmp+rename) plus `data/last-reject.json` for the last refused submit.
 
-Health includes halt, alerts, last reject (reason/side/symbol/age), grid books, daily cap, exposure, paper lots, working-order slots, and the worker lease.
+Health includes halt, alerts, last reject (reason/side/symbol/age), grid books, daily cap, exposure, paper lots, working-order slots, the worker lease, and the optional paper loop.
 
 ## Paper / Live
 
