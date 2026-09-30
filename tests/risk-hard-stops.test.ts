@@ -4,7 +4,9 @@ import {
   applyHardStops,
   clearHalt,
   evaluateRisk,
+  PRICE_GAP_LIMIT,
   recordAcceptedTrade,
+  recordLastPrice,
   rollDailyTradeWindow,
   type RiskState,
 } from "@/lib/risk";
@@ -83,4 +85,30 @@ test("recordAcceptedTrade increments within the same UTC day", () => {
   const state = baseState({ tradesDayKey: "2026-09-29", tradesToday: 1 });
   recordAcceptedTrade(state, now);
   expect(state.tradesToday).toBe(2);
+});
+
+test("first mark is stored and does not gap-halt", () => {
+  const state = baseState();
+  applyHardStops(state, { symbol: "BTC/USDT", price: 100_000 });
+  expect(state.haltReason).toBeNull();
+  expect(state.lastPrices?.["BTC/USDT"]).toBe(100_000);
+});
+
+test("price-gap hard-stop fires on a jump vs the recorded last mark", () => {
+  const state = baseState();
+  applyHardStops(state, { symbol: "BTC/USDT", price: 100_000 });
+  const jumped = 100_000 * (1 + PRICE_GAP_LIMIT + 0.01);
+  applyHardStops(state, { symbol: "BTC/USDT", price: jumped });
+  expect(state.haltReason).toMatch(/price gap/i);
+  expect(state.lastPrices?.["BTC/USDT"]).toBe(jumped);
+});
+
+test("clearHalt after a gap does not instantly re-fire on the same mark", () => {
+  const state = baseState();
+  recordLastPrice(state, "BTC/USDT", 100_000);
+  applyHardStops(state, { symbol: "BTC/USDT", price: 110_000 });
+  expect(state.haltReason).toMatch(/price gap/i);
+  clearHalt(state);
+  applyHardStops(state, { symbol: "BTC/USDT", price: 110_000 });
+  expect(state.haltReason).toBeNull();
 });

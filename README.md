@@ -16,7 +16,7 @@ Sells that would leave a leftover position whose notional is below `orders.minOr
 
 Unconfirmed grid rung reservations older than `grid.reservationTtlMs` (default 2m) are rolled back on every `executeBotTick` as well as inside `gridStrategy` / hydrate — hold and non-grid ticks included — so a hung submit cannot leave `stackedBuys` latched. Confirmed fills (`reserved=false`) stay. Vitest covers the TTL path in `tests/grid-reservation-ttl.test.ts` (no exchange, no secrets).
 
-`applyHardStops` still latches daily-loss, max-drawdown, losing-streak, network-error, and price-gap halts. `evaluateRisk` refuses after a halt and also refuses at `risk.maxDailyTrades` **without** setting `haltReason`. Vitest covers those floors in `tests/risk-hard-stops.test.ts` (no exchange, no secrets).
+`applyHardStops` still latches daily-loss, max-drawdown, losing-streak, network-error, and price-gap halts. Each `currentPrice` tick now writes `riskState.lastPrices[symbol]` so a later jump ≥ `PRICE_GAP_LIMIT` (3.5%) can actually fire. The gapped mark is stored too, so `clearHalt` does not instantly re-halt on the same print. `evaluateRisk` refuses after a halt and also refuses at `risk.maxDailyTrades` **without** setting `haltReason`. Vitest covers those floors in `tests/risk-hard-stops.test.ts` (no exchange, no secrets).
 
 A file lease at `data/worker-lease.json` elects one process as the trading worker (TTL 90s, steal on expiry). A second process logs standby and **cannot submit** — `createServerOrderManager` renews the lease and refuses with `Standby worker cannot submit` when another live owner holds it. Optional `WORKER_ID` / `WORKER_LEASE_PATH` / `WORKER_LEASE_TTL_MS` — no secrets. Health includes `workerWatch` (holder, age, this process maySubmit).
 

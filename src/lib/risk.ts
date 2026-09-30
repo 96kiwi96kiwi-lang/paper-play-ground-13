@@ -153,6 +153,14 @@ export function classifyPriceGap(
   return { gap: Math.abs(pct) >= PRICE_GAP_LIMIT, pct };
 }
 
+/** Persist the latest mark so the next applyHardStops can detect a gap. */
+export function recordLastPrice(state: RiskState, symbol: string, price: number): RiskState {
+  if (!(price > 0) || !symbol) return state;
+  if (!state.lastPrices) state.lastPrices = {};
+  state.lastPrices[symbol] = price;
+  return state;
+}
+
 function halt(state: RiskState, reason: string, code: HardStopReason, symbol?: string): RiskState {
   state.haltReason = reason;
   logDecision({
@@ -170,13 +178,18 @@ function halt(state: RiskState, reason: string, code: HardStopReason, symbol?: s
 /**
  * Mutate state: if a hard-stop condition is true, set haltReason so every
  * later evaluateRisk() refuses until an operator clears the halt.
+ * When a currentPrice is supplied, store it on lastPrices even if a gap halt
+ * fires — otherwise the next tick (or a cleared halt) has no baseline.
  */
 export function applyHardStops(state: RiskState, currentPrice?: { symbol: string; price: number }): RiskState {
   const { risk } = TRADING_CONFIG;
 
   rollDailyTradeWindow(state);
 
-  if (state.haltReason) return state;
+  if (state.haltReason) {
+    if (currentPrice) recordLastPrice(state, currentPrice.symbol, currentPrice.price);
+    return state;
+  }
 
   if (state.dailyPnlPct <= risk.dailyLossLimitPct) {
     return halt(
@@ -205,6 +218,7 @@ export function applyHardStops(state: RiskState, currentPrice?: { symbol: string
   if (currentPrice) {
     const prev = state.lastPrices?.[currentPrice.symbol];
     const { gap, pct } = classifyPriceGap(prev, currentPrice.price);
+    recordLastPrice(state, currentPrice.symbol, currentPrice.price);
     if (gap) {
       return halt(
         state,
