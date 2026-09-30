@@ -7,6 +7,7 @@ import { TRADING_CONFIG } from "@/config/trading";
 import type { ExchangeAdapter, Side, UnifiedOrder } from "@/lib/exchange/types";
 import { applyHardStops, evaluateRisk, type RiskState } from "@/lib/risk";
 import { cashReserveBuyReason } from "./cash-reserve";
+import { sellDustRemainderReason } from "./sell-dust";
 import { selectStaleOpenOrders } from "./stale-open";
 import { staleMarketQuoteReason } from "./stale-quote";
 
@@ -194,6 +195,14 @@ export class OrderManager {
       if (held + 1e-12 < intent.amount) {
         return this.fail(`Inventory: cannot sell ${intent.amount} of ${intent.symbol} (held ${held})`);
       }
+      const dust = sellDustRemainderReason(
+        intent.side,
+        held,
+        intent.amount,
+        px,
+        cfg.minOrderNotionalUsd,
+      );
+      if (dust) return this.fail(dust);
     }
 
     const risk = evaluateRisk(riskState, intent.side, intent.symbol);
