@@ -7,6 +7,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getModeStatus, setRuntimeMode, type ModeStatus } from "./trading-mode";
 import { clearOperatorHalt, getHealth, markBotTick } from "./trading-api";
 import { registerHardStopMonitoring } from "./register-monitoring";
+import { assertOperatorToken } from "./operator-auth";
 
 registerHardStopMonitoring();
 
@@ -139,29 +140,39 @@ export const markBotTickFn = createServerFn({ method: "POST" })
 
 export const requestSetMode = createServerFn({ method: "POST" })
   .validator((data: unknown) => {
-    const body = (data ?? {}) as { mode?: string; confirmed?: boolean };
+    const body = (data ?? {}) as { mode?: string; confirmed?: boolean; operatorToken?: string };
     if (body.mode !== "paper" && body.mode !== "live") {
       throw new Error("mode must be paper or live");
     }
-    return { mode: body.mode as "paper" | "live", confirmed: Boolean(body.confirmed) };
+    const operatorToken = typeof body.operatorToken === "string" ? body.operatorToken : "";
+    return {
+      mode: body.mode as "paper" | "live",
+      confirmed: Boolean(body.confirmed),
+      operatorToken,
+    };
   })
   .handler(async ({ data }): Promise<ModeStatus> => {
-    return setRuntimeMode(data.mode, { confirmed: data.confirmed });
+    return setRuntimeMode(data.mode, {
+      confirmed: data.confirmed,
+      operatorToken: data.operatorToken,
+    });
   });
 
 /**
  * Operator acknowledgement of a persisted hard-stop.
- * Does not enable live mode. Daily PnL / drawdown can halt again if still breached.
+ * Requires OPERATOR_TOKEN. Does not enable live mode.
  */
 export const requestClearHalt = createServerFn({ method: "POST" })
   .validator((data: unknown) => {
-    const body = (data ?? {}) as { note?: string; confirmed?: boolean };
+    const body = (data ?? {}) as { note?: string; confirmed?: boolean; operatorToken?: string };
     if (!body.confirmed) {
       throw new Error("Clearing a halt requires explicit confirmation.");
     }
     const note = typeof body.note === "string" ? body.note.trim().slice(0, 160) : "";
-    return { note: note || "dashboard", confirmed: true as const };
+    const operatorToken = typeof body.operatorToken === "string" ? body.operatorToken : "";
+    return { note: note || "dashboard", confirmed: true as const, operatorToken };
   })
   .handler(async ({ data }) => {
+    assertOperatorToken(data.operatorToken);
     return clearOperatorHalt(data.note);
   });

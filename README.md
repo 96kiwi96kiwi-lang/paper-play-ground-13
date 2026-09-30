@@ -2,7 +2,7 @@
 
 Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 
-> **Default mode is always PAPER.** Live trading requires server-side API keys, a Trade-only permission audit, and explicit confirmation. After every process restart the bot boots in paper again.
+> **Default mode is always PAPER.** Live trading requires server-side API keys, a Trade-only permission audit, `OPERATOR_TOKEN` on the server, and explicit confirmation. After every process restart the bot boots in paper again.
 
 **Risk warning:** Live crypto trading can lose all capital in the account. This software does not guarantee profits. Never attach a key that can Withdraw. Use only money you can afford to lose. See [SAFETY.md](./SAFETY.md).
 
@@ -24,7 +24,9 @@ Set `PAPER_SERVER_LOOP=1` to run an opt-in **paper-only** server housekeeping lo
 
 A root `Dockerfile` builds the production Node server for hosts that require a Dockerfile (e.g. Railway paper-hourly-worker). The image does not contain secrets and starts in paper. Mount a persistent volume at `/app/data` so the worker lease and `bot-state.json` survive restarts. Live keys, if ever used, stay in the host environment — never in the image.
 
-See the file history for the full phase table. Default remains paper. Live keys stay on the server. Live mode stays blocked until authenticated operator authorization exists.
+**Operator auth:** `OPERATOR_TOKEN` must be set in the server environment before live can be enabled or a halt can be cleared. A public `confirmed: true` flag is not enough. Mode status reports `operatorAuthConfigured` (boolean only). The token is never returned in health or mode payloads. Leave the env unset to keep live and halt-clear fail-closed. Vitest: `tests/operator-auth.test.ts` and `tests/trading-mode.test.ts` (fixture string only, no real secret).
+
+See the file history for the full phase table. Default remains paper. Live keys stay on the server. Live mode stays blocked until the operator token is configured and presented.
 
 ## Architecture
 
@@ -36,6 +38,6 @@ Health includes halt, alerts, last reject (reason/side/symbol/age), grid books, 
 
 ## Paper / Live
 
-Paper is the default. Live needs Trade-only KuCoin keys in server `.env`, a permission audit that blocks Withdraw, and typed `ENABLE LIVE`. A process restart always returns to paper.
+Paper is the default. Live needs Trade-only KuCoin keys in server `.env`, a permission audit that blocks Withdraw, `OPERATOR_TOKEN`, and typed `ENABLE LIVE`. A process restart always returns to paper.
 
 Never invent or commit secrets. See [SAFETY.md](./SAFETY.md).

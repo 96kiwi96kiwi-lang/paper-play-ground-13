@@ -12,6 +12,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] You can rotate/revoke the key immediately if it leaks
 - [ ] Enabling LIVE runs a server-side permission audit; Withdraw on the key blocks live
 - [ ] If audit cannot read permissions, live stays blocked unless you set `KUCOIN_ALLOW_UNVERIFIED_KEY=1` after a manual check
+- [ ] `OPERATOR_TOKEN` is set on the server (your value, not from this repo) before live or halt-clear
 
 ## Confirmation path
 
@@ -19,6 +20,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] Dashboard live switch requires typing `ENABLE LIVE`
 - [ ] Server reports `hasCredentials: true` without returning secret values
 - [ ] After a process restart the bot boots in **paper** again (live must be re-confirmed)
+- [ ] Enable-live and clear-halt reject requests that omit or mismatch `OPERATOR_TOKEN`
 
 ## Risk hard-stops
 
@@ -27,7 +29,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] You know how to inspect `data/bot-state.json` and server logs after a halt
 - [ ] Optional `HARD_STOP_WEBHOOK_URL` is set if you want an external ping
 - [ ] You will not clear a halt without reviewing why it fired
-- [ ] Resume only via `clearOperatorHalt()` (or `clearPersistedHalt`) — do not just delete `haltReason` from the JSON; `lastHardStop.reason` used to restore it
+- [ ] Resume only via `clearOperatorHalt()` after presenting `OPERATOR_TOKEN` — do not just delete `haltReason` from the JSON; `lastHardStop.reason` used to restore it
 - [ ] Health reports last tick age; a stale heartbeat (no tick for ~135s) fails health and fires a watchdog alert
 - [ ] `minCashReserveUsd` is sized so buys cannot empty the account cash sleeve
 - [ ] Only one process holds `data/worker-lease.json`; a second replica stays standby until the lease expires
