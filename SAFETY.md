@@ -26,6 +26,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 
 - [ ] Daily loss limit, max drawdown, and losing streak will halt the bot
 - [ ] On halt in LIVE mode the server cancels visible open orders (does not market-dump positions)
+- [ ] On halt in PAPER mode persisted working orders are marked canceled on disk (positions stay)
 - [ ] You know how to inspect `data/bot-state.json` and server logs after a halt
 - [ ] Optional `HARD_STOP_WEBHOOK_URL` is set if you want an external ping
 - [ ] You will not clear a halt without reviewing why it fired
