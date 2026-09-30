@@ -11,6 +11,7 @@ import { duplicateClientOrderIdReason } from "./client-order-id";
 import { sellDustRemainderReason } from "./sell-dust";
 import { selectStaleOpenOrders, selectWorkingOrders } from "./stale-open";
 import { staleMarketQuoteReason } from "./stale-quote";
+import { symbolFlipCooldownReason } from "./symbol-flip";
 
 export type OrderIntent = {
   symbol: string;
@@ -144,6 +145,15 @@ export class OrderManager {
 
     const stale = staleMarketQuoteReason(type, intent.quotedAt, now, cfg.maxPriceAgeMs);
     if (stale) return this.fail(stale);
+
+    const flip = symbolFlipCooldownReason(
+      intent.symbol,
+      intent.side,
+      this.seen,
+      now,
+      cfg.symbolFlipCooldownMs,
+    );
+    if (flip) return this.fail(flip);
 
     if (this.lastSubmitAt > 0 && now - this.lastSubmitAt < cfg.minSubmitIntervalMs) {
       return this.fail(
