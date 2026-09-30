@@ -7,6 +7,7 @@ import { TRADING_CONFIG } from "@/config/trading";
 import type { ExchangeAdapter, Side, UnifiedOrder } from "@/lib/exchange/types";
 import { applyHardStops, evaluateRisk, type RiskState } from "@/lib/risk";
 import { cashReserveBuyReason } from "./cash-reserve";
+import { duplicateClientOrderIdReason } from "./client-order-id";
 import { sellDustRemainderReason } from "./sell-dust";
 import { selectStaleOpenOrders } from "./stale-open";
 import { staleMarketQuoteReason } from "./stale-quote";
@@ -125,6 +126,9 @@ export class OrderManager {
     if (!(intent.amount > 0) || !Number.isFinite(intent.amount)) {
       return this.fail("Amount must be a positive finite number");
     }
+
+    const dup = duplicateClientOrderIdReason(intent.clientOrderId, this.seen);
+    if (dup) return this.fail(dup);
 
     const stale = staleMarketQuoteReason(type, intent.quotedAt, now, cfg.maxPriceAgeMs);
     if (stale) return this.fail(stale);
