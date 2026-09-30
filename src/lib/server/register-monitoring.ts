@@ -14,6 +14,7 @@ import { acquireWorkerLease } from "./worker-lease";
 let registered = false;
 let gridHydrated = false;
 let leaseOwnerId: string | null = null;
+let loopArmed = false;
 
 function thisWorkerId(): string {
   return process.env.WORKER_ID?.trim() || `pid-${process.pid}`;
@@ -50,12 +51,22 @@ export function getClaimedWorkerId(): string | null {
   return leaseOwnerId;
 }
 
+function armPaperLoop(): void {
+  if (loopArmed) return;
+  loopArmed = true;
+  void import("./paper-loop").then(({ startPaperServerLoop }) => {
+    const status = startPaperServerLoop();
+    console.info(`[paper-loop] ${status.reason} running=${status.running} enabled=${status.enabled}`);
+  });
+}
+
 export function registerHardStopMonitoring(): void {
   restorePersistedGridBooks();
   const claim = claimWorkerLease();
   if (!claim.ok) {
     console.warn(`[lease] this process is standby: ${claim.reason}`);
   }
+  armPaperLoop();
   if (registered) return;
   registered = true;
   onHardStop(({ reason, code }) => {
