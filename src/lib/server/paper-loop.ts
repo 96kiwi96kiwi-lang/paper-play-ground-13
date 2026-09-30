@@ -7,10 +7,9 @@
  */
 
 import { TRADING_CONFIG } from "@/config/trading";
-import { expireStaleGridReservations } from "@/lib/strategies";
+import { expireStaleGridReservations, snapshotGridBooks } from "@/lib/strategies";
 import { recordBotHeartbeat } from "./heartbeat";
 import { persistGridBooks } from "./persist";
-import { snapshotGridBooks } from "@/lib/strategies";
 import { claimWorkerLease, restorePersistedGridBooks } from "./register-monitoring";
 import { getRuntimeMode } from "./trading-mode";
 
