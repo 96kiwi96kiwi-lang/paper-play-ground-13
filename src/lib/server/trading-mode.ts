@@ -1,10 +1,11 @@
 /**
  * Runtime trading mode.
  * Default is always paper. Live is opt-in and requires:
- *  1. Explicit setMode("live") after operator confirmation
- *  2. Valid KUCOIN_* env credentials on the server
- *  3. Key permission audit: Trade present, Withdraw absent
- * API keys are never returned from this module.
+ *  1. OPERATOR_TOKEN set on the server and supplied on the enable request
+ *  2. Explicit setMode("live") after operator confirmation
+ *  3. Valid KUCOIN_* env credentials on the server
+ *  4. Key permission audit: Trade present, Withdraw absent
+ * API keys and the operator token are never returned from this module.
  */
 
 import * as kucoin from "@/lib/exchange/kucoin";
@@ -12,6 +13,11 @@ import {
   inspectKucoinKeyPermissions,
   type KeyPermissionAudit,
 } from "@/lib/exchange/kucoin-permissions";
+import {
+  assertOperatorConfigured,
+  assertOperatorToken,
+  operatorTokenConfigured,
+} from "./operator-auth";
 import { saveBotState } from "./persist";
 
 export type TradingRuntimeMode = "paper" | "live";
@@ -35,6 +41,7 @@ export type ModeStatus = {
   tradeOnly: boolean | null;
   withdrawDisabled: boolean | null;
   keyAuditMessage: string | null;
+  operatorAuthConfigured: boolean;
   message: string;
 };
 
@@ -47,6 +54,7 @@ export function getModeStatus(): ModeStatus {
     tradeOnly: lastKeyAudit ? lastKeyAudit.trade && !lastKeyAudit.withdraw : null,
     withdrawDisabled: lastKeyAudit ? !lastKeyAudit.withdraw : null,
     keyAuditMessage: lastKeyAudit?.message ?? null,
+    operatorAuthConfigured: operatorTokenConfigured(),
     message:
       runtimeMode === "live"
         ? "LIVE MODE — real orders may be sent to KuCoin"
@@ -56,7 +64,7 @@ export function getModeStatus(): ModeStatus {
 
 export async function setRuntimeMode(
   next: TradingRuntimeMode,
-  opts: { confirmed: boolean },
+  opts: { confirmed: boolean; operatorToken?: string | null },
 ): Promise<ModeStatus> {
   if (next === "paper") {
     runtimeMode = "paper";
@@ -65,9 +73,7 @@ export async function setRuntimeMode(
     return getModeStatus();
   }
 
-  // No authenticated operator boundary exists yet. Fail closed even if keys
-  // and a client-supplied confirmation are present.
-  assertLiveDeploymentEnabled();
+  assertOperatorToken(opts.operatorToken);
 
   if (!opts.confirmed) {
     throw new Error("Live mode requires explicit confirmation.");
@@ -95,7 +101,7 @@ export async function setRuntimeMode(
 }
 
 export function assertLiveDeploymentEnabled(): void {
-  throw new Error("LIVE_MODE_DISABLED_PENDING_OPERATOR_AUTH");
+  assertOperatorConfigured();
 }
 
 export function assertLiveAllowed(): void {
