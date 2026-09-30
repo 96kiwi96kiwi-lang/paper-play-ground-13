@@ -20,6 +20,8 @@ Unconfirmed grid rung reservations older than `grid.reservationTtlMs` (default 2
 
 A file lease at `data/worker-lease.json` elects one process as the trading worker (TTL 90s, steal on expiry). A second process logs standby and **cannot submit** — `createServerOrderManager` renews the lease and refuses with `Standby worker cannot submit` when another live owner holds it. Optional `WORKER_ID` / `WORKER_LEASE_PATH` / `WORKER_LEASE_TTL_MS` — no secrets. Health includes `workerWatch` (holder, age, this process maySubmit).
 
+A root `Dockerfile` builds the production Node server for hosts that require a Dockerfile (e.g. Railway paper-hourly-worker). The image does not contain secrets and starts in paper. Mount a persistent volume at `/app/data` so the worker lease and `bot-state.json` survive restarts. Live keys, if ever used, stay in the host environment — never in the image.
+
 See the file history for the full phase table. Default remains paper. Live keys stay on the server. Live mode stays blocked until authenticated operator authorization exists.
 
 ## Architecture
