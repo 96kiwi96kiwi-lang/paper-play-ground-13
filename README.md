@@ -12,6 +12,8 @@ Hour 1–8 plus hardening are in place. OrderManager refuses market submits with
 
 `cancelStaleOpenOrders` uses `orders.staleOpenOrderMs` (default 15m): working limit / open / partial orders older than that window are canceled through the adapter. Market fills are ignored. Positions are not flattened. `executeBotTick` now runs that sweep **before** strategy submit, including hold ticks, so resting limits do not sit forever waiting for a later manual call. Vitest covers the selector and cancel path in `tests/stale-open-orders.test.ts` (no exchange, no secrets).
 
+Unconfirmed grid rung reservations older than `grid.reservationTtlMs` (default 2m) are rolled back on every `executeBotTick` as well as inside `gridStrategy` / hydrate — hold and non-grid ticks included — so a hung submit cannot leave `stackedBuys` latched. Confirmed fills (`reserved=false`) stay. Vitest covers the TTL path in `tests/grid-reservation-ttl.test.ts` (no exchange, no secrets).
+
 `applyHardStops` still latches daily-loss, max-drawdown, losing-streak, network-error, and price-gap halts. `evaluateRisk` refuses after a halt and also refuses at `risk.maxDailyTrades` **without** setting `haltReason`. Vitest covers those floors in `tests/risk-hard-stops.test.ts` (no exchange, no secrets).
 
 A file lease at `data/worker-lease.json` elects one process as the trading worker (TTL 90s, steal on expiry). A second process logs standby and **cannot submit** — `createServerOrderManager` renews the lease and refuses with `Standby worker cannot submit` when another live owner holds it. Optional `WORKER_ID` / `WORKER_LEASE_PATH` / `WORKER_LEASE_TTL_MS` — no secrets. Health includes `workerWatch` (holder, age, this process maySubmit).

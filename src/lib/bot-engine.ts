@@ -6,6 +6,7 @@
 import { TRADING_CONFIG, type StrategyId } from "@/config/trading";
 import {
   confirmGridReservation,
+  expireStaleGridReservations,
   getGridBook,
   releaseGridReservation,
   runStrategy,
@@ -119,6 +120,8 @@ export function gridSellRungAmount(symbol: string, held: number): number {
  * Full path: strategy → risk → OrderManager → adapter (Paper or KuCoin).
  * Same interface regardless of exchange. No UI changes.
  * Resting limits older than orders.staleOpenOrderMs are canceled first.
+ * Unconfirmed grid reservations older than grid.reservationTtlMs roll back first
+ * (hold and non-grid ticks included) so a hung submit cannot lock stackedBuys.
  * Grid rung reservations are confirmed only after an accepted submit.
  * Sells are clamped to booked inventory so OrderManager never shorts.
  * evaluateRisk does not size sells — default to held inventory, grid sells one rung.
@@ -129,6 +132,7 @@ export async function executeBotTick(
   manager: OrderManager,
 ): Promise<{ tick: BotTickResult; submit?: SubmitResult }> {
   await manager.cancelStaleOpenOrders();
+  expireStaleGridReservations();
 
   const tick = botTick(input);
   if (!tick.shouldExecute || tick.action === "hold") {
