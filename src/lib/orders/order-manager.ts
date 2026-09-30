@@ -6,7 +6,7 @@
 import { TRADING_CONFIG } from "@/config/trading";
 import type { ExchangeAdapter, Side, UnifiedOrder } from "@/lib/exchange/types";
 import { applyHardStops, evaluateRisk, type RiskState } from "@/lib/risk";
-import { cashReserveBuyReason } from "./cash-reserve";
+import { cashReserveBuyReason, workingBuyReservedUsd } from "./cash-reserve";
 import { duplicateClientOrderIdReason } from "./client-order-id";
 import { sellDustRemainderReason } from "./sell-dust";
 import { selectStaleOpenOrders, selectWorkingOrders } from "./stale-open";
@@ -203,6 +203,7 @@ export class OrderManager {
       this.cash,
       notional,
       TRADING_CONFIG.risk.minCashReserveUsd,
+      workingBuyReservedUsd(working),
     );
     if (reserveReason) return this.fail(reserveReason);
 
