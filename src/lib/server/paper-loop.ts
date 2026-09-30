@@ -11,6 +11,7 @@ import { expireStaleGridReservations, snapshotGridBooks } from "@/lib/strategies
 import { recordBotHeartbeat } from "./heartbeat";
 import { persistGridBooks } from "./persist";
 import { claimWorkerLease, restorePersistedGridBooks } from "./register-monitoring";
+import { cancelStaleSeenOrdersOnDisk } from "./stale-seen";
 import { getRuntimeMode } from "./trading-mode";
 
 export type PaperLoopStatus = {
@@ -21,12 +22,14 @@ export type PaperLoopStatus = {
   lastTickAgeMs: number | null;
   ticks: number;
   reason: string;
+  lastStaleCanceled?: number;
 };
 
 let timer: ReturnType<typeof setInterval> | null = null;
 let ticks = 0;
 let lastTickAt: number | null = null;
 let lastReason = "idle";
+let lastStaleCanceled = 0;
 
 export function paperServerLoopRequested(): boolean {
   const raw = process.env.PAPER_SERVER_LOOP?.trim().toLowerCase();
@@ -44,6 +47,7 @@ export function describePaperLoop(now = Date.now()): PaperLoopStatus {
     lastTickAgeMs: lastTickAt != null ? Math.max(0, now - lastTickAt) : null,
     ticks,
     reason: lastReason,
+    lastStaleCanceled,
   };
 }
 
@@ -55,10 +59,15 @@ export function runPaperHousekeepingTick(now = Date.now()): PaperLoopStatus {
   restorePersistedGridBooks();
   expireStaleGridReservations();
   persistGridBooks(snapshotGridBooks());
+  const sweep = cancelStaleSeenOrdersOnDisk(now);
+  lastStaleCanceled = sweep.canceled;
   recordBotHeartbeat({ at: now, action: "hold", symbol: "loop" });
   ticks += 1;
   lastTickAt = now;
-  lastReason = "housekeeping";
+  lastReason =
+    sweep.canceled > 0
+      ? `housekeeping canceled ${sweep.canceled} stale working order(s)`
+      : "housekeeping";
   return describePaperLoop(now);
 }
 
