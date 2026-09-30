@@ -118,6 +118,7 @@ export function gridSellRungAmount(symbol: string, held: number): number {
 /**
  * Full path: strategy → risk → OrderManager → adapter (Paper or KuCoin).
  * Same interface regardless of exchange. No UI changes.
+ * Resting limits older than orders.staleOpenOrderMs are canceled first.
  * Grid rung reservations are confirmed only after an accepted submit.
  * Sells are clamped to booked inventory so OrderManager never shorts.
  * evaluateRisk does not size sells — default to held inventory, grid sells one rung.
@@ -127,6 +128,8 @@ export async function executeBotTick(
   input: BotTickInput,
   manager: OrderManager,
 ): Promise<{ tick: BotTickResult; submit?: SubmitResult }> {
+  await manager.cancelStaleOpenOrders();
+
   const tick = botTick(input);
   if (!tick.shouldExecute || tick.action === "hold") {
     return { tick };
