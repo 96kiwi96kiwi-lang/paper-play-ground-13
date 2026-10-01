@@ -18,6 +18,12 @@ import {
   acceptedTradeCountOnUtcDayForSymbol,
   dailyTradeCapPerSymbolReason,
 } from "./daily-trade-cap";
+import {
+  acceptedSellNotionalOnUtcDay,
+  acceptedSellNotionalOnUtcDayForSymbol,
+  dailySellNotionalPerSymbolReason,
+  dailySellNotionalReason,
+} from "./daily-sell-notional";
 import { inventoryReserveSellReason, workingSellReservedAmount } from "./inventory-reserve";
 import { sellDustRemainderReason } from "./sell-dust";
 import { selectStaleOpenOrders, selectWorkingOrders } from "./stale-open";
@@ -264,6 +270,23 @@ export class OrderManager {
       cfg.maxDailyBuyNotionalPerSymbolUsd,
     );
     if (dailyBuySymbol) return this.fail(dailyBuySymbol);
+
+    const dailySell = dailySellNotionalReason(
+      intent.side,
+      notional,
+      acceptedSellNotionalOnUtcDay(this.seen, now),
+      cfg.maxDailySellNotionalUsd,
+    );
+    if (dailySell) return this.fail(dailySell);
+
+    const dailySellSymbol = dailySellNotionalPerSymbolReason(
+      intent.side,
+      intent.symbol,
+      notional,
+      acceptedSellNotionalOnUtcDayForSymbol(this.seen, intent.symbol, now),
+      cfg.maxDailySellNotionalPerSymbolUsd,
+    );
+    if (dailySellSymbol) return this.fail(dailySellSymbol);
 
     const reserveReason = cashReserveBuyReason(
       intent.side,
