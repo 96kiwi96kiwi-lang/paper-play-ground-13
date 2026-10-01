@@ -67,6 +67,8 @@ export const TRADING_CONFIG = {
     minSubmitIntervalMs: 8_000,
     /** Refuse opposite-side submits on the same symbol inside this window after an accepted order. */
     symbolFlipCooldownMs: 90_000,
+    /** Refuse same-side submits on the same symbol inside this window after an accepted order. */
+    sameSideCooldownMs: 25_000,
     /** Refuse a new submit while this many local working orders are still open / partial / pending. */
     maxConcurrentOpenOrders: 4,
     /** Refuse a new submit if this many working orders already exist on the same symbol. */
@@ -91,6 +93,12 @@ export const TRADING_CONFIG = {
     maxDailySellNotionalUsd: 6_000,
     /** Refuse a sell when that symbol's accepted sell notional on the UTC day plus this order would exceed this USD total. */
     maxDailySellNotionalPerSymbolUsd: 2_500,
+    /** Rolling window for the hourly sell-notional floor (ms). */
+    hourlySellWindowMs: 60 * 60 * 1000,
+    /** Refuse a sell when accepted sell notional inside hourlySellWindowMs plus this order would exceed this USD total. */
+    maxHourlySellNotionalUsd: 2_500,
+    /** Refuse a sell when that symbol's accepted sell notional inside the window plus this order would exceed this USD total. */
+    maxHourlySellNotionalPerSymbolUsd: 1_200,
     /** Refuse when remaining notional on working orders plus this submit would exceed this USD total. */
     maxWorkingNotionalUsd: 5_000,
     /** Refuse when remaining notional on working orders for this symbol plus this submit would exceed this USD total. */

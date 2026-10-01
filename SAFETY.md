@@ -34,8 +34,10 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] Health reports last tick age; a stale heartbeat (no tick for ~135s) fails health and fires a watchdog alert
 - [ ] `minCashReserveUsd` is sized so buys cannot empty the account cash sleeve
 - [ ] `maxDailyTrades` (12) and `maxDailyTradesPerSymbol` (5) match how much churn you will allow before OrderManager refuses
+- [ ] `sameSideCooldownMs` (25s) matches how soon you will allow another buy or another sell on the same pair (not a halt; does not flatten; opposite side still uses the 90s flip cooldown)
 - [ ] `maxDailySellNotionalUsd` (6,000) and `maxDailySellNotionalPerSymbolUsd` (2,500) match how much inventory you will allow OrderManager to sell in one UTC day (not a halt; does not flatten)
 - [ ] `maxHourlyBuyNotionalUsd` (1,500) and `maxHourlyBuyNotionalPerSymbolUsd` (800) match how much you will allow OrderManager to buy inside a rolling 60 minutes (not a halt; sells still allowed)
+- [ ] `maxHourlySellNotionalUsd` (2,500) and `maxHourlySellNotionalPerSymbolUsd` (1,200) match how much you will allow OrderManager to sell inside a rolling 60 minutes (not a halt; does not flatten; buys still allowed)
 - [ ] `maxWorkingNotionalUsd` (5,000) is sized so resting open / partial / pending orders cannot stack past that sleeve
 - [ ] `maxWorkingNotionalPerSymbolUsd` (2,500) is sized so one pair cannot rest the whole working-notional sleeve
 - [ ] Only one process holds `data/worker-lease.json`; a second replica stays standby until the lease expires
