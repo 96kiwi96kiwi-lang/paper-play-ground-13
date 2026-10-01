@@ -127,6 +127,9 @@ test("market tick uses a fresh quote, strategy, lease and persisted paper order"
   expect(status.lastQuoteAt).toBe(now);
   expect(loadSeenOrders()).toHaveLength(1);
   expect(loadSeenOrders()[0]?.symbol).toBe("BTC/USDT");
+  expect(loadSeenOrders()[0]?.cost).toBeLessThanOrEqual(
+    TRADING_CONFIG.orders.maxHourlyBuyNotionalPerSymbolUsd,
+  );
   expect(loadPaperPortfolio()?.positions["BTC/USDT"]?.amount).toBeGreaterThan(0);
   expect(loadMarketHistory()["BTC/USDT"]).toHaveLength(2);
 });

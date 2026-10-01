@@ -139,7 +139,20 @@ export async function executeBotTick(
     return { tick };
   }
 
-  const sizeUsd = tick.suggestedSizeUsd ?? 0;
+  let sizeUsd = tick.suggestedSizeUsd ?? 0;
+  if (tick.action === "buy") {
+    const orders = TRADING_CONFIG.orders;
+    // Keep strategy sizing inside every static buy envelope. OrderManager remains
+    // authoritative for already-booked notional and can still refuse the submit.
+    sizeUsd = Math.min(
+      sizeUsd,
+      orders.maxOrderNotionalUsd,
+      orders.maxDailyBuyNotionalUsd,
+      orders.maxDailyBuyNotionalPerSymbolUsd,
+      orders.maxHourlyBuyNotionalUsd,
+      orders.maxHourlyBuyNotionalPerSymbolUsd,
+    );
+  }
   let amount = input.currentPrice > 0 && sizeUsd > 0 ? sizeUsd / input.currentPrice : 0;
 
   if (tick.action === "sell") {
