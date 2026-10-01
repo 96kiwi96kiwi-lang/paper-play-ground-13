@@ -67,6 +67,8 @@ export const TRADING_CONFIG = {
     minSubmitIntervalMs: 8_000,
     /** Refuse opposite-side submits on the same symbol inside this window after an accepted order. */
     symbolFlipCooldownMs: 90_000,
+    /** Refuse same-side submits on the same symbol inside this window after an accepted order. */
+    sameSideCooldownMs: 25_000,
     /** Refuse a new submit while this many local working orders are still open / partial / pending. */
     maxConcurrentOpenOrders: 4,
     /** Refuse a new submit if this many working orders already exist on the same symbol. */

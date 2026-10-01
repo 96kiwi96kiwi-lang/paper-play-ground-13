@@ -37,6 +37,7 @@ import {
   hourlySellNotionalReason,
 } from "./hourly-sell-notional";
 import { inventoryReserveSellReason, workingSellReservedAmount } from "./inventory-reserve";
+import { sameSideCooldownReason } from "./same-side-cooldown";
 import { sellDustRemainderReason } from "./sell-dust";
 import { selectStaleOpenOrders, selectWorkingOrders } from "./stale-open";
 import { staleMarketQuoteReason } from "./stale-quote";
@@ -189,6 +190,15 @@ export class OrderManager {
       cfg.symbolFlipCooldownMs,
     );
     if (flip) return this.fail(flip);
+
+    const sameSide = sameSideCooldownReason(
+      intent.symbol,
+      intent.side,
+      this.seen,
+      now,
+      cfg.sameSideCooldownMs,
+    );
+    if (sameSide) return this.fail(sameSide);
 
     if (this.lastSubmitAt > 0 && now - this.lastSubmitAt < cfg.minSubmitIntervalMs) {
       return this.fail(
