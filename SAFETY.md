@@ -33,6 +33,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] Resume only via `clearOperatorHalt()` after presenting `OPERATOR_TOKEN` — do not just delete `haltReason` from the JSON; `lastHardStop.reason` used to restore it
 - [ ] Health reports last tick age; a stale heartbeat (no tick for ~135s) fails health and fires a watchdog alert
 - [ ] `minCashReserveUsd` is sized so buys cannot empty the account cash sleeve
+- [ ] `maxDailyTrades` (12) and `maxDailyTradesPerSymbol` (5) match how much churn you will allow before OrderManager refuses
 - [ ] Only one process holds `data/worker-lease.json`; a second replica stays standby until the lease expires
 - [ ] `PAPER_SERVER_LOOP=1` is paper-only housekeeping (heartbeat + grid TTL). It does not place live orders or invent quotes. Leave it off unless you want a server-owned heartbeat.
 
