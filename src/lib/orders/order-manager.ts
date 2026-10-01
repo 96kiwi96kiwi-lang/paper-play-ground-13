@@ -10,6 +10,8 @@ import { cashReserveBuyReason, workingBuyReservedUsd } from "./cash-reserve";
 import { duplicateClientOrderIdReason } from "./client-order-id";
 import {
   acceptedBuyNotionalOnUtcDay,
+  acceptedBuyNotionalOnUtcDayForSymbol,
+  dailyBuyNotionalPerSymbolReason,
   dailyBuyNotionalReason,
 } from "./daily-buy-notional";
 import { inventoryReserveSellReason, workingSellReservedAmount } from "./inventory-reserve";
@@ -220,6 +222,15 @@ export class OrderManager {
       cfg.maxDailyBuyNotionalUsd,
     );
     if (dailyBuy) return this.fail(dailyBuy);
+
+    const dailyBuySymbol = dailyBuyNotionalPerSymbolReason(
+      intent.side,
+      intent.symbol,
+      notional,
+      acceptedBuyNotionalOnUtcDayForSymbol(this.seen, intent.symbol, now),
+      cfg.maxDailyBuyNotionalPerSymbolUsd,
+    );
+    if (dailyBuySymbol) return this.fail(dailyBuySymbol);
 
     const reserveReason = cashReserveBuyReason(
       intent.side,
