@@ -8,6 +8,10 @@ import type { ExchangeAdapter, Side, UnifiedOrder } from "@/lib/exchange/types";
 import { applyHardStops, evaluateRisk, type RiskState } from "@/lib/risk";
 import { cashReserveBuyReason, workingBuyReservedUsd } from "./cash-reserve";
 import { duplicateClientOrderIdReason } from "./client-order-id";
+import {
+  acceptedBuyNotionalOnUtcDay,
+  dailyBuyNotionalReason,
+} from "./daily-buy-notional";
 import { inventoryReserveSellReason, workingSellReservedAmount } from "./inventory-reserve";
 import { sellDustRemainderReason } from "./sell-dust";
 import { selectStaleOpenOrders, selectWorkingOrders } from "./stale-open";
@@ -208,6 +212,14 @@ export class OrderManager {
         }
       }
     }
+
+    const dailyBuy = dailyBuyNotionalReason(
+      intent.side,
+      notional,
+      acceptedBuyNotionalOnUtcDay(this.seen, now),
+      cfg.maxDailyBuyNotionalUsd,
+    );
+    if (dailyBuy) return this.fail(dailyBuy);
 
     const reserveReason = cashReserveBuyReason(
       intent.side,
