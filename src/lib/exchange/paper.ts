@@ -21,8 +21,12 @@ export class PaperExchange implements ExchangeAdapter {
   private orderIdCounter = 1;
   private clientOrderIndex = new Map<string, string>();
 
-  constructor(startingBalance = 10_000) {
+  constructor(
+    startingBalance = 10_000,
+    startingPositions: Record<string, { amount: number; avgEntry: number }> = {},
+  ) {
     this.cash = startingBalance;
+    this.positions = { ...startingPositions };
   }
 
   /** Allow external price injection (from CoinGecko) */
