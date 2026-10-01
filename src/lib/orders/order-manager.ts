@@ -37,6 +37,7 @@ import {
   hourlySellNotionalReason,
 } from "./hourly-sell-notional";
 import { inventoryReserveSellReason, workingSellReservedAmount } from "./inventory-reserve";
+import { limitPriceBandReason } from "./limit-price-band";
 import {
   rejectBurstPerSymbolReason,
   rejectBurstReason,
@@ -61,6 +62,8 @@ export type OrderIntent = {
   amount: number;
   type?: "market" | "limit";
   price?: number;
+  /** Last mark used only to band limit prices. Market orders ignore it. */
+  markPrice?: number;
   quotedAt?: number;
   clientOrderId?: string;
   reason?: string;
@@ -187,6 +190,14 @@ export class OrderManager {
 
     const stale = staleMarketQuoteReason(type, intent.quotedAt, now, cfg.maxPriceAgeMs);
     if (stale) return this.fail(stale);
+
+    const band = limitPriceBandReason(
+      type,
+      intent.price,
+      intent.markPrice,
+      cfg.maxLimitDeviationPct,
+    );
+    if (band) return this.fail(band);
 
     const flip = symbolFlipCooldownReason(
       intent.symbol,
