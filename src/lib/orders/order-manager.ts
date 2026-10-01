@@ -8,6 +8,7 @@ import type { ExchangeAdapter, Side, UnifiedOrder } from "@/lib/exchange/types";
 import { applyHardStops, evaluateRisk, type RiskState } from "@/lib/risk";
 import { cashReserveBuyReason, workingBuyReservedUsd } from "./cash-reserve";
 import { duplicateClientOrderIdReason } from "./client-order-id";
+import { inventoryReserveSellReason, workingSellReservedAmount } from "./inventory-reserve";
 import { sellDustRemainderReason } from "./sell-dust";
 import { selectStaleOpenOrders, selectWorkingOrders } from "./stale-open";
 import { staleMarketQuoteReason } from "./stale-quote";
@@ -219,12 +220,19 @@ export class OrderManager {
 
     if (intent.side === "sell") {
       const held = this.positionAmount(intent.symbol);
-      if (held + 1e-12 < intent.amount) {
-        return this.fail(`Inventory: cannot sell ${intent.amount} of ${intent.symbol} (held ${held})`);
-      }
-      const dust = sellDustRemainderReason(
+      const reservedSells = workingSellReservedAmount(intent.symbol, working);
+      const inventoryReason = inventoryReserveSellReason(
         intent.side,
         held,
+        intent.amount,
+        reservedSells,
+        intent.symbol,
+      );
+      if (inventoryReason) return this.fail(inventoryReason);
+      const available = held - reservedSells;
+      const dust = sellDustRemainderReason(
+        intent.side,
+        available,
         intent.amount,
         px,
         cfg.minOrderNotionalUsd,
