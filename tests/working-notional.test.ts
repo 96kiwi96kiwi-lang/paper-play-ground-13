@@ -1,8 +1,14 @@
 import { expect, test } from "vitest";
 import { TRADING_CONFIG } from "@/config/trading";
-import { workingNotionalReason, workingNotionalUsd } from "@/lib/orders/working-notional";
+import {
+  workingNotionalPerSymbolReason,
+  workingNotionalReason,
+  workingNotionalUsd,
+  workingNotionalUsdForSymbol,
+} from "@/lib/orders/working-notional";
 
 const cap = TRADING_CONFIG.orders.maxWorkingNotionalUsd;
+const symbolCap = TRADING_CONFIG.orders.maxWorkingNotionalPerSymbolUsd;
 
 test("working notional sums remaining size on open, partial, and pending orders", () => {
   const booked = workingNotionalUsd([
@@ -42,4 +48,31 @@ test("unknown notional is refused only when the sleeve is already full", () => {
 
 test("zero cap disables the floor", () => {
   expect(workingNotionalReason(99_000, 1, 0)).toBeNull();
+});
+
+test("per-symbol working notional ignores other pairs and closed rows", () => {
+  const booked = workingNotionalUsdForSymbol(
+    [
+      { symbol: "BTC/USDT", side: "buy", status: "open", amount: 1, remaining: 0.4, price: 2000 },
+      { symbol: "BTC/USDT", side: "sell", status: "closed", amount: 1, price: 9000 },
+      { symbol: "ETH/USDT", side: "buy", status: "open", amount: 1, price: 3000 },
+      { symbol: "BTC/USDT", side: "buy", status: "canceled", amount: 1, price: 5000 },
+    ],
+    "BTC/USDT",
+  );
+  expect(booked).toBe(800);
+});
+
+test("refuses when one symbol's booked notional plus this order would pass its sleeve", () => {
+  const reason = workingNotionalPerSymbolReason("SOL/USDT", symbolCap - 50, 100, symbolCap);
+  expect(reason).toMatch(/Working notional \(SOL\/USDT\)/);
+  expect(reason).toMatch(String(symbolCap));
+  expect(workingNotionalPerSymbolReason("ETH/USDT", 400, 200, symbolCap)).toBeNull();
+});
+
+test("per-symbol unknown notional is refused only when that symbol sleeve is full", () => {
+  expect(workingNotionalPerSymbolReason("BNB/USDT", symbolCap, undefined, symbolCap)).toMatch(
+    /already at max/,
+  );
+  expect(workingNotionalPerSymbolReason("BNB/USDT", symbolCap - 1, undefined, symbolCap)).toBeNull();
 });

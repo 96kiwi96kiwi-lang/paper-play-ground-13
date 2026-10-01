@@ -1,6 +1,7 @@
 /** Refuse when resting working orders plus this submit exceed the notional sleeve. Not a halt. */
 
 export type WorkingNotionalOrder = {
+  symbol?: string;
   side?: string;
   status?: string;
   amount?: number;
@@ -29,16 +30,28 @@ function orderNotional(order: WorkingNotionalOrder): number {
   return 0;
 }
 
+function isWorking(order: WorkingNotionalOrder): boolean {
+  const status = String(order.status ?? "");
+  return status === "open" || status === "partially_filled" || status === "pending";
+}
+
 /** Remaining notional on working orders (buy and sell). Closed, rejected, and canceled rows are ignored. */
 export function workingNotionalUsd(orders: WorkingNotionalOrder[]): number {
   let booked = 0;
   for (const order of orders) {
-    const status = String(order.status ?? "");
-    if (status !== "open" && status !== "partially_filled" && status !== "pending") continue;
+    if (!isWorking(order)) continue;
     const n = orderNotional(order);
     if (n > 0) booked += n;
   }
   return booked;
+}
+
+/** Remaining notional on working orders for one symbol. Other pairs are ignored. */
+export function workingNotionalUsdForSymbol(
+  orders: WorkingNotionalOrder[],
+  symbol: string,
+): number {
+  return workingNotionalUsd(orders.filter((order) => order.symbol === symbol));
 }
 
 export function workingNotionalReason(
@@ -59,4 +72,15 @@ export function workingNotionalReason(
     return `Working notional: ${next.toFixed(2)} would exceed max ${capUsd} (booked ${booked.toFixed(2)})`;
   }
   return null;
+}
+
+export function workingNotionalPerSymbolReason(
+  symbol: string,
+  bookedUsd: number,
+  thisNotional: number | undefined,
+  capUsd: number,
+): string | null {
+  const reason = workingNotionalReason(bookedUsd, thisNotional, capUsd);
+  if (!reason) return null;
+  return reason.replace("Working notional:", `Working notional (${symbol}):`);
 }

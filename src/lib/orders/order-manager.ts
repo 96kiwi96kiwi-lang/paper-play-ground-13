@@ -23,7 +23,12 @@ import { sellDustRemainderReason } from "./sell-dust";
 import { selectStaleOpenOrders, selectWorkingOrders } from "./stale-open";
 import { staleMarketQuoteReason } from "./stale-quote";
 import { symbolFlipCooldownReason } from "./symbol-flip";
-import { workingNotionalReason, workingNotionalUsd } from "./working-notional";
+import {
+  workingNotionalPerSymbolReason,
+  workingNotionalReason,
+  workingNotionalUsd,
+  workingNotionalUsdForSymbol,
+} from "./working-notional";
 
 export type OrderIntent = {
   symbol: string;
@@ -234,6 +239,14 @@ export class OrderManager {
       cfg.maxWorkingNotionalUsd,
     );
     if (sleeve) return this.fail(sleeve);
+
+    const sleeveSymbol = workingNotionalPerSymbolReason(
+      intent.symbol,
+      workingNotionalUsdForSymbol(working, intent.symbol),
+      notional,
+      cfg.maxWorkingNotionalPerSymbolUsd,
+    );
+    if (sleeveSymbol) return this.fail(sleeveSymbol);
 
     const dailyBuy = dailyBuyNotionalReason(
       intent.side,

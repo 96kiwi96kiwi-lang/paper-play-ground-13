@@ -35,6 +35,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] `minCashReserveUsd` is sized so buys cannot empty the account cash sleeve
 - [ ] `maxDailyTrades` (12) and `maxDailyTradesPerSymbol` (5) match how much churn you will allow before OrderManager refuses
 - [ ] `maxWorkingNotionalUsd` (5,000) is sized so resting open / partial / pending orders cannot stack past that sleeve
+- [ ] `maxWorkingNotionalPerSymbolUsd` (2,500) is sized so one pair cannot rest the whole working-notional sleeve
 - [ ] Only one process holds `data/worker-lease.json`; a second replica stays standby until the lease expires
 - [ ] `PAPER_SERVER_LOOP=1` is paper-only housekeeping (heartbeat + grid TTL). It does not place live orders or invent quotes. Leave it off unless you want a server-owned heartbeat.
 
