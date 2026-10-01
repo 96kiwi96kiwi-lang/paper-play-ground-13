@@ -111,6 +111,8 @@ export const TRADING_CONFIG = {
     maxWorkingNotionalPerSymbolUsd: 2_500,
     /** Refuse market submits whose quote timestamp is older than this (ms). */
     maxPriceAgeMs: 90_000,
+    /** Refuse a limit whose price is more than this percent away from markPrice. Market orders skip this. */
+    maxLimitDeviationPct: 2.5,
   },
 
   // Bot timing
