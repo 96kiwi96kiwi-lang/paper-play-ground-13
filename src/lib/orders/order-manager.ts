@@ -30,6 +30,12 @@ import {
   dailySellNotionalPerSymbolReason,
   dailySellNotionalReason,
 } from "./daily-sell-notional";
+import {
+  acceptedSellNotionalInWindow,
+  acceptedSellNotionalInWindowForSymbol,
+  hourlySellNotionalPerSymbolReason,
+  hourlySellNotionalReason,
+} from "./hourly-sell-notional";
 import { inventoryReserveSellReason, workingSellReservedAmount } from "./inventory-reserve";
 import { sellDustRemainderReason } from "./sell-dust";
 import { selectStaleOpenOrders, selectWorkingOrders } from "./stale-open";
@@ -310,6 +316,23 @@ export class OrderManager {
       cfg.maxDailySellNotionalPerSymbolUsd,
     );
     if (dailySellSymbol) return this.fail(dailySellSymbol);
+
+    const hourlySell = hourlySellNotionalReason(
+      intent.side,
+      notional,
+      acceptedSellNotionalInWindow(this.seen, now, cfg.hourlySellWindowMs),
+      cfg.maxHourlySellNotionalUsd,
+    );
+    if (hourlySell) return this.fail(hourlySell);
+
+    const hourlySellSymbol = hourlySellNotionalPerSymbolReason(
+      intent.side,
+      intent.symbol,
+      notional,
+      acceptedSellNotionalInWindowForSymbol(this.seen, intent.symbol, now, cfg.hourlySellWindowMs),
+      cfg.maxHourlySellNotionalPerSymbolUsd,
+    );
+    if (hourlySellSymbol) return this.fail(hourlySellSymbol);
 
     const reserveReason = cashReserveBuyReason(
       intent.side,
