@@ -81,6 +81,12 @@ export const TRADING_CONFIG = {
     maxDailyBuyNotionalUsd: 4_000,
     /** Refuse a buy when that symbol's accepted buy notional on the UTC day plus this order would exceed this USD total. */
     maxDailyBuyNotionalPerSymbolUsd: 1_800,
+    /** Rolling window for the hourly buy-notional floor (ms). */
+    hourlyBuyWindowMs: 60 * 60 * 1000,
+    /** Refuse a buy when accepted buy notional inside hourlyBuyWindowMs plus this order would exceed this USD total. */
+    maxHourlyBuyNotionalUsd: 1_500,
+    /** Refuse a buy when that symbol's accepted buy notional inside the window plus this order would exceed this USD total. */
+    maxHourlyBuyNotionalPerSymbolUsd: 800,
     /** Refuse a sell when accepted sell notional on the UTC day plus this order would exceed this USD total. */
     maxDailySellNotionalUsd: 6_000,
     /** Refuse a sell when that symbol's accepted sell notional on the UTC day plus this order would exceed this USD total. */

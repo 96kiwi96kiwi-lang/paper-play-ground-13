@@ -19,6 +19,12 @@ import {
   dailyTradeCapPerSymbolReason,
 } from "./daily-trade-cap";
 import {
+  acceptedBuyNotionalInWindow,
+  acceptedBuyNotionalInWindowForSymbol,
+  hourlyBuyNotionalPerSymbolReason,
+  hourlyBuyNotionalReason,
+} from "./hourly-buy-notional";
+import {
   acceptedSellNotionalOnUtcDay,
   acceptedSellNotionalOnUtcDayForSymbol,
   dailySellNotionalPerSymbolReason,
@@ -270,6 +276,23 @@ export class OrderManager {
       cfg.maxDailyBuyNotionalPerSymbolUsd,
     );
     if (dailyBuySymbol) return this.fail(dailyBuySymbol);
+
+    const hourlyBuy = hourlyBuyNotionalReason(
+      intent.side,
+      notional,
+      acceptedBuyNotionalInWindow(this.seen, now, cfg.hourlyBuyWindowMs),
+      cfg.maxHourlyBuyNotionalUsd,
+    );
+    if (hourlyBuy) return this.fail(hourlyBuy);
+
+    const hourlyBuySymbol = hourlyBuyNotionalPerSymbolReason(
+      intent.side,
+      intent.symbol,
+      notional,
+      acceptedBuyNotionalInWindowForSymbol(this.seen, intent.symbol, now, cfg.hourlyBuyWindowMs),
+      cfg.maxHourlyBuyNotionalPerSymbolUsd,
+    );
+    if (hourlyBuySymbol) return this.fail(hourlyBuySymbol);
 
     const dailySell = dailySellNotionalReason(
       intent.side,
