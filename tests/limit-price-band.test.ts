@@ -18,11 +18,9 @@ test("limit beyond the band is refused either side", () => {
   const high = limitPriceBandReason("limit", 103, 100, MAX);
   expect(high).toMatch(/Limit band/);
   expect(high).toMatch(/3\.00%/);
-  expect(high).toMatch(/max 2\.5%/
-);
+  expect(high).toMatch(/max 2\.5%/);
   const low = limitPriceBandReason("limit", 97, 100, MAX);
-  expect(low).toMatch(/3\.00%/
-);
+  expect(low).toMatch(/3\.00%/);
 });
 
 test("missing or non-positive mark is refused", () => {
