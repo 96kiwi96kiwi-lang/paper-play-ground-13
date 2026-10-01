@@ -81,6 +81,10 @@ export const TRADING_CONFIG = {
     maxDailyBuyNotionalUsd: 4_000,
     /** Refuse a buy when that symbol's accepted buy notional on the UTC day plus this order would exceed this USD total. */
     maxDailyBuyNotionalPerSymbolUsd: 1_800,
+    /** Refuse when remaining notional on working orders plus this submit would exceed this USD total. */
+    maxWorkingNotionalUsd: 5_000,
+    /** Refuse when remaining notional on working orders for this symbol plus this submit would exceed this USD total. */
+    maxWorkingNotionalPerSymbolUsd: 2_500,
     /** Refuse market submits whose quote timestamp is older than this (ms). */
     maxPriceAgeMs: 90_000,
   },
