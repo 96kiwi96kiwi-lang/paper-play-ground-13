@@ -14,6 +14,10 @@ import {
   dailyBuyNotionalPerSymbolReason,
   dailyBuyNotionalReason,
 } from "./daily-buy-notional";
+import {
+  acceptedTradeCountOnUtcDayForSymbol,
+  dailyTradeCapPerSymbolReason,
+} from "./daily-trade-cap";
 import { inventoryReserveSellReason, workingSellReservedAmount } from "./inventory-reserve";
 import { sellDustRemainderReason } from "./sell-dust";
 import { selectStaleOpenOrders, selectWorkingOrders } from "./stale-open";
@@ -180,6 +184,14 @@ export class OrderManager {
         `Per-symbol working-order cap: ${perSymbol}/${cfg.maxOpenOrdersPerSymbol} on ${intent.symbol}`,
       );
     }
+
+    const symbolDayTrades = acceptedTradeCountOnUtcDayForSymbol(this.seen, intent.symbol, now);
+    const symbolTradeCap = dailyTradeCapPerSymbolReason(
+      intent.symbol,
+      symbolDayTrades,
+      TRADING_CONFIG.risk.maxDailyTradesPerSymbol,
+    );
+    if (symbolTradeCap) return this.fail(symbolTradeCap);
 
     const px = intent.price && intent.price > 0 ? intent.price : undefined;
     const notional = px != null ? intent.amount * px : undefined;

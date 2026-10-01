@@ -33,6 +33,8 @@ export const TRADING_CONFIG = {
     losingStreakHardStop: 4,
     /** Max accepted orders (buy or sell) per UTC day. Not a hard-stop — just refuse new submits. */
     maxDailyTrades: 12,
+    /** Max accepted orders (buy or sell) per symbol per UTC day. Not a halt. */
+    maxDailyTradesPerSymbol: 5,
     /** Keep at least this much cash; buys that would breach it are refused (not a halt). */
     minCashReserveUsd: 500,
   },
