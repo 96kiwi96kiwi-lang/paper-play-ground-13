@@ -23,28 +23,48 @@ function orderNotional(order: {
 
 const COUNTED = new Set(["pending", "open", "partially_filled", "closed", "filled"]);
 
-export function acceptedBuyNotionalOnUtcDay(
-  orders: Array<{
-    side?: string;
-    status?: string;
-    timestamp?: number;
-    cost?: number;
-    amount?: number;
-    filled?: number;
-    remaining?: number;
-    price?: number;
-  }>,
+type CountedOrder = {
+  side?: string;
+  symbol?: string;
+  status?: string;
+  timestamp?: number;
+  cost?: number;
+  amount?: number;
+  filled?: number;
+  remaining?: number;
+  price?: number;
+};
+
+function isAcceptedBuyOnUtcDay(order: CountedOrder, day: string): boolean {
+  if (order.side !== "buy") return false;
+  const status = String(order.status ?? "");
+  if (!COUNTED.has(status)) return false;
+  const ts = order.timestamp;
+  if (ts == null || !Number.isFinite(ts)) return false;
+  return utcDayKeyFromTs(ts) === day;
+}
+
+export function acceptedBuyNotionalOnUtcDay(orders: CountedOrder[], now: number): number {
+  const day = utcDayKeyFromTs(now);
+  let sum = 0;
+  for (const order of orders) {
+    if (!isAcceptedBuyOnUtcDay(order, day)) continue;
+    const n = orderNotional(order);
+    if (n > 0) sum += n;
+  }
+  return sum;
+}
+
+export function acceptedBuyNotionalOnUtcDayForSymbol(
+  orders: CountedOrder[],
+  symbol: string,
   now: number,
 ): number {
   const day = utcDayKeyFromTs(now);
   let sum = 0;
   for (const order of orders) {
-    if (order.side !== "buy") continue;
-    const status = String(order.status ?? "");
-    if (!COUNTED.has(status)) continue;
-    const ts = order.timestamp;
-    if (ts == null || !Number.isFinite(ts)) continue;
-    if (utcDayKeyFromTs(ts) !== day) continue;
+    if (order.symbol !== symbol) continue;
+    if (!isAcceptedBuyOnUtcDay(order, day)) continue;
     const n = orderNotional(order);
     if (n > 0) sum += n;
   }
@@ -69,6 +89,29 @@ export function dailyBuyNotionalReason(
   const next = booked + thisNotional;
   if (next > capUsd + 1e-9) {
     return `Daily buy notional: $${next.toFixed(2)} would exceed cap $${capUsd} (booked today $${booked.toFixed(2)})`;
+  }
+  return null;
+}
+
+export function dailyBuyNotionalPerSymbolReason(
+  side: "buy" | "sell",
+  symbol: string,
+  thisNotional: number | undefined,
+  bookedTodayUsd: number,
+  capUsd: number,
+): string | null {
+  if (side !== "buy") return null;
+  if (!(capUsd > 0)) return null;
+  const booked = Number.isFinite(bookedTodayUsd) && bookedTodayUsd > 0 ? bookedTodayUsd : 0;
+  if (thisNotional == null || !Number.isFinite(thisNotional)) {
+    if (booked >= capUsd) {
+      return `Daily buy notional (${symbol}): booked $${booked.toFixed(2)} already at cap $${capUsd}`;
+    }
+    return null;
+  }
+  const next = booked + thisNotional;
+  if (next > capUsd + 1e-9) {
+    return `Daily buy notional (${symbol}): $${next.toFixed(2)} would exceed cap $${capUsd} (booked today $${booked.toFixed(2)})`;
   }
   return null;
 }
