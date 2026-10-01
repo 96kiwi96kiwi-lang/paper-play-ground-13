@@ -35,6 +35,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] `minCashReserveUsd` is sized so buys cannot empty the account cash sleeve
 - [ ] `maxDailyTrades` (12) and `maxDailyTradesPerSymbol` (5) match how much churn you will allow before OrderManager refuses
 - [ ] `sameSideCooldownMs` (25s) matches how soon you will allow another buy or another sell on the same pair (not a halt; does not flatten; opposite side still uses the 90s flip cooldown)
+- [ ] `maxRejectsInWindow` (4) and `maxRejectsPerSymbolInWindow` (3) match how many adapter rejects you will allow inside 10 minutes before OrderManager pauses new submits (not a halt; does not flatten; floor refusals do not count)
 - [ ] `maxDailySellNotionalUsd` (6,000) and `maxDailySellNotionalPerSymbolUsd` (2,500) match how much inventory you will allow OrderManager to sell in one UTC day (not a halt; does not flatten)
 - [ ] `maxHourlyBuyNotionalUsd` (1,500) and `maxHourlyBuyNotionalPerSymbolUsd` (800) match how much you will allow OrderManager to buy inside a rolling 60 minutes (not a halt; sells still allowed)
 - [ ] `maxHourlySellNotionalUsd` (2,500) and `maxHourlySellNotionalPerSymbolUsd` (1,200) match how much you will allow OrderManager to sell inside a rolling 60 minutes (not a halt; does not flatten; buys still allowed)

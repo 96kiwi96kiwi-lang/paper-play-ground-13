@@ -69,6 +69,12 @@ export const TRADING_CONFIG = {
     symbolFlipCooldownMs: 90_000,
     /** Refuse same-side submits on the same symbol inside this window after an accepted order. */
     sameSideCooldownMs: 25_000,
+    /** Rolling window for adapter-reject burst floor (ms). */
+    rejectBurstWindowMs: 10 * 60 * 1000,
+    /** Refuse a new submit when this many adapter rejects are on the seen book inside the window. */
+    maxRejectsInWindow: 4,
+    /** Refuse a new submit when this many adapter rejects are on the seen book for that symbol inside the window. */
+    maxRejectsPerSymbolInWindow: 3,
     /** Refuse a new submit while this many local working orders are still open / partial / pending. */
     maxConcurrentOpenOrders: 4,
     /** Refuse a new submit if this many working orders already exist on the same symbol. */
