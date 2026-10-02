@@ -6,6 +6,7 @@
 import { TRADING_CONFIG } from "@/config/trading";
 import type { ExchangeAdapter, Side, UnifiedOrder } from "@/lib/exchange/types";
 import { applyHardStops, evaluateRisk, type RiskState } from "@/lib/risk";
+import { averageDownReason } from "./average-down";
 import { cashReserveBuyReason, workingBuyReservedUsd } from "./cash-reserve";
 import { duplicateClientOrderIdReason } from "./client-order-id";
 import { consecutiveBuysReason, trailingAcceptedBuys } from "./consecutive-buys";
@@ -286,6 +287,18 @@ export class OrderManager {
       cfg.lossReentryCooldownMs,
     );
     if (lossReentry) return this.fail(lossReentry);
+
+    const mark = intent.markPrice && intent.markPrice > 0 ? intent.markPrice : intent.price;
+    const heldPos = this.positions[intent.symbol];
+    const averageDown = averageDownReason(
+      intent.side,
+      intent.symbol,
+      heldPos?.amount ?? 0,
+      heldPos?.avgEntry ?? 0,
+      mark,
+      cfg.maxAverageDownPct,
+    );
+    if (averageDown) return this.fail(averageDown);
 
     const px = intent.price && intent.price > 0 ? intent.price : undefined;
     const notional = px != null ? intent.amount * px : undefined;
