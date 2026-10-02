@@ -31,7 +31,9 @@ test("a scratch sell and a profitable sell do not start the cooldown", () => {
 });
 
 test("buys on that symbol wait out the cooldown; sells and other pairs pass", () => {
-  const now = 10_000;
+  // Keep the synthetic timestamp positive: the helper deliberately ignores
+  // missing/invalid persisted timestamps at or below zero.
+  const now = 100_000;
   const lossAt = now - 60_000;
   expect(lossReentryReason("buy", "BTC/USDT", lossAt, now, cooldown)).toMatch(/Loss reentry/);
   expect(lossReentryReason("sell", "BTC/USDT", lossAt, now, cooldown)).toBeNull();
