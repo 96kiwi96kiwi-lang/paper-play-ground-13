@@ -121,6 +121,10 @@ export const TRADING_CONFIG = {
     lossReentryMinLossPct: 1,
     /** Refuse an add when mark is at least this percent under the open average entry. */
     maxAverageDownPct: 3,
+    /** Refuse a buy this long after an accepted buy on the same symbol if the mark has run up (ms). */
+    chaseUpWindowMs: 15 * 60 * 1000,
+    /** Refuse a buy when mark is at least this percent above the latest accepted buy fill inside the window. */
+    maxChaseUpPct: 2,
   },
 
   // Bot timing
