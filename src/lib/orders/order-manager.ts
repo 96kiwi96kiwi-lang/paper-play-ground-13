@@ -37,6 +37,13 @@ import {
   hourlySellNotionalReason,
 } from "./hourly-sell-notional";
 import { inventoryReserveSellReason, workingSellReservedAmount } from "./inventory-reserve";
+import { limitPriceBandReason } from "./limit-price-band";
+import {
+  rejectBurstPerSymbolReason,
+  rejectBurstReason,
+  rejectedCountInWindow,
+  rejectedCountInWindowForSymbol,
+} from "./reject-burst";
 import { sameSideCooldownReason } from "./same-side-cooldown";
 import { sellDustRemainderReason } from "./sell-dust";
 import { selectStaleOpenOrders, selectWorkingOrders } from "./stale-open";
@@ -55,6 +62,8 @@ export type OrderIntent = {
   amount: number;
   type?: "market" | "limit";
   price?: number;
+  /** Last mark used only to band limit prices. Market orders ignore it. */
+  markPrice?: number;
   quotedAt?: number;
   clientOrderId?: string;
   reason?: string;
@@ -182,6 +191,14 @@ export class OrderManager {
     const stale = staleMarketQuoteReason(type, intent.quotedAt, now, cfg.maxPriceAgeMs);
     if (stale) return this.fail(stale);
 
+    const band = limitPriceBandReason(
+      type,
+      intent.price,
+      intent.markPrice,
+      cfg.maxLimitDeviationPct,
+    );
+    if (band) return this.fail(band);
+
     const flip = symbolFlipCooldownReason(
       intent.symbol,
       intent.side,
@@ -199,6 +216,21 @@ export class OrderManager {
       cfg.sameSideCooldownMs,
     );
     if (sameSide) return this.fail(sameSide);
+
+    const rejectBurst = rejectBurstReason(
+      rejectedCountInWindow(this.seen, now, cfg.rejectBurstWindowMs),
+      cfg.maxRejectsInWindow,
+      cfg.rejectBurstWindowMs,
+    );
+    if (rejectBurst) return this.fail(rejectBurst);
+
+    const rejectBurstSymbol = rejectBurstPerSymbolReason(
+      intent.symbol,
+      rejectedCountInWindowForSymbol(this.seen, intent.symbol, now, cfg.rejectBurstWindowMs),
+      cfg.maxRejectsPerSymbolInWindow,
+      cfg.rejectBurstWindowMs,
+    );
+    if (rejectBurstSymbol) return this.fail(rejectBurstSymbol);
 
     if (this.lastSubmitAt > 0 && now - this.lastSubmitAt < cfg.minSubmitIntervalMs) {
       return this.fail(

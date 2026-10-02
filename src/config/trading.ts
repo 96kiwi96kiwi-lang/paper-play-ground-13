@@ -69,6 +69,12 @@ export const TRADING_CONFIG = {
     symbolFlipCooldownMs: 90_000,
     /** Refuse same-side submits on the same symbol inside this window after an accepted order. */
     sameSideCooldownMs: 25_000,
+    /** Rolling window for adapter-reject burst floor (ms). */
+    rejectBurstWindowMs: 10 * 60 * 1000,
+    /** Refuse a new submit when this many adapter rejects are on the seen book inside the window. */
+    maxRejectsInWindow: 4,
+    /** Refuse a new submit when this many adapter rejects are on the seen book for that symbol inside the window. */
+    maxRejectsPerSymbolInWindow: 3,
     /** Refuse a new submit while this many local working orders are still open / partial / pending. */
     maxConcurrentOpenOrders: 4,
     /** Refuse a new submit if this many working orders already exist on the same symbol. */
@@ -105,6 +111,8 @@ export const TRADING_CONFIG = {
     maxWorkingNotionalPerSymbolUsd: 2_500,
     /** Refuse market submits whose quote timestamp is older than this (ms). */
     maxPriceAgeMs: 90_000,
+    /** Refuse a limit whose price is more than this percent away from markPrice. Market orders skip this. */
+    maxLimitDeviationPct: 2.5,
   },
 
   // Bot timing
