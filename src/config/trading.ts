@@ -85,6 +85,8 @@ export const TRADING_CONFIG = {
     blockSamePriceWorking: true,
     /** Band (percent) for the same-price floor. Below grid.spacingPct so an adjacent rung still passes. */
     samePriceBandPct: 0.15,
+    /** Refuse a buy limit at or above the mark, and a sell limit at or below it. */
+    blockCrossMark: true,
     /** Refuse when amount * price exceeds this USD notional (skipped if no price on the intent). */
     maxOrderNotionalUsd: 2_500,
     /** Refuse when amount * price is below this USD notional (skipped if no price on the intent). */
