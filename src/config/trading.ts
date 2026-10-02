@@ -113,6 +113,8 @@ export const TRADING_CONFIG = {
     maxPriceAgeMs: 90_000,
     /** Refuse a limit whose price is more than this percent away from markPrice. Market orders skip this. */
     maxLimitDeviationPct: 2.5,
+    /** Refuse a buy after this many trailing accepted buys on the symbol with no accepted sell between them. */
+    maxConsecutiveBuysPerSymbol: 4,
   },
 
   // Bot timing
