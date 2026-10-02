@@ -32,6 +32,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] You will not clear a halt without reviewing why it fired
 - [ ] Resume only via `clearOperatorHalt()` after presenting `OPERATOR_TOKEN` — do not just delete `haltReason` from the JSON; `lastHardStop.reason` used to restore it
 - [ ] Health reports last tick age; a stale heartbeat (no tick for ~135s) fails health and fires a watchdog alert
+- [ ] `maxClientOrderIdLength` (40) matches KuCoin `clientOid`: non-blank ids outside letters, digits, and hyphens are refused before the adapter (not a halt; blank ids still pass)
 - [ ] `minCashReserveUsd` is sized so buys cannot empty the account cash sleeve
 - [ ] `maxDailyTrades` (12) and `maxDailyTradesPerSymbol` (5) match how much churn you will allow before OrderManager refuses
 - [ ] `sameSideCooldownMs` (25s) matches how soon you will allow another buy or another sell on the same pair (not a halt; does not flatten; opposite side still uses the 90s flip cooldown)
