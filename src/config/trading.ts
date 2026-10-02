@@ -95,6 +95,8 @@ export const TRADING_CONFIG = {
     maxOrderNotionalUsd: 2_500,
     /** Refuse when amount * reference price is below this USD notional. Markets need price or markPrice. */
     minOrderNotionalUsd: 12,
+    /** Refuse a non-blank clientOrderId longer than this or outside [A-Za-z0-9-]. Blank still passes. KuCoin clientOid max is 40. */
+    maxClientOrderIdLength: 40,
     /** Refuse a buy when booked cost basis + this order notional would exceed this USD total. */
     maxGrossExposureUsd: 8_000,
     /** Refuse a buy when accepted buy notional on the UTC day plus this order would exceed this USD total. */

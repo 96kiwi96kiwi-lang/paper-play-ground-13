@@ -10,7 +10,7 @@ import { averageDownReason } from "./average-down";
 import { cashReserveBuyReason, workingBuyReservedUsd } from "./cash-reserve";
 import { crossMarkReason } from "./cross-mark";
 import { chaseUpReason, lastAcceptedBuyFill } from "./chase-up";
-import { duplicateClientOrderIdReason } from "./client-order-id";
+import { duplicateClientOrderIdReason, invalidClientOrderIdReason } from "./client-order-id";
 import { consecutiveBuysReason, trailingAcceptedBuys } from "./consecutive-buys";
 import {
   acceptedBuyNotionalOnUtcDay,
@@ -194,6 +194,9 @@ export class OrderManager {
     if (!(intent.amount > 0) || !Number.isFinite(intent.amount)) {
       return this.fail("Amount must be a positive finite number");
     }
+
+    const badId = invalidClientOrderIdReason(intent.clientOrderId, cfg.maxClientOrderIdLength);
+    if (badId) return this.fail(badId);
 
     const dup = duplicateClientOrderIdReason(intent.clientOrderId, this.seen);
     if (dup) return this.fail(dup);
