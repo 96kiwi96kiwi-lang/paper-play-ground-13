@@ -8,6 +8,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 
 ## Current status
 
+A limit submit is refused when it would cross or touch the mark (`Cross mark`). A buy limit at or above `markPrice`, and a sell limit at or below it, would take instead of rest, so OrderManager refuses it. A buy below the mark and a sell above it still pass, which is how a grid rung sits. Market submits skip this floor. A missing mark is already refused by the limit-price band. Set `orders.blockCrossMark` to false to skip it. This is a maker floor, not a halt, and does not flatten positions. Vitest: `tests/cross-mark.test.ts` (no exchange, no secrets).
+
 A same-side limit is refused when a working order already rests within `orders.samePriceBandPct` (default 0.15%) of the new price (`Same price`). Market orders, opposite sides, other symbols and adjacent grid rungs still pass. This is a resting-book floor, not a halt. Vitest: `tests/same-price.test.ts`.
 
 A submit is refused when an opposite-side working order already rests on the same symbol (`Self-cross`). A buy cannot sit against a working sell, and a sell cannot sit against a working buy. Same-side adds and other symbols still pass. This is a resting-book floor, not a halt. Vitest: `tests/self-cross.test.ts`.

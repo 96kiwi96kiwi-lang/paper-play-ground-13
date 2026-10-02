@@ -8,6 +8,7 @@ import type { ExchangeAdapter, Side, UnifiedOrder } from "@/lib/exchange/types";
 import { applyHardStops, evaluateRisk, type RiskState } from "@/lib/risk";
 import { averageDownReason } from "./average-down";
 import { cashReserveBuyReason, workingBuyReservedUsd } from "./cash-reserve";
+import { crossMarkReason } from "./cross-mark";
 import { chaseUpReason, lastAcceptedBuyFill } from "./chase-up";
 import { duplicateClientOrderIdReason } from "./client-order-id";
 import { consecutiveBuysReason, trailingAcceptedBuys } from "./consecutive-buys";
@@ -275,6 +276,16 @@ export class OrderManager {
       cfg.blockSamePriceWorking,
     );
     if (samePrice) return this.fail(samePrice);
+
+    const crossMark = crossMarkReason(
+      type,
+      intent.side,
+      intent.symbol,
+      intent.price,
+      intent.markPrice,
+      cfg.blockCrossMark,
+    );
+    if (crossMark) return this.fail(crossMark);
 
     const slots = openSlotReason(
       intent.side,
