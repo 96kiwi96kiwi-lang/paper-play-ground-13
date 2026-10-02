@@ -79,6 +79,8 @@ export const TRADING_CONFIG = {
     maxConcurrentOpenOrders: 4,
     /** Refuse a new submit if this many working orders already exist on the same symbol. */
     maxOpenOrdersPerSymbol: 2,
+    /** Refuse a submit while an opposite-side working order rests on the same symbol. */
+    blockOppositeWorking: true,
     /** Refuse when amount * price exceeds this USD notional (skipped if no price on the intent). */
     maxOrderNotionalUsd: 2_500,
     /** Refuse when amount * price is below this USD notional (skipped if no price on the intent). */
