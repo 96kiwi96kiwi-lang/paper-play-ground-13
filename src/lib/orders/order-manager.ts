@@ -52,6 +52,7 @@ import {
 } from "./reject-burst";
 import { sameSideCooldownReason } from "./same-side-cooldown";
 import { samePriceWorkingReason } from "./same-price";
+import { rungSpacingReason } from "./rung-spacing";
 import { selfCrossReason } from "./self-cross";
 import { sellDustRemainderReason } from "./sell-dust";
 import { selectStaleOpenOrders, selectWorkingOrders } from "./stale-open";
@@ -286,6 +287,16 @@ export class OrderManager {
       cfg.blockSamePriceWorking,
     );
     if (samePrice) return this.fail(samePrice);
+
+    const rung = rungSpacingReason(
+      intent.side,
+      intent.symbol,
+      type === "limit" ? intent.price : undefined,
+      working,
+      cfg.minRungSpacingPct,
+      cfg.blockTightRung,
+    );
+    if (rung) return this.fail(rung);
 
     const slots = openSlotReason(
       intent.side,
