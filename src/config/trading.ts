@@ -119,6 +119,8 @@ export const TRADING_CONFIG = {
     lossReentryCooldownMs: 20 * 60 * 1000,
     /** A sell counts as losing when fill is at least this percent under book average entry. */
     lossReentryMinLossPct: 1,
+    /** Refuse an add when mark is at least this percent under the open average entry. */
+    maxAverageDownPct: 3,
   },
 
   // Bot timing
