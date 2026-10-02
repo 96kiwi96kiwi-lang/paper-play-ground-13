@@ -38,6 +38,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] `maxRejectsInWindow` (4) and `maxRejectsPerSymbolInWindow` (3) match how many adapter rejects you will allow inside 10 minutes before OrderManager pauses new submits (not a halt; does not flatten; floor refusals do not count)
 - [ ] `maxLimitDeviationPct` (2.5) matches how far a limit may sit from `markPrice` before OrderManager refuses it (not a halt; does not flatten; market orders skip this and still need a fresh quote)
 - [ ] `lossReentryCooldownMs` (20 minutes) and `lossReentryMinLossPct` (1) match how long you will pause buys on a pair after a losing sell (not a halt; does not flatten; sells and other pairs still pass)
+- [ ] `maxAverageDownPct` (3) matches how far under the open average you will still allow an add (not a halt; does not flatten; sells and new names still pass; no mark skips the floor)
 - [ ] `maxDailySellNotionalUsd` (6,000) and `maxDailySellNotionalPerSymbolUsd` (2,500) match how much inventory you will allow OrderManager to sell in one UTC day (not a halt; does not flatten)
 - [ ] `maxHourlyBuyNotionalUsd` (1,500) and `maxHourlyBuyNotionalPerSymbolUsd` (800) match how much you will allow OrderManager to buy inside a rolling 60 minutes (not a halt; sells still allowed)
 - [ ] `maxHourlySellNotionalUsd` (2,500) and `maxHourlySellNotionalPerSymbolUsd` (1,200) match how much you will allow OrderManager to sell inside a rolling 60 minutes (not a halt; does not flatten; buys still allowed)
