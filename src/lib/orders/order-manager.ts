@@ -50,6 +50,8 @@ import {
   rejectedCountInWindowForSymbol,
 } from "./reject-burst";
 import { sameSideCooldownReason } from "./same-side-cooldown";
+import { samePriceWorkingReason } from "./same-price";
+import { selfCrossReason } from "./self-cross";
 import { sellDustRemainderReason } from "./sell-dust";
 import { selectStaleOpenOrders, selectWorkingOrders } from "./stale-open";
 import { staleMarketQuoteReason } from "./stale-quote";
@@ -255,6 +257,24 @@ export class OrderManager {
         `Per-symbol working-order cap: ${perSymbol}/${cfg.maxOpenOrdersPerSymbol} on ${intent.symbol}`,
       );
     }
+
+    const cross = selfCrossReason(
+      intent.side,
+      intent.symbol,
+      working,
+      cfg.blockOppositeWorking,
+    );
+    if (cross) return this.fail(cross);
+
+    const samePrice = samePriceWorkingReason(
+      intent.side,
+      intent.symbol,
+      type === "limit" ? intent.price : undefined,
+      working,
+      cfg.samePriceBandPct,
+      cfg.blockSamePriceWorking,
+    );
+    if (samePrice) return this.fail(samePrice);
 
     const slots = openSlotReason(
       intent.side,

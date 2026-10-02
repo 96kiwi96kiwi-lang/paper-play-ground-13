@@ -8,6 +8,10 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 
 ## Current status
 
+A same-side limit is refused when a working order already rests within `orders.samePriceBandPct` (default 0.15%) of the new price (`Same price`). Market orders, opposite sides, other symbols and adjacent grid rungs still pass. This is a resting-book floor, not a halt. Vitest: `tests/same-price.test.ts`.
+
+A submit is refused when an opposite-side working order already rests on the same symbol (`Self-cross`). A buy cannot sit against a working sell, and a sell cannot sit against a working buy. Same-side adds and other symbols still pass. This is a resting-book floor, not a halt. Vitest: `tests/self-cross.test.ts`.
+
 A buy is refused when the mark (`markPrice`, else limit `price`) is at least `orders.maxChaseUpPct` (default 2%) above the latest accepted buy fill on that symbol and that fill is still inside `orders.chaseUpWindowMs` (default 15 minutes) (`Chase up`). Rejects and cancels do not count. Fills older than the window, other symbols, and submits with no positive mark still pass. Grid scale-in is downward, so this floor does not block a lower rung. Sells still pass so a stop or take-profit is not blocked. This is a chase floor, not a halt, and does not flatten positions. Vitest: `tests/chase-up.test.ts` (no exchange, no secrets).
 
 A buy that adds to a symbol already held is refused when the mark (`markPrice`, else limit `price`) is at least `orders.maxAverageDownPct` (default 3%) under that symbol's open average entry (`Average down`). Flat names still open. Sells still pass so a stop or take-profit is not blocked. A submit with no positive mark skips this floor. This is an add floor, not a halt, and does not flatten positions. Vitest: `tests/average-down.test.ts` (no exchange, no secrets).
