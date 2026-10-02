@@ -39,6 +39,7 @@ import {
 } from "./hourly-sell-notional";
 import { inventoryReserveSellReason, workingSellReservedAmount } from "./inventory-reserve";
 import { limitPriceBandReason } from "./limit-price-band";
+import { openSlotReason, openSlotSymbols } from "./open-slots";
 import {
   rejectBurstPerSymbolReason,
   rejectBurstReason,
@@ -251,6 +252,14 @@ export class OrderManager {
         `Per-symbol working-order cap: ${perSymbol}/${cfg.maxOpenOrdersPerSymbol} on ${intent.symbol}`,
       );
     }
+
+    const slots = openSlotReason(
+      intent.side,
+      intent.symbol,
+      openSlotSymbols(this.positions, working),
+      TRADING_CONFIG.risk.maxOpenPositions,
+    );
+    if (slots) return this.fail(slots);
 
     const symbolDayTrades = acceptedTradeCountOnUtcDayForSymbol(this.seen, intent.symbol, now);
     const symbolTradeCap = dailyTradeCapPerSymbolReason(
