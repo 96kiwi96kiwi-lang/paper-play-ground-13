@@ -57,6 +57,7 @@ import { selfCrossReason } from "./self-cross";
 import { sellDustRemainderReason } from "./sell-dust";
 import { selectStaleOpenOrders, selectWorkingOrders } from "./stale-open";
 import { staleMarketQuoteReason } from "./stale-quote";
+import { marketReferencePrice, unpricedMarketReason } from "./unpriced-market";
 import { symbolFlipCooldownReason } from "./symbol-flip";
 import {
   workingNotionalPerSymbolReason,
@@ -71,7 +72,7 @@ export type OrderIntent = {
   amount: number;
   type?: "market" | "limit";
   price?: number;
-  /** Last mark used only to band limit prices. Market orders ignore it. */
+  /** Mark used to band limits and to size a market that has no price. */
   markPrice?: number;
   quotedAt?: number;
   clientOrderId?: string;
@@ -354,7 +355,10 @@ export class OrderManager {
     );
     if (chaseUp) return this.fail(chaseUp);
 
-    const px = intent.price && intent.price > 0 ? intent.price : undefined;
+    const unpriced = unpricedMarketReason(type, intent.price, intent.markPrice);
+    if (unpriced) return this.fail(unpriced);
+
+    const px = marketReferencePrice(type, intent.price, intent.markPrice);
     const notional = px != null ? intent.amount * px : undefined;
     if (px != null && notional != null) {
       if (notional > cfg.maxOrderNotionalUsd) {
