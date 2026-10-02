@@ -8,6 +8,7 @@ import type { ExchangeAdapter, Side, UnifiedOrder } from "@/lib/exchange/types";
 import { applyHardStops, evaluateRisk, type RiskState } from "@/lib/risk";
 import { cashReserveBuyReason, workingBuyReservedUsd } from "./cash-reserve";
 import { duplicateClientOrderIdReason } from "./client-order-id";
+import { consecutiveBuysReason, trailingAcceptedBuys } from "./consecutive-buys";
 import {
   acceptedBuyNotionalOnUtcDay,
   acceptedBuyNotionalOnUtcDayForSymbol,
@@ -258,6 +259,14 @@ export class OrderManager {
       TRADING_CONFIG.risk.maxDailyTradesPerSymbol,
     );
     if (symbolTradeCap) return this.fail(symbolTradeCap);
+
+    const buyLadder = consecutiveBuysReason(
+      intent.side,
+      intent.symbol,
+      trailingAcceptedBuys(this.seen, intent.symbol),
+      cfg.maxConsecutiveBuysPerSymbol,
+    );
+    if (buyLadder) return this.fail(buyLadder);
 
     const px = intent.price && intent.price > 0 ? intent.price : undefined;
     const notional = px != null ? intent.amount * px : undefined;
