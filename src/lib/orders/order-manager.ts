@@ -8,6 +8,7 @@ import type { ExchangeAdapter, Side, UnifiedOrder } from "@/lib/exchange/types";
 import { applyHardStops, evaluateRisk, type RiskState } from "@/lib/risk";
 import { averageDownReason } from "./average-down";
 import { cashReserveBuyReason, workingBuyReservedUsd } from "./cash-reserve";
+import { chaseUpReason, lastAcceptedBuyFill } from "./chase-up";
 import { duplicateClientOrderIdReason } from "./client-order-id";
 import { consecutiveBuysReason, trailingAcceptedBuys } from "./consecutive-buys";
 import {
@@ -299,6 +300,17 @@ export class OrderManager {
       cfg.maxAverageDownPct,
     );
     if (averageDown) return this.fail(averageDown);
+
+    const chaseUp = chaseUpReason(
+      intent.side,
+      intent.symbol,
+      mark,
+      lastAcceptedBuyFill(this.seen, intent.symbol),
+      now,
+      cfg.chaseUpWindowMs,
+      cfg.maxChaseUpPct,
+    );
+    if (chaseUp) return this.fail(chaseUp);
 
     const px = intent.price && intent.price > 0 ? intent.price : undefined;
     const notional = px != null ? intent.amount * px : undefined;
