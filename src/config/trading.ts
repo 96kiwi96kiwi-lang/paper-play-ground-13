@@ -115,6 +115,10 @@ export const TRADING_CONFIG = {
     maxLimitDeviationPct: 2.5,
     /** Refuse a buy after this many trailing accepted buys on the symbol with no accepted sell between them. */
     maxConsecutiveBuysPerSymbol: 4,
+    /** Refuse a buy this long after a losing sell on the same symbol (ms). */
+    lossReentryCooldownMs: 20 * 60 * 1000,
+    /** A sell counts as losing when fill is at least this percent under book average entry. */
+    lossReentryMinLossPct: 1,
   },
 
   // Bot timing
