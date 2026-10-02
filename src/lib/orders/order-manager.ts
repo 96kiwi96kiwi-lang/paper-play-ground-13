@@ -39,6 +39,8 @@ import {
 } from "./hourly-sell-notional";
 import { inventoryReserveSellReason, workingSellReservedAmount } from "./inventory-reserve";
 import { limitPriceBandReason } from "./limit-price-band";
+import { lastLosingSellAt, lossReentryReason } from "./loss-reentry";
+import { openSlotReason, openSlotSymbols } from "./open-slots";
 import {
   rejectBurstPerSymbolReason,
   rejectBurstReason,
@@ -252,6 +254,14 @@ export class OrderManager {
       );
     }
 
+    const slots = openSlotReason(
+      intent.side,
+      intent.symbol,
+      openSlotSymbols(this.positions, working),
+      TRADING_CONFIG.risk.maxOpenPositions,
+    );
+    if (slots) return this.fail(slots);
+
     const symbolDayTrades = acceptedTradeCountOnUtcDayForSymbol(this.seen, intent.symbol, now);
     const symbolTradeCap = dailyTradeCapPerSymbolReason(
       intent.symbol,
@@ -267,6 +277,15 @@ export class OrderManager {
       cfg.maxConsecutiveBuysPerSymbol,
     );
     if (buyLadder) return this.fail(buyLadder);
+
+    const lossReentry = lossReentryReason(
+      intent.side,
+      intent.symbol,
+      lastLosingSellAt(this.seen, intent.symbol, cfg.lossReentryMinLossPct),
+      now,
+      cfg.lossReentryCooldownMs,
+    );
+    if (lossReentry) return this.fail(lossReentry);
 
     const px = intent.price && intent.price > 0 ? intent.price : undefined;
     const notional = px != null ? intent.amount * px : undefined;
