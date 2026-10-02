@@ -8,6 +8,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 
 ## Current status
 
+A submit is refused when the base amount has more than `orders.maxAmountDecimals` decimal places (default 8) (`Amount precision`). KuCoin spot rejects a size finer than the pair base increment before it rests, which would otherwise count as an adapter reject and burn `maxRejectsInWindow`. Trailing zeros do not count. A whole number and an 8-place size still pass. This is a size floor, not a halt, and does not flatten positions. Vitest: `tests/amount-precision.test.ts` (no exchange, no secrets).
+
 A non-blank `clientOrderId` is refused when it is longer than `orders.maxClientOrderIdLength` (default 40) or outside letters, digits, and hyphens (`Bad clientOrderId`). KuCoin rejects those ids before they rest, which would otherwise count as an adapter reject and burn `maxRejectsInWindow`. Blank and omitted ids still pass, and the duplicate-id floor still runs after this shape check. This is a retry floor, not a halt, and does not flatten positions. Vitest: `tests/client-order-id.test.ts` (no exchange, no secrets).
 
 A market submit is refused when it has neither a positive `price` nor a positive `markPrice` (`Unpriced market`). Without a reference, min/max notional, gross exposure, and `maxPositionPct` were skipped. A market that carries only a mark uses that mark as the notional reference, so those floors still run. A positive `price` still wins over the mark. Strategy ticks already pass `currentPrice`, so they are unchanged. A limit without a price is not this floor (it is still refused later as a missing limit price). This is a sizing floor, not a halt, and does not flatten positions. Vitest: `tests/unpriced-market.test.ts` (no exchange, no secrets).
