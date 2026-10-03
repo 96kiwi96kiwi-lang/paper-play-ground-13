@@ -62,6 +62,7 @@ import { staleMarketQuoteReason } from "./stale-quote";
 import { marketReferencePrice, unpricedMarketReason } from "./unpriced-market";
 import { normalizeOrderType } from "./order-type";
 import { normalizeTimeInForce } from "./time-in-force";
+import { icebergReason } from "./iceberg";
 import { postOnlyReason } from "./post-only";
 import { reduceOnlyReason } from "./reduce-only";
 import { stopPriceReason } from "./stop-price";
@@ -94,6 +95,12 @@ export type OrderIntent = {
   reduceOnly?: boolean;
   /** Trigger price. Adapters do not forward it, so a present value is refused. */
   stopPrice?: number;
+  /** Display-size flag. Adapters do not forward it, so true is refused. */
+  iceberg?: boolean;
+  /** Hide-size flag. Adapters do not forward it, so true is refused. */
+  hidden?: boolean;
+  /** Shown slice. Adapters do not forward it, so a present value is refused. */
+  visibleSize?: number;
 };
 
 export type SubmitResult =
@@ -215,6 +222,11 @@ export class OrderManager {
 
     const stopPrice = stopPriceReason(intent.stopPrice);
     if (stopPrice) return this.fail(stopPrice);
+
+    const iceberg = icebergReason(intent.iceberg, intent.visibleSize);
+    if (iceberg) return this.fail(iceberg);
+    const hidden = icebergReason(intent.hidden);
+    if (hidden) return this.fail(hidden);
 
     applyHardStops(riskState);
     if (riskState.haltReason) {
