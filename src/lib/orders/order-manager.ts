@@ -61,6 +61,7 @@ import { selectStaleOpenOrders, selectWorkingOrders } from "./stale-open";
 import { staleMarketQuoteReason } from "./stale-quote";
 import { marketReferencePrice, unpricedMarketReason } from "./unpriced-market";
 import { normalizeOrderType } from "./order-type";
+import { normalizeTimeInForce } from "./time-in-force";
 import { normalizeOrderSide } from "./side-form";
 import { normalizePairSymbol } from "./symbol-form";
 import { symbolFlipCooldownReason } from "./symbol-flip";
@@ -82,6 +83,8 @@ export type OrderIntent = {
   quotedAt?: number;
   clientOrderId?: string;
   reason?: string;
+  /** Resting policy. Omitted means GTC. IOC/FOK are refused before the adapter. */
+  timeInForce?: string;
 };
 
 export type SubmitResult =
@@ -190,6 +193,10 @@ export class OrderManager {
     if ("reason" in typed) return this.fail(typed.reason);
     const type = typed.type;
     intent = { ...intent, type };
+
+    const tif = normalizeTimeInForce(intent.timeInForce);
+    if ("reason" in tif) return this.fail(tif.reason);
+    intent = { ...intent, timeInForce: tif.timeInForce };
 
     applyHardStops(riskState);
     if (riskState.haltReason) {
