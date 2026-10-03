@@ -8,6 +8,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 
 ## Current status
 
+A submit is refused when the symbol is not on the configured pair allowlist after shape normalization (`Unsupported pair`). Whitespace is stripped, case is uppercased, and a KuCoin hyphen (`ETH-USDT`) becomes the internal slash form (`ETH/USDT`) when that pair is allowed. An unknown base still fails before the adapter, so it does not burn `maxRejectsInWindow`. This is a shape floor, not a halt, and does not flatten positions. Vitest: `tests/symbol-form.test.ts` (no exchange, no secrets).
+
 A limit submit is refused when the price has more than `orders.maxPriceDecimals` decimal places (default 8) (`Price precision`). KuCoin spot rejects a quote finer than the pair price increment before it rests, which would otherwise count as an adapter reject and burn `maxRejectsInWindow`. Trailing zeros do not count. A whole number and an 8-place price still pass. Market submits skip this floor (no resting price is sent). A missing limit price is not this floor. This is a price floor, not a halt, and does not flatten positions. Vitest: `tests/price-precision.test.ts` (no exchange, no secrets).
 
 A submit is refused when the base amount has more than `orders.maxAmountDecimals` decimal places (default 8) (`Amount precision`). KuCoin spot rejects a size finer than the pair base increment before it rests, which would otherwise count as an adapter reject and burn `maxRejectsInWindow`. Trailing zeros do not count. A whole number and an 8-place size still pass. This is a size floor, not a halt, and does not flatten positions. Vitest: `tests/amount-precision.test.ts` (no exchange, no secrets).

@@ -60,6 +60,7 @@ import { sellDustRemainderReason } from "./sell-dust";
 import { selectStaleOpenOrders, selectWorkingOrders } from "./stale-open";
 import { staleMarketQuoteReason } from "./stale-quote";
 import { marketReferencePrice, unpricedMarketReason } from "./unpriced-market";
+import { normalizePairSymbol } from "./symbol-form";
 import { symbolFlipCooldownReason } from "./symbol-flip";
 import {
   workingNotionalPerSymbolReason,
@@ -189,9 +190,9 @@ export class OrderManager {
       return this.fail(`Halted: ${riskState.haltReason}`);
     }
 
-    if (!ALLOWED.has(intent.symbol)) {
-      return this.fail(`Unsupported pair: ${intent.symbol}`);
-    }
+    const pair = normalizePairSymbol(intent.symbol, ALLOWED);
+    if ("reason" in pair) return this.fail(pair.reason);
+    intent = { ...intent, symbol: pair.symbol };
 
     if (!(intent.amount > 0) || !Number.isFinite(intent.amount)) {
       return this.fail("Amount must be a positive finite number");
