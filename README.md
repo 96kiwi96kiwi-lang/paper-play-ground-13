@@ -8,6 +8,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 
 ## Current status
 
+A submit is refused when `iceberg` or `hidden` is true, or when `visibleSize` is present (`Iceberg is not supported` / `Visible size is not supported`). Paper and KuCoin adapters do not forward a display-size flag, so the full amount would rest or fill on the book. Omitted, null, false, and blank still pass. A non-boolean flag is refused as a bad shape. This runs before the adapter, so it does not burn `maxRejectsInWindow`. This is a display floor, not a halt, and does not flatten positions. Vitest: `tests/iceberg.test.ts` (no exchange, no secrets).
+
 A submit is refused when `stopPrice` is present (`Stop price is not supported`). Paper and KuCoin adapters do not forward a trigger, so a stop would fill or rest as a normal order. Omitted, null, and blank still pass. This runs before the adapter, so it does not burn `maxRejectsInWindow`. This is a trigger floor, not a halt, and does not flatten positions. Vitest: `tests/stop-price.test.ts` (no exchange, no secrets).
 
 A submit is refused when `reduceOnly` is true (`Reduce-only is not supported`). Paper and KuCoin adapters do not forward a close-only flag, so a true flag would open or add as a normal order. Omitted and `false` still pass. A non-boolean flag is refused as a bad shape. This runs before the adapter, so it does not burn `maxRejectsInWindow`. This is a close-only floor, not a halt, and does not flatten positions. Vitest: `tests/reduce-only.test.ts` (no exchange, no secrets).
