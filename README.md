@@ -8,6 +8,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 
 ## Current status
 
+A submit is refused when `reduceOnly` is true (`Reduce-only is not supported`). Paper and KuCoin adapters do not forward a close-only flag, so a true flag would open or add as a normal order. Omitted and `false` still pass. A non-boolean flag is refused as a bad shape. This runs before the adapter, so it does not burn `maxRejectsInWindow`. This is a close-only floor, not a halt, and does not flatten positions. Vitest: `tests/reduce-only.test.ts` (no exchange, no secrets).
+
 A submit is refused when `postOnly` is true (`Post-only is not supported`). Paper and KuCoin adapters do not forward a maker-only flag, so a true flag would rest or take as a normal order. Omitted and `false` still pass. A non-boolean flag is refused as a bad shape. This runs before the adapter, so it does not burn `maxRejectsInWindow`. This is a maker floor, not a halt, and does not flatten positions. Vitest: `tests/post-only.test.ts` (no exchange, no secrets).
 
 A submit is refused when time in force is not GTC after shape normalization (`Unsupported time in force`). Whitespace is stripped and case is uppercased, so `gtc` and `  Gtc  ` become `GTC`. An omitted or blank value still defaults to GTC. IOC, FOK, GTT, and any other value are refused before the adapter, so a fill-or-kill is not silently rested and a KuCoin reject does not burn `maxRejectsInWindow`. This is a shape floor, not a halt, and does not flatten positions. Vitest: `tests/time-in-force.test.ts` (no exchange, no secrets).

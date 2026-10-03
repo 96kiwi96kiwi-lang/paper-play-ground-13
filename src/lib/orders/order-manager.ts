@@ -63,6 +63,7 @@ import { marketReferencePrice, unpricedMarketReason } from "./unpriced-market";
 import { normalizeOrderType } from "./order-type";
 import { normalizeTimeInForce } from "./time-in-force";
 import { postOnlyReason } from "./post-only";
+import { reduceOnlyReason } from "./reduce-only";
 import { normalizeOrderSide } from "./side-form";
 import { normalizePairSymbol } from "./symbol-form";
 import { symbolFlipCooldownReason } from "./symbol-flip";
@@ -88,6 +89,8 @@ export type OrderIntent = {
   timeInForce?: string;
   /** Maker-only flag. Adapters do not forward it, so true is refused. */
   postOnly?: boolean;
+  /** Close-only flag. Adapters do not forward it, so true is refused. */
+  reduceOnly?: boolean;
 };
 
 export type SubmitResult =
@@ -203,6 +206,9 @@ export class OrderManager {
 
     const postOnly = postOnlyReason(intent.postOnly);
     if (postOnly) return this.fail(postOnly);
+
+    const reduceOnly = reduceOnlyReason(intent.reduceOnly);
+    if (reduceOnly) return this.fail(reduceOnly);
 
     applyHardStops(riskState);
     if (riskState.haltReason) {
