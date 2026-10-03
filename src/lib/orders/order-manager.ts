@@ -67,6 +67,7 @@ import { quoteSizeReason } from "./quote-size";
 import { postOnlyReason } from "./post-only";
 import { reduceOnlyReason } from "./reduce-only";
 import { stopPriceReason } from "./stop-price";
+import { spotOnlyReason } from "./spot-only";
 import { normalizeOrderSide } from "./side-form";
 import { normalizePairSymbol } from "./symbol-form";
 import { symbolFlipCooldownReason } from "./symbol-flip";
@@ -108,6 +109,12 @@ export type OrderIntent = {
   quoteOrderQty?: number;
   /** Quote spend. Adapters size by base amount, so a present value is refused. */
   quoteQty?: number;
+  /** Leverage. Spot adapters do not forward it, so a present value is refused. */
+  leverage?: number;
+  /** Margin mode. Spot adapters do not forward it, so a present value is refused. */
+  marginMode?: string;
+  /** KuCoin trade type. Only spot/TRADE is accepted; margin is refused. */
+  tradeType?: string;
 };
 
 export type SubmitResult =
@@ -241,6 +248,9 @@ export class OrderManager {
     if (quoteOrderQty) return this.fail(quoteOrderQty);
     const quoteQty = quoteSizeReason(intent.quoteQty, "Quote qty");
     if (quoteQty) return this.fail(quoteQty);
+
+    const spotOnly = spotOnlyReason(intent.leverage, intent.marginMode, intent.tradeType);
+    if (spotOnly) return this.fail(spotOnly);
 
     applyHardStops(riskState);
     if (riskState.haltReason) {
