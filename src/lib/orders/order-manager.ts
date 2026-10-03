@@ -7,6 +7,7 @@ import { TRADING_CONFIG } from "@/config/trading";
 import type { ExchangeAdapter, Side, UnifiedOrder } from "@/lib/exchange/types";
 import { applyHardStops, evaluateRisk, type RiskState } from "@/lib/risk";
 import { excessAmountDecimalsReason } from "./amount-precision";
+import { excessPriceDecimalsReason } from "./price-precision";
 import { averageDownReason } from "./average-down";
 import { cashReserveBuyReason, workingBuyReservedUsd } from "./cash-reserve";
 import { crossMarkReason } from "./cross-mark";
@@ -198,6 +199,9 @@ export class OrderManager {
 
     const fineAmount = excessAmountDecimalsReason(intent.amount, cfg.maxAmountDecimals);
     if (fineAmount) return this.fail(fineAmount);
+
+    const finePrice = excessPriceDecimalsReason(type, intent.price, cfg.maxPriceDecimals);
+    if (finePrice) return this.fail(finePrice);
 
     const badId = invalidClientOrderIdReason(intent.clientOrderId, cfg.maxClientOrderIdLength);
     if (badId) return this.fail(badId);
