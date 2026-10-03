@@ -60,6 +60,7 @@ import { sellDustRemainderReason } from "./sell-dust";
 import { selectStaleOpenOrders, selectWorkingOrders } from "./stale-open";
 import { staleMarketQuoteReason } from "./stale-quote";
 import { marketReferencePrice, unpricedMarketReason } from "./unpriced-market";
+import { normalizeOrderType } from "./order-type";
 import { normalizeOrderSide } from "./side-form";
 import { normalizePairSymbol } from "./symbol-form";
 import { symbolFlipCooldownReason } from "./symbol-flip";
@@ -183,8 +184,12 @@ export class OrderManager {
 
   async submit(intent: OrderIntent, riskState: RiskState): Promise<SubmitResult> {
     const now = Date.now();
-    const type = intent.type ?? "market";
     const cfg = TRADING_CONFIG.orders;
+
+    const typed = normalizeOrderType(intent.type);
+    if ("reason" in typed) return this.fail(typed.reason);
+    const type = typed.type;
+    intent = { ...intent, type };
 
     applyHardStops(riskState);
     if (riskState.haltReason) {
@@ -225,6 +230,16 @@ export class OrderManager {
       cfg.maxLimitDeviationPct,
     );
     if (band) return this.fail(band);
+
+    const crossMark = crossMarkReason(
+      type,
+      intent.side,
+      intent.symbol,
+      intent.price,
+      intent.markPrice,
+      cfg.blockCrossMark,
+    );
+    if (crossMark) return this.fail(crossMark);
 
     const flip = symbolFlipCooldownReason(
       intent.symbol,
@@ -305,16 +320,6 @@ export class OrderManager {
       cfg.blockTightRung,
     );
     if (rung) return this.fail(rung);
-
-    const crossMark = crossMarkReason(
-      type,
-      intent.side,
-      intent.symbol,
-      intent.price,
-      intent.markPrice,
-      cfg.blockCrossMark,
-    );
-    if (crossMark) return this.fail(crossMark);
 
     const slots = openSlotReason(
       intent.side,
