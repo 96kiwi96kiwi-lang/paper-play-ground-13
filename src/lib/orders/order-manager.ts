@@ -64,6 +64,7 @@ import { normalizeOrderType } from "./order-type";
 import { normalizeTimeInForce } from "./time-in-force";
 import { postOnlyReason } from "./post-only";
 import { reduceOnlyReason } from "./reduce-only";
+import { stopPriceReason } from "./stop-price";
 import { normalizeOrderSide } from "./side-form";
 import { normalizePairSymbol } from "./symbol-form";
 import { symbolFlipCooldownReason } from "./symbol-flip";
@@ -91,6 +92,8 @@ export type OrderIntent = {
   postOnly?: boolean;
   /** Close-only flag. Adapters do not forward it, so true is refused. */
   reduceOnly?: boolean;
+  /** Trigger price. Adapters do not forward it, so a present value is refused. */
+  stopPrice?: number;
 };
 
 export type SubmitResult =
@@ -209,6 +212,9 @@ export class OrderManager {
 
     const reduceOnly = reduceOnlyReason(intent.reduceOnly);
     if (reduceOnly) return this.fail(reduceOnly);
+
+    const stopPrice = stopPriceReason(intent.stopPrice);
+    if (stopPrice) return this.fail(stopPrice);
 
     applyHardStops(riskState);
     if (riskState.haltReason) {
