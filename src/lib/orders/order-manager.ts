@@ -63,6 +63,7 @@ import { marketReferencePrice, unpricedMarketReason } from "./unpriced-market";
 import { normalizeOrderType } from "./order-type";
 import { normalizeTimeInForce } from "./time-in-force";
 import { icebergReason } from "./iceberg";
+import { quoteSizeReason } from "./quote-size";
 import { postOnlyReason } from "./post-only";
 import { reduceOnlyReason } from "./reduce-only";
 import { stopPriceReason } from "./stop-price";
@@ -101,6 +102,12 @@ export type OrderIntent = {
   hidden?: boolean;
   /** Shown slice. Adapters do not forward it, so a present value is refused. */
   visibleSize?: number;
+  /** Quote spend. Adapters size by base amount, so a present value is refused. */
+  funds?: number;
+  /** Quote spend. Adapters size by base amount, so a present value is refused. */
+  quoteOrderQty?: number;
+  /** Quote spend. Adapters size by base amount, so a present value is refused. */
+  quoteQty?: number;
 };
 
 export type SubmitResult =
@@ -227,6 +234,13 @@ export class OrderManager {
     if (iceberg) return this.fail(iceberg);
     const hidden = icebergReason(intent.hidden);
     if (hidden) return this.fail(hidden);
+
+    const funds = quoteSizeReason(intent.funds, "Funds");
+    if (funds) return this.fail(funds);
+    const quoteOrderQty = quoteSizeReason(intent.quoteOrderQty, "Quote order qty");
+    if (quoteOrderQty) return this.fail(quoteOrderQty);
+    const quoteQty = quoteSizeReason(intent.quoteQty, "Quote qty");
+    if (quoteQty) return this.fail(quoteQty);
 
     applyHardStops(riskState);
     if (riskState.haltReason) {
