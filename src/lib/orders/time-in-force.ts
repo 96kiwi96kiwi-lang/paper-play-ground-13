@@ -11,7 +11,8 @@ export type TimeInForce = "GTC";
  */
 export function normalizeTimeInForce(raw: unknown): { timeInForce: TimeInForce } | { reason: string } {
   if (raw == null) return { timeInForce: "GTC" };
-  const shaped = typeof raw === "string" ? raw.trim().toUpperCase() : "";
+  if (typeof raw !== "string") return { reason: `Unsupported time in force: ${String(raw)}` };
+  const shaped = raw.trim().toUpperCase();
   if (shaped === "" || shaped === "GTC") return { timeInForce: "GTC" };
   const shown = shaped || String(raw);
   return { reason: `Unsupported time in force: ${shown}` };
