@@ -8,6 +8,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 
 ## Current status
 
+A submit is refused when the order type is not market or limit after shape normalization (`Unsupported order type`). Whitespace is stripped and case is lowercased, so `MARKET` and `  Limit  ` become `market` and `limit`. An omitted or blank type still defaults to market. A stop or other unknown type is refused before the adapter, so it is not silently sent as a market order and does not burn `maxRejectsInWindow`. This is a shape floor, not a halt, and does not flatten positions. Vitest: `tests/order-type.test.ts` (no exchange, no secrets).
+
 A submit is refused when the side is not buy or sell after shape normalization (`Unsupported side`). Whitespace is stripped and case is lowercased, so `BUY` and `  Sell  ` become `buy` and `sell`. A blank or unknown side (`long`) still fails before the adapter, so it does not burn `maxRejectsInWindow`. This is a shape floor, not a halt, and does not flatten positions. Vitest: `tests/side-form.test.ts` (no exchange, no secrets).
 
 A submit is refused when the symbol is not on the configured pair allowlist after shape normalization (`Unsupported pair`). Whitespace is stripped, case is uppercased, and a KuCoin hyphen (`ETH-USDT`) becomes the internal slash form (`ETH/USDT`) when that pair is allowed. An unknown base still fails before the adapter, so it does not burn `maxRejectsInWindow`. This is a shape floor, not a halt, and does not flatten positions. Vitest: `tests/symbol-form.test.ts` (no exchange, no secrets).
