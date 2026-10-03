@@ -9,16 +9,12 @@ import { emitHardStopAlert } from "./alerts";
 import { flattenOpenOrdersOnHalt } from "./flatten-on-halt";
 import { loadGridBooks, persistGridBooks, recordPersistedHardStop } from "./persist";
 import { getRuntimeMode } from "./trading-mode";
-import { acquireWorkerLease } from "./worker-lease";
+import { acquireWorkerLease, currentWorkerId } from "./worker-lease";
 
 let registered = false;
 let gridHydrated = false;
 let leaseOwnerId: string | null = null;
 let loopArmed = false;
-
-function thisWorkerId(): string {
-  return process.env.WORKER_ID?.trim() || `pid-${process.pid}`;
-}
 
 /**
  * Load grid books from disk once.
@@ -35,7 +31,7 @@ export function restorePersistedGridBooks(): void {
 
 /** Try to become the single trading worker. Safe to call repeatedly. */
 export function claimWorkerLease(): { ok: boolean; ownerId: string; reason?: string } {
-  const ownerId = thisWorkerId();
+  const ownerId = currentWorkerId();
   const result = acquireWorkerLease(ownerId);
   if (result.ok) {
     leaseOwnerId = ownerId;

@@ -6,11 +6,7 @@ type WorkingOrder = {
   symbol?: string;
 };
 
-/**
- * A buy is refused when a working sell already exists on that symbol, and a
- * sell is refused when a working buy exists. Same-side adds, other symbols,
- * and an empty working book still pass. Closed rows are not in `working`.
- */
+/** Buy vs working sell, or sell vs working buy, on one symbol is refused. */
 export function selfCrossReason(
   side: "buy" | "sell",
   symbol: string,

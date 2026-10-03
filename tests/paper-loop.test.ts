@@ -1,17 +1,27 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, expect, test } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { TRADING_CONFIG } from "@/config/trading";
 import {
   describePaperLoop,
   paperServerLoopRequested,
   runPaperHousekeepingTick,
+  runPaperMarketTick,
+  resetPaperMarketRuntimeForTests,
+  setPaperQuoteSourceForTests,
   startPaperServerLoop,
   stopPaperServerLoop,
 } from "@/lib/server/paper-loop";
 import { getBotHeartbeat } from "@/lib/server/heartbeat";
-import { loadSeenOrders, persistSeenOrders } from "@/lib/server/persist";
+import {
+  loadMarketHistory,
+  loadPaperPortfolio,
+  loadSeenOrders,
+  persistMarketHistory,
+  persistSeenOrders,
+  setBotStatePathForTests,
+} from "@/lib/server/persist";
 import { setWorkerLeasePathForTests } from "@/lib/server/worker-lease";
 import type { UnifiedOrder } from "@/lib/exchange/types";
 
@@ -20,20 +30,28 @@ const prevCwd = process.cwd();
 const prevLoop = process.env.PAPER_SERVER_LOOP;
 
 beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(1_700_000_300_000);
   dir = mkdtempSync(join(tmpdir(), "ppg-loop-"));
   process.chdir(dir);
   setWorkerLeasePathForTests(join(dir, "worker-lease.json"));
+  setBotStatePathForTests(join(dir, "bot-state.json"));
   delete process.env.PAPER_SERVER_LOOP;
   stopPaperServerLoop("reset");
+  resetPaperMarketRuntimeForTests();
 });
 
 afterEach(() => {
   stopPaperServerLoop("reset");
+  setPaperQuoteSourceForTests(null);
+  resetPaperMarketRuntimeForTests();
   setWorkerLeasePathForTests(null);
+  setBotStatePathForTests(null);
   process.chdir(prevCwd);
   if (prevLoop == null) delete process.env.PAPER_SERVER_LOOP;
   else process.env.PAPER_SERVER_LOOP = prevLoop;
   rmSync(dir, { recursive: true, force: true });
+  vi.useRealTimers();
 });
 
 test("loop is off unless PAPER_SERVER_LOOP is set", () => {
@@ -83,4 +101,58 @@ test("start refuses to run when env is on but process stays paper-gated", () => 
   expect(status.enabled).toBe(true);
   stopPaperServerLoop();
   expect(describePaperLoop().running).toBe(false);
+});
+
+test("market tick uses a fresh quote, strategy, lease and persisted paper order", async () => {
+  const now = 1_700_000_300_000;
+  persistMarketHistory({ "BTC/USDT": [{ t: now - 5 * 60_000, price: 100 }] });
+  resetPaperMarketRuntimeForTests();
+  setPaperQuoteSourceForTests(async () => ({
+    fetchedAt: now,
+    tickers: {
+      "BTC/USDT": {
+        symbol: "BTC/USDT",
+        last: 103,
+        bid: 103,
+        ask: 103,
+        timestamp: now,
+      },
+    },
+  }));
+
+  const status = await runPaperMarketTick(now);
+
+  expect(status.reason).toMatch(/market tick: 1 decision/);
+  expect(status.lastOrders).toBe(1);
+  expect(status.lastQuoteAt).toBe(now);
+  expect(loadSeenOrders()).toHaveLength(1);
+  expect(loadSeenOrders()[0]?.symbol).toBe("BTC/USDT");
+  expect(loadSeenOrders()[0]?.cost).toBeLessThanOrEqual(
+    TRADING_CONFIG.orders.maxHourlyBuyNotionalPerSymbolUsd,
+  );
+  expect(loadPaperPortfolio()?.positions["BTC/USDT"]?.amount).toBeGreaterThan(0);
+  expect(loadMarketHistory()["BTC/USDT"]).toHaveLength(2);
+});
+
+test("market runtime restores paper inventory after a process restart", async () => {
+  const now = 1_700_000_300_000;
+  persistMarketHistory({ "BTC/USDT": [{ t: now - 5 * 60_000, price: 100 }] });
+  resetPaperMarketRuntimeForTests();
+  setPaperQuoteSourceForTests(async (at = now) => ({
+    fetchedAt: at,
+    tickers: {
+      "BTC/USDT": { symbol: "BTC/USDT", last: 103, bid: 103, ask: 103, timestamp: at },
+    },
+  }));
+  await runPaperMarketTick(now);
+  const held = loadPaperPortfolio()?.positions["BTC/USDT"]?.amount ?? 0;
+  expect(held).toBeGreaterThan(0);
+
+  resetPaperMarketRuntimeForTests();
+  vi.setSystemTime(now + 45_000);
+  const status = await runPaperMarketTick(now + 45_000);
+
+  expect(status.lastOrders).toBe(0);
+  expect(loadPaperPortfolio()?.positions["BTC/USDT"]?.amount).toBe(held);
+  expect(loadSeenOrders()).toHaveLength(1);
 });

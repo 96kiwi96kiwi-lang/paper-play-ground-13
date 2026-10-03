@@ -7,12 +7,6 @@ type WorkingOrder = {
   price?: number;
 };
 
-/**
- * A limit is refused when a working order on the same side and symbol already
- * rests within `bandPct` of the new price. Market submits (no limit price),
- * other symbols, opposite side, and a disabled floor still pass. Closed rows
- * are not in `working`.
- */
 export function samePriceWorkingReason(
   side: "buy" | "sell",
   symbol: string,

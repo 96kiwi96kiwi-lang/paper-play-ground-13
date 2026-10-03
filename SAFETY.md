@@ -47,7 +47,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] `maxWorkingNotionalUsd` (5,000) is sized so resting open / partial / pending orders cannot stack past that sleeve
 - [ ] `maxWorkingNotionalPerSymbolUsd` (2,500) is sized so one pair cannot rest the whole working-notional sleeve
 - [ ] Only one process holds `data/worker-lease.json`; a second replica stays standby until the lease expires
-- [ ] `PAPER_SERVER_LOOP=1` is paper-only housekeeping (heartbeat + grid TTL). It does not place live orders or invent quotes. Leave it off unless you want a server-owned heartbeat.
+- [ ] `PAPER_SERVER_LOOP=1` is a paper-only market loop. It accepts only fresh provider-timestamped public quotes, runs strategy/risk/order gates, and cannot call the live adapter. Leave it off unless the server worker should own paper decisions.
 
 ## Capital
 
