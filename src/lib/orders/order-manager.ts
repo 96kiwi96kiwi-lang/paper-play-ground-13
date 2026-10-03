@@ -67,6 +67,7 @@ import { quoteSizeReason } from "./quote-size";
 import { postOnlyReason } from "./post-only";
 import { reduceOnlyReason } from "./reduce-only";
 import { stopPriceReason } from "./stop-price";
+import { autoBorrowReason } from "./auto-borrow";
 import { spotOnlyReason } from "./spot-only";
 import { normalizeOrderSide } from "./side-form";
 import { normalizePairSymbol } from "./symbol-form";
@@ -115,6 +116,10 @@ export type OrderIntent = {
   marginMode?: string;
   /** KuCoin trade type. Only spot/TRADE is accepted; margin is refused. */
   tradeType?: string;
+  /** Margin auto-borrow. Spot adapters do not forward it, so true is refused. */
+  autoBorrow?: boolean;
+  /** Margin auto-repay. Spot adapters do not forward it, so true is refused. */
+  autoRepay?: boolean;
 };
 
 export type SubmitResult =
@@ -251,6 +256,9 @@ export class OrderManager {
 
     const spotOnly = spotOnlyReason(intent.leverage, intent.marginMode, intent.tradeType);
     if (spotOnly) return this.fail(spotOnly);
+
+    const autoBorrow = autoBorrowReason(intent.autoBorrow, intent.autoRepay);
+    if (autoBorrow) return this.fail(autoBorrow);
 
     applyHardStops(riskState);
     if (riskState.haltReason) {
