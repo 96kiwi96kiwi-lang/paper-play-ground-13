@@ -23,6 +23,7 @@ import {
 import type { PricePoint } from "@/lib/trading";
 import type { Side } from "@/lib/exchange/types";
 import type { OrderManager, SubmitResult } from "@/lib/orders/order-manager";
+import { floorAmountToDecimals } from "@/lib/orders/amount-precision";
 
 export interface BotTickInput {
   strategy: StrategyId;
@@ -189,6 +190,10 @@ export async function executeBotTick(
       }
     }
   }
+
+  // USD / mark produces a long floating-point tail. Normalize down before the
+  // exchange-precision gate, never above the risk-sized notional or inventory.
+  amount = floorAmountToDecimals(amount, TRADING_CONFIG.orders.maxAmountDecimals);
 
   if (amount <= 1e-12) {
     if (input.strategy === "grid") releaseGridReservation(input.symbol);

@@ -6,6 +6,7 @@
 import { TRADING_CONFIG } from "@/config/trading";
 import type { ExchangeAdapter, Side, UnifiedOrder } from "@/lib/exchange/types";
 import { applyHardStops, evaluateRisk, type RiskState } from "@/lib/risk";
+import { excessAmountDecimalsReason } from "./amount-precision";
 import { averageDownReason } from "./average-down";
 import { cashReserveBuyReason, workingBuyReservedUsd } from "./cash-reserve";
 import { crossMarkReason } from "./cross-mark";
@@ -194,6 +195,9 @@ export class OrderManager {
     if (!(intent.amount > 0) || !Number.isFinite(intent.amount)) {
       return this.fail("Amount must be a positive finite number");
     }
+
+    const fineAmount = excessAmountDecimalsReason(intent.amount, cfg.maxAmountDecimals);
+    if (fineAmount) return this.fail(fineAmount);
 
     const badId = invalidClientOrderIdReason(intent.clientOrderId, cfg.maxClientOrderIdLength);
     if (badId) return this.fail(badId);
