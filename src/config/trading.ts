@@ -99,6 +99,8 @@ export const TRADING_CONFIG = {
     maxClientOrderIdLength: 40,
     /** Refuse a base amount with more than this many decimal places. KuCoin spot base increments are coarser than a raw float. */
     maxAmountDecimals: 8,
+    /** Refuse a limit price with more than this many decimal places. KuCoin spot quote increments are coarser than a raw float. Market submits skip this. */
+    maxPriceDecimals: 8,
     /** Refuse a buy when booked cost basis + this order notional would exceed this USD total. */
     maxGrossExposureUsd: 8_000,
     /** Refuse a buy when accepted buy notional on the UTC day plus this order would exceed this USD total. */

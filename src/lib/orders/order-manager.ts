@@ -7,6 +7,7 @@ import { TRADING_CONFIG } from "@/config/trading";
 import type { ExchangeAdapter, Side, UnifiedOrder } from "@/lib/exchange/types";
 import { applyHardStops, evaluateRisk, type RiskState } from "@/lib/risk";
 import { excessAmountDecimalsReason } from "./amount-precision";
+import { excessPriceDecimalsReason } from "./price-precision";
 import { averageDownReason } from "./average-down";
 import { cashReserveBuyReason, workingBuyReservedUsd } from "./cash-reserve";
 import { crossMarkReason } from "./cross-mark";
@@ -59,6 +60,7 @@ import { sellDustRemainderReason } from "./sell-dust";
 import { selectStaleOpenOrders, selectWorkingOrders } from "./stale-open";
 import { staleMarketQuoteReason } from "./stale-quote";
 import { marketReferencePrice, unpricedMarketReason } from "./unpriced-market";
+import { normalizePairSymbol } from "./symbol-form";
 import { symbolFlipCooldownReason } from "./symbol-flip";
 import {
   workingNotionalPerSymbolReason,
@@ -188,9 +190,9 @@ export class OrderManager {
       return this.fail(`Halted: ${riskState.haltReason}`);
     }
 
-    if (!ALLOWED.has(intent.symbol)) {
-      return this.fail(`Unsupported pair: ${intent.symbol}`);
-    }
+    const pair = normalizePairSymbol(intent.symbol, ALLOWED);
+    if ("reason" in pair) return this.fail(pair.reason);
+    intent = { ...intent, symbol: pair.symbol };
 
     if (!(intent.amount > 0) || !Number.isFinite(intent.amount)) {
       return this.fail("Amount must be a positive finite number");
@@ -198,6 +200,9 @@ export class OrderManager {
 
     const fineAmount = excessAmountDecimalsReason(intent.amount, cfg.maxAmountDecimals);
     if (fineAmount) return this.fail(fineAmount);
+
+    const finePrice = excessPriceDecimalsReason(type, intent.price, cfg.maxPriceDecimals);
+    if (finePrice) return this.fail(finePrice);
 
     const badId = invalidClientOrderIdReason(intent.clientOrderId, cfg.maxClientOrderIdLength);
     if (badId) return this.fail(badId);
