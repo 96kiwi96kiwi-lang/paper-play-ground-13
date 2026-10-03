@@ -60,6 +60,7 @@ import { sellDustRemainderReason } from "./sell-dust";
 import { selectStaleOpenOrders, selectWorkingOrders } from "./stale-open";
 import { staleMarketQuoteReason } from "./stale-quote";
 import { marketReferencePrice, unpricedMarketReason } from "./unpriced-market";
+import { normalizeOrderSide } from "./side-form";
 import { normalizePairSymbol } from "./symbol-form";
 import { symbolFlipCooldownReason } from "./symbol-flip";
 import {
@@ -193,6 +194,10 @@ export class OrderManager {
     const pair = normalizePairSymbol(intent.symbol, ALLOWED);
     if ("reason" in pair) return this.fail(pair.reason);
     intent = { ...intent, symbol: pair.symbol };
+
+    const side = normalizeOrderSide(intent.side);
+    if ("reason" in side) return this.fail(side.reason);
+    intent = { ...intent, side: side.side };
 
     if (!(intent.amount > 0) || !Number.isFinite(intent.amount)) {
       return this.fail("Amount must be a positive finite number");
