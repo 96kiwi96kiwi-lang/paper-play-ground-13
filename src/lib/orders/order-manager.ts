@@ -69,6 +69,7 @@ import { reduceOnlyReason } from "./reduce-only";
 import { stopPriceReason } from "./stop-price";
 import { autoBorrowReason } from "./auto-borrow";
 import { trailingReason } from "./trailing";
+import { orderExpiryReason } from "./order-expiry";
 import { spotOnlyReason } from "./spot-only";
 import { normalizeOrderSide } from "./side-form";
 import { normalizePairSymbol } from "./symbol-form";
@@ -135,6 +136,12 @@ export type OrderIntent = {
   callbackRate?: number;
   /** Activation price. Adapters do not forward it, so a present value is refused. */
   activationPrice?: number;
+  /** Seconds until cancel. Adapters do not forward it, so a present value is refused. */
+  cancelAfter?: number;
+  /** Absolute expire time. Adapters do not forward it, so a present value is refused. */
+  expireTime?: number;
+  /** Good-till date. Adapters do not forward it, so a present value is refused. */
+  goodTillDate?: number | string;
 };
 
 export type SubmitResult =
@@ -285,6 +292,9 @@ export class OrderManager {
       intent.activationPrice,
     );
     if (trailing) return this.fail(trailing);
+
+    const expiry = orderExpiryReason(intent.cancelAfter, intent.expireTime, intent.goodTillDate);
+    if (expiry) return this.fail(expiry);
 
     applyHardStops(riskState);
     if (riskState.haltReason) {
