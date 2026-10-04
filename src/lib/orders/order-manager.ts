@@ -78,6 +78,7 @@ import { isolatedReason } from "./isolated";
 import { baseSizeReason } from "./base-size";
 import { priceAliasReason } from "./price-alias";
 import { clientIdAliasReason } from "./client-id-alias";
+import { sideAliasReason } from "./side-alias";
 import { spotOnlyReason } from "./spot-only";
 import { normalizeOrderSide } from "./side-form";
 import { normalizePairSymbol } from "./symbol-form";
@@ -202,6 +203,12 @@ export type OrderIntent = {
   newClientOrderId?: string;
   /** Cancel-replace id. Adapters do not forward it, so a present value is refused. */
   origClientOrderId?: string;
+  /** Side alias. Adapters read side only, so a present value is refused. */
+  orderSide?: string;
+  /** Side alias. Adapters read side only, so a present value is refused. */
+  direction?: string;
+  /** Side alias. Adapters read side only, so a present value is refused. */
+  action?: string;
 };
 
 export type SubmitResult =
@@ -400,6 +407,9 @@ export class OrderManager {
       intent.origClientOrderId,
     );
     if (clientIdAlias) return this.fail(clientIdAlias);
+
+    const sideAlias = sideAliasReason(intent.orderSide, intent.direction, intent.action);
+    if (sideAlias) return this.fail(sideAlias);
 
     applyHardStops(riskState);
     if (riskState.haltReason) {
