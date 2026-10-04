@@ -73,6 +73,7 @@ import { orderExpiryReason } from "./order-expiry";
 import { selfTradeReason } from "./self-trade";
 import { positionSideReason } from "./position-side";
 import { isolatedReason } from "./isolated";
+import { baseSizeReason } from "./base-size";
 import { spotOnlyReason } from "./spot-only";
 import { normalizeOrderSide } from "./side-form";
 import { normalizePairSymbol } from "./symbol-form";
@@ -163,6 +164,14 @@ export type OrderIntent = {
   isIsolated?: string | boolean;
   /** Close entire position. Spot adapters do not forward it, so a present value is refused. */
   closePosition?: boolean | number | string;
+  /** Size alias. Adapters size by amount, so a present value is refused. */
+  size?: number | string;
+  /** Size alias. Adapters size by amount, so a present value is refused. */
+  quantity?: number | string;
+  /** Size alias. Adapters size by amount, so a present value is refused. */
+  qty?: number | string;
+  /** Size alias. Adapters size by amount, so a present value is refused. */
+  baseSize?: number | string;
 };
 
 export type SubmitResult =
@@ -333,6 +342,9 @@ export class OrderManager {
 
     const isolated = isolatedReason(intent.isolated, intent.isIsolated, intent.closePosition);
     if (isolated) return this.fail(isolated);
+
+    const baseSize = baseSizeReason(intent.size, intent.quantity, intent.qty, intent.baseSize);
+    if (baseSize) return this.fail(baseSize);
 
     applyHardStops(riskState);
     if (riskState.haltReason) {
