@@ -72,6 +72,7 @@ import { trailingReason } from "./trailing";
 import { orderExpiryReason } from "./order-expiry";
 import { selfTradeReason } from "./self-trade";
 import { positionSideReason } from "./position-side";
+import { isolatedReason } from "./isolated";
 import { spotOnlyReason } from "./spot-only";
 import { normalizeOrderSide } from "./side-form";
 import { normalizePairSymbol } from "./symbol-form";
@@ -156,6 +157,12 @@ export type OrderIntent = {
   hedgeMode?: string | boolean;
   /** Position mode. Spot adapters do not forward it, so a present value is refused. */
   positionMode?: string;
+  /** Isolated margin. Spot adapters do not forward it, so a present value is refused. */
+  isolated?: string | boolean;
+  /** Isolated flag. Spot adapters do not forward it, so a present value is refused. */
+  isIsolated?: string | boolean;
+  /** Close entire position. Spot adapters do not forward it, so a present value is refused. */
+  closePosition?: boolean | number | string;
 };
 
 export type SubmitResult =
@@ -323,6 +330,9 @@ export class OrderManager {
       intent.positionMode,
     );
     if (positionSide) return this.fail(positionSide);
+
+    const isolated = isolatedReason(intent.isolated, intent.isIsolated, intent.closePosition);
+    if (isolated) return this.fail(isolated);
 
     applyHardStops(riskState);
     if (riskState.haltReason) {
