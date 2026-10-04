@@ -75,6 +75,7 @@ import { positionSideReason } from "./position-side";
 import { isolatedReason } from "./isolated";
 import { baseSizeReason } from "./base-size";
 import { priceAliasReason } from "./price-alias";
+import { clientIdAliasReason } from "./client-id-alias";
 import { spotOnlyReason } from "./spot-only";
 import { normalizeOrderSide } from "./side-form";
 import { normalizePairSymbol } from "./symbol-form";
@@ -179,6 +180,12 @@ export type OrderIntent = {
   orderPrice?: number | string;
   /** Price alias. Adapters price by price, so a present value is refused. */
   px?: number | string;
+  /** KuCoin client oid. Adapters identify by clientOrderId, so a present value is refused. */
+  clientOid?: string;
+  /** Binance client-id alias. Adapters identify by clientOrderId, so a present value is refused. */
+  newClientOrderId?: string;
+  /** Cancel-replace id. Adapters do not forward it, so a present value is refused. */
+  origClientOrderId?: string;
 };
 
 export type SubmitResult =
@@ -355,6 +362,13 @@ export class OrderManager {
 
     const priceAlias = priceAliasReason(intent.limitPrice, intent.orderPrice, intent.px);
     if (priceAlias) return this.fail(priceAlias);
+
+    const clientIdAlias = clientIdAliasReason(
+      intent.clientOid,
+      intent.newClientOrderId,
+      intent.origClientOrderId,
+    );
+    if (clientIdAlias) return this.fail(clientIdAlias);
 
     applyHardStops(riskState);
     if (riskState.haltReason) {
