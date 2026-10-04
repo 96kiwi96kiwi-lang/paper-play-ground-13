@@ -70,6 +70,7 @@ import { stopPriceReason } from "./stop-price";
 import { autoBorrowReason } from "./auto-borrow";
 import { trailingReason } from "./trailing";
 import { orderExpiryReason } from "./order-expiry";
+import { selfTradeReason } from "./self-trade";
 import { spotOnlyReason } from "./spot-only";
 import { normalizeOrderSide } from "./side-form";
 import { normalizePairSymbol } from "./symbol-form";
@@ -142,6 +143,12 @@ export type OrderIntent = {
   expireTime?: number;
   /** Good-till date. Adapters do not forward it, so a present value is refused. */
   goodTillDate?: number | string;
+  /** KuCoin STP. Adapters do not forward it, so a present value is refused. */
+  stp?: string;
+  /** Self-trade prevention. Adapters do not forward it, so a present value is refused. */
+  selfTradePrevention?: string;
+  /** Self-trade prevention mode. Adapters do not forward it, so a present value is refused. */
+  selfTradePreventionMode?: string;
 };
 
 export type SubmitResult =
@@ -295,6 +302,13 @@ export class OrderManager {
 
     const expiry = orderExpiryReason(intent.cancelAfter, intent.expireTime, intent.goodTillDate);
     if (expiry) return this.fail(expiry);
+
+    const selfTrade = selfTradeReason(
+      intent.stp,
+      intent.selfTradePrevention,
+      intent.selfTradePreventionMode,
+    );
+    if (selfTrade) return this.fail(selfTrade);
 
     applyHardStops(riskState);
     if (riskState.haltReason) {
