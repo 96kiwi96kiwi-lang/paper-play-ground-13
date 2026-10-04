@@ -66,6 +66,7 @@ import { tifAliasReason } from "./tif-alias";
 import { icebergReason } from "./iceberg";
 import { quoteSizeReason } from "./quote-size";
 import { postOnlyReason } from "./post-only";
+import { postOnlyAliasReason } from "./post-only-alias";
 import { reduceOnlyReason } from "./reduce-only";
 import { stopPriceReason } from "./stop-price";
 import { autoBorrowReason } from "./auto-borrow";
@@ -111,6 +112,12 @@ export type OrderIntent = {
   fillOrKill?: boolean | string | number;
   /** Maker-only flag. Adapters do not forward it, so true is refused. */
   postOnly?: boolean;
+  /** Maker-only alias. Adapters read postOnly only, so a present value is refused. */
+  post_only?: boolean | string | number;
+  /** Maker-only alias. Adapters do not forward it, so a present value is refused. */
+  makerOnly?: boolean | string | number;
+  /** Maker-only alias. Adapters do not forward it, so a present value is refused. */
+  timeInForcePostOnly?: boolean | string | number;
   /** Close-only flag. Adapters do not forward it, so true is refused. */
   reduceOnly?: boolean;
   /** Trigger price. Adapters do not forward it, so a present value is refused. */
@@ -315,6 +322,13 @@ export class OrderManager {
     const tif = normalizeTimeInForce(intent.timeInForce);
     if ("reason" in tif) return this.fail(tif.reason);
     intent = { ...intent, timeInForce: tif.timeInForce };
+
+    const postOnlyAlias = postOnlyAliasReason(
+      intent.post_only,
+      intent.makerOnly,
+      intent.timeInForcePostOnly,
+    );
+    if (postOnlyAlias) return this.fail(postOnlyAlias);
 
     const postOnly = postOnlyReason(intent.postOnly);
     if (postOnly) return this.fail(postOnly);
