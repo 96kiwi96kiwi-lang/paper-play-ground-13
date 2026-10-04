@@ -29,7 +29,11 @@ export function rungSpacingReason(
     if (order.symbol !== symbol || order.side !== side) return false;
     if (!(order.price && order.price > 0)) return false;
     const distPct = (Math.abs(order.price - limitPrice) / order.price) * 100;
-    return distPct < minSpacingPct;
+    // Decimal prices can represent an exact configured rung a few ulps below
+    // the threshold (for example 100 -> 100.8 at 0.8%). Keep the documented
+    // boundary inclusive without weakening meaningfully tighter spacing.
+    const epsilon = Math.max(1, minSpacingPct) * Number.EPSILON * 32;
+    return distPct + epsilon < minSpacingPct;
   });
   if (!hit) return null;
   const id = hit.id ? ` ${hit.id}` : "";

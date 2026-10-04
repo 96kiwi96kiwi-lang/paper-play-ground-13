@@ -27,3 +27,15 @@ export function excessAmountDecimalsReason(amount: number, maxDecimals: number):
   if (places == null || places <= maxDecimals) return null;
   return `Amount precision: more than ${maxDecimals} decimal places`;
 }
+
+/**
+ * Clamp a computed strategy size down to the configured base precision.
+ * Flooring cannot spend or sell more than the risk/inventory calculation allowed.
+ */
+export function floorAmountToDecimals(amount: number, maxDecimals: number): number {
+  if (!(amount > 0) || !Number.isFinite(amount)) return 0;
+  if (!(maxDecimals >= 0) || !Number.isInteger(maxDecimals)) return amount;
+  const factor = 10 ** maxDecimals;
+  if (!Number.isFinite(factor)) return amount;
+  return Math.floor(amount * factor + Number.EPSILON * factor) / factor;
+}
