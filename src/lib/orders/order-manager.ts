@@ -62,6 +62,7 @@ import { staleMarketQuoteReason } from "./stale-quote";
 import { marketReferencePrice, unpricedMarketReason } from "./unpriced-market";
 import { normalizeOrderType } from "./order-type";
 import { normalizeTimeInForce } from "./time-in-force";
+import { tifAliasReason } from "./tif-alias";
 import { icebergReason } from "./iceberg";
 import { quoteSizeReason } from "./quote-size";
 import { postOnlyReason } from "./post-only";
@@ -100,6 +101,14 @@ export type OrderIntent = {
   reason?: string;
   /** Resting policy. Omitted means GTC. IOC/FOK are refused before the adapter. */
   timeInForce?: string;
+  /** Time-in-force alias. Adapters read timeInForce only, so a present value is refused. */
+  tif?: string;
+  /** Time-in-force alias. Adapters read timeInForce only, so a present value is refused. */
+  time_in_force?: string;
+  /** Immediate-or-cancel flag. Adapters do not forward it, so a present value is refused. */
+  immediateOrCancel?: boolean | string | number;
+  /** Fill-or-kill flag. Adapters do not forward it, so a present value is refused. */
+  fillOrKill?: boolean | string | number;
   /** Maker-only flag. Adapters do not forward it, so true is refused. */
   postOnly?: boolean;
   /** Close-only flag. Adapters do not forward it, so true is refused. */
@@ -294,6 +303,14 @@ export class OrderManager {
     if ("reason" in typed) return this.fail(typed.reason);
     const type = typed.type;
     intent = { ...intent, type };
+
+    const tifAlias = tifAliasReason(
+      intent.tif,
+      intent.time_in_force,
+      intent.immediateOrCancel,
+      intent.fillOrKill,
+    );
+    if (tifAlias) return this.fail(tifAlias);
 
     const tif = normalizeTimeInForce(intent.timeInForce);
     if ("reason" in tif) return this.fail(tif.reason);
