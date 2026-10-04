@@ -12,6 +12,7 @@ import type { UnifiedOrder } from "@/lib/exchange/types";
 import type { GridBook } from "@/lib/strategies";
 import type { TradingRuntimeMode } from "./trading-mode";
 import type { PersistedLastReject } from "./last-reject";
+import type { PricePoint } from "@/lib/trading";
 export type { PersistedLastReject } from "./last-reject";
 export { persistLastReject, loadLastReject, sanitizeLastReject } from "./last-reject";
 
@@ -32,15 +33,24 @@ export type PersistedBotState = {
   lastSubmitAt: number;
   lastReject?: PersistedLastReject | null;
   recentAlerts: PersistedAlert[];
+  marketHistory: Record<string, PricePoint[]>;
 };
 
-const STATE_PATH = resolve(process.cwd(), "data", "bot-state.json");
-const STATE_TMP_PATH = `${STATE_PATH}.tmp`;
+let overrideStatePath: string | null = null;
+
+function statePath(): string {
+  return overrideStatePath ?? resolve(process.cwd(), "data", "bot-state.json");
+}
+
+/** Test-only: isolate persisted state in a temporary directory. */
+export function setBotStatePathForTests(path: string | null): void {
+  overrideStatePath = path;
+}
 const MAX_SEEN_ORDERS = 200;
 const MAX_ALERTS = 50;
 
 function emptyState(): PersistedBotState {
-  return { version: 1, savedAt: 0, mode: "paper", liveConfirmedAt: null, risk: null, lastHardStop: null, lastHeartbeat: null, paperPortfolio: null, seenOrders: [], gridBooks: {}, lastSubmitAt: 0, lastReject: null, recentAlerts: [] };
+  return { version: 1, savedAt: 0, mode: "paper", liveConfirmedAt: null, risk: null, lastHardStop: null, lastHeartbeat: null, paperPortfolio: null, seenOrders: [], gridBooks: {}, lastSubmitAt: 0, lastReject: null, recentAlerts: [], marketHistory: {} };
 }
 
 function asNum(v: unknown, fallback = 0): number {
@@ -141,6 +151,26 @@ function sanitizeGridBooks(raw: unknown): Record<string, GridBook> {
   return out;
 }
 
+function sanitizeMarketHistory(raw: unknown): Record<string, PricePoint[]> {
+  if (!raw || typeof raw !== "object") return {};
+  const out: Record<string, PricePoint[]> = {};
+  for (const [symbol, values] of Object.entries(raw as Record<string, unknown>)) {
+    if (!symbol || !Array.isArray(values)) continue;
+    out[symbol] = values
+      .flatMap((value) => {
+        if (!value || typeof value !== "object") return [];
+        const t = Number((value as PricePoint).t);
+        const price = Number((value as PricePoint).price);
+        return t > 0 && price > 0 && Number.isFinite(t) && Number.isFinite(price)
+          ? [{ t, price }]
+          : [];
+      })
+      .sort((a, b) => a.t - b.t)
+      .slice(-240);
+  }
+  return out;
+}
+
 function inferHardStopCode(reason: string): string | undefined {
   const r = reason.toLowerCase();
   if (r.includes("daily loss")) return "daily_loss_limit";
@@ -157,19 +187,22 @@ function emptyRiskSlice(): NonNullable<PersistedBotState["risk"]> {
 }
 
 function writeStateAtomic(state: PersistedBotState): void {
-  mkdirSync(dirname(STATE_PATH), { recursive: true });
-  writeFileSync(STATE_TMP_PATH, JSON.stringify(state, null, 2), "utf8");
-  try { renameSync(STATE_TMP_PATH, STATE_PATH); }
+  const path = statePath();
+  const tmpPath = `${path}.tmp`;
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(tmpPath, JSON.stringify(state, null, 2), "utf8");
+  try { renameSync(tmpPath, path); }
   catch (err) {
-    try { unlinkSync(STATE_TMP_PATH); } catch { /* ignore */ }
+    try { unlinkSync(tmpPath); } catch { /* ignore */ }
     throw err;
   }
 }
 
 export function loadBotState(): PersistedBotState {
   try {
-    if (!existsSync(STATE_PATH)) return emptyState();
-    const raw = JSON.parse(readFileSync(STATE_PATH, "utf8")) as Partial<PersistedBotState>;
+    const path = statePath();
+    if (!existsSync(path)) return emptyState();
+    const raw = JSON.parse(readFileSync(path, "utf8")) as Partial<PersistedBotState>;
     return {
       ...emptyState(),
       ...raw,
@@ -183,6 +216,7 @@ export function loadBotState(): PersistedBotState {
       gridBooks: sanitizeGridBooks(raw.gridBooks),
       lastSubmitAt: sanitizeLastSubmitAt(raw.lastSubmitAt),
       recentAlerts: sanitizeAlerts(raw.recentAlerts),
+      marketHistory: sanitizeMarketHistory(raw.marketHistory),
     };
   } catch (err) {
     console.warn("[persist] failed to load bot-state.json", err);
@@ -275,3 +309,9 @@ export function persistLastSubmitAt(at: number): void {
 export function loadLastSubmitAt(): number { return loadBotState().lastSubmitAt ?? 0; }
 export function persistRecentAlerts(alerts: PersistedAlert[]): void { saveBotState({ recentAlerts: sanitizeAlerts(alerts) }); }
 export function loadRecentAlerts(): PersistedAlert[] { return loadBotState().recentAlerts ?? []; }
+export function persistMarketHistory(history: Record<string, PricePoint[]>): void {
+  saveBotState({ marketHistory: sanitizeMarketHistory(history) });
+}
+export function loadMarketHistory(): Record<string, PricePoint[]> {
+  return loadBotState().marketHistory ?? {};
+}

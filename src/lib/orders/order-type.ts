@@ -11,7 +11,8 @@ export type OrderType = "market" | "limit";
  */
 export function normalizeOrderType(raw: unknown): { type: OrderType } | { reason: string } {
   if (raw == null) return { type: "market" };
-  const shaped = typeof raw === "string" ? raw.trim().toLowerCase() : "";
+  if (typeof raw !== "string") return { reason: `Unsupported order type: ${String(raw)}` };
+  const shaped = raw.trim().toLowerCase();
   if (shaped === "" || shaped === "market") return { type: "market" };
   if (shaped === "limit") return { type: "limit" };
   const shown = shaped || String(raw);

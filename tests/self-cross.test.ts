@@ -26,12 +26,11 @@ test("a sell is refused while a working buy rests on the same symbol", () => {
 });
 
 test("same side, other symbols, and a disabled floor still pass", () => {
-  const working = [
-    { id: "b1", side: "buy", symbol: "SOL/USDT" },
-    { id: "s1", side: "sell", symbol: "BNB/USDT" },
-  ];
-  expect(selfCrossReason("buy", "SOL/USDT", working, block)).toBeNull();
-  expect(selfCrossReason("sell", "SOL/USDT", working, block)).toBeNull();
-  expect(selfCrossReason("buy", "BTC/USDT", working, false)).toBeNull();
+  const buyWorking = [{ id: "b1", side: "buy", symbol: "SOL/USDT" }];
+  const sellWorking = [{ id: "s1", side: "sell", symbol: "SOL/USDT" }];
+  expect(selfCrossReason("buy", "SOL/USDT", buyWorking, block)).toBeNull();
+  expect(selfCrossReason("sell", "SOL/USDT", sellWorking, block)).toBeNull();
+  expect(selfCrossReason("buy", "BTC/USDT", sellWorking, block)).toBeNull();
+  expect(selfCrossReason("buy", "BTC/USDT", sellWorking, false)).toBeNull();
   expect(selfCrossReason("sell", "ETH/USDT", [], block)).toBeNull();
 });

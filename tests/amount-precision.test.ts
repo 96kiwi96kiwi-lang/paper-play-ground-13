@@ -1,6 +1,10 @@
 import { expect, test } from "vitest";
 import { TRADING_CONFIG } from "@/config/trading";
-import { amountDecimalPlaces, excessAmountDecimalsReason } from "@/lib/orders/amount-precision";
+import {
+  amountDecimalPlaces,
+  excessAmountDecimalsReason,
+  floorAmountToDecimals,
+} from "@/lib/orders/amount-precision";
 
 const maxDecimals = TRADING_CONFIG.orders.maxAmountDecimals;
 
@@ -24,4 +28,13 @@ test("a disabled cap and unusable amounts do not refuse", () => {
   expect(excessAmountDecimalsReason(1.5, -1)).toBeNull();
   expect(excessAmountDecimalsReason(Number.NaN, maxDecimals)).toBeNull();
   expect(amountDecimalPlaces(0)).toBeNull();
+});
+
+test("computed strategy sizes floor to the cap without increasing exposure", () => {
+  const raw = 1_500 / 103;
+  const amount = floorAmountToDecimals(raw, maxDecimals);
+  expect(amount).toBeLessThanOrEqual(raw);
+  expect(amountDecimalPlaces(amount)).toBeLessThanOrEqual(maxDecimals);
+  expect(excessAmountDecimalsReason(amount, maxDecimals)).toBeNull();
+  expect(floorAmountToDecimals(Number.NaN, maxDecimals)).toBe(0);
 });

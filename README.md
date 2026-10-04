@@ -71,3 +71,8 @@ Health includes halt, alerts, last reject (reason/side/symbol/age), grid books, 
 Paper is the default. Live needs Trade-only KuCoin keys in server `.env`, a permission audit that blocks Withdraw, `OPERATOR_TOKEN`, and typed `ENABLE LIVE`. A process restart always returns to paper.
 
 Never invent or commit secrets. See [SAFETY.md](./SAFETY.md).
+
+### Unattended worker startup
+The Nitro runtime plugin starts the opt-in paper loop before any HTTP request.
+Run `npm run build && npm run test:worker` to verify startup, quote decisions and persisted history with deterministic quotes and no incoming requests.
+A Railway worker still requires a persistent volume at `/app/data`; build success alone does not prove production persistence.
