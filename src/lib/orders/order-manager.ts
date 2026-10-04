@@ -74,6 +74,7 @@ import { selfTradeReason } from "./self-trade";
 import { positionSideReason } from "./position-side";
 import { isolatedReason } from "./isolated";
 import { baseSizeReason } from "./base-size";
+import { priceAliasReason } from "./price-alias";
 import { spotOnlyReason } from "./spot-only";
 import { normalizeOrderSide } from "./side-form";
 import { normalizePairSymbol } from "./symbol-form";
@@ -172,6 +173,12 @@ export type OrderIntent = {
   qty?: number | string;
   /** Size alias. Adapters size by amount, so a present value is refused. */
   baseSize?: number | string;
+  /** Price alias. Adapters price by price, so a present value is refused. */
+  limitPrice?: number | string;
+  /** Price alias. Adapters price by price, so a present value is refused. */
+  orderPrice?: number | string;
+  /** Price alias. Adapters price by price, so a present value is refused. */
+  px?: number | string;
 };
 
 export type SubmitResult =
@@ -345,6 +352,9 @@ export class OrderManager {
 
     const baseSize = baseSizeReason(intent.size, intent.quantity, intent.qty, intent.baseSize);
     if (baseSize) return this.fail(baseSize);
+
+    const priceAlias = priceAliasReason(intent.limitPrice, intent.orderPrice, intent.px);
+    if (priceAlias) return this.fail(priceAlias);
 
     applyHardStops(riskState);
     if (riskState.haltReason) {
