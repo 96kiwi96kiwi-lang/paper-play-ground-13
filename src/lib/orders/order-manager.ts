@@ -68,6 +68,7 @@ import { postOnlyReason } from "./post-only";
 import { reduceOnlyReason } from "./reduce-only";
 import { stopPriceReason } from "./stop-price";
 import { autoBorrowReason } from "./auto-borrow";
+import { trailingReason } from "./trailing";
 import { spotOnlyReason } from "./spot-only";
 import { normalizeOrderSide } from "./side-form";
 import { normalizePairSymbol } from "./symbol-form";
@@ -120,6 +121,20 @@ export type OrderIntent = {
   autoBorrow?: boolean;
   /** Margin auto-repay. Spot adapters do not forward it, so true is refused. */
   autoRepay?: boolean;
+  /** Extra trigger. Adapters do not forward it, so a present value is refused. */
+  triggerPrice?: number;
+  /** Stop-loss price. Adapters do not forward it, so a present value is refused. */
+  stopLossPrice?: number;
+  /** Take-profit price. Adapters do not forward it, so a present value is refused. */
+  takeProfitPrice?: number;
+  /** Trailing offset. Adapters do not forward it, so a present value is refused. */
+  trailingDelta?: number;
+  /** Trailing percent. Adapters do not forward it, so a present value is refused. */
+  trailingPercent?: number;
+  /** Callback rate. Adapters do not forward it, so a present value is refused. */
+  callbackRate?: number;
+  /** Activation price. Adapters do not forward it, so a present value is refused. */
+  activationPrice?: number;
 };
 
 export type SubmitResult =
@@ -259,6 +274,17 @@ export class OrderManager {
 
     const autoBorrow = autoBorrowReason(intent.autoBorrow, intent.autoRepay);
     if (autoBorrow) return this.fail(autoBorrow);
+
+    const trailing = trailingReason(
+      intent.triggerPrice,
+      intent.stopLossPrice,
+      intent.takeProfitPrice,
+      intent.trailingDelta,
+      intent.trailingPercent,
+      intent.callbackRate,
+      intent.activationPrice,
+    );
+    if (trailing) return this.fail(trailing);
 
     applyHardStops(riskState);
     if (riskState.haltReason) {
