@@ -13,7 +13,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "test:smoke": "node scripts/smoke-built-server.mjs"
+    "test:smoke": "node scripts/smoke-built-server.mjs",
+    "test:worker": "node scripts/smoke-worker-startup.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

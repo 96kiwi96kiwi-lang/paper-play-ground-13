@@ -8,6 +8,10 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 
 ## Current status
 
+A submit is refused when `isolated` or `isIsolated` is present (`Isolated margin is not supported` / `Isolated flag is not supported`), or when `closePosition` is present (`Close position is not supported`). Paper and KuCoin adapters place spot orders only, so an isolated-margin or close-entire-position flag would be ignored and the base size would trade on the spot book. Omitted, null, false, and blank still pass. Zero is present and is refused. This runs before the adapter, so it does not burn `maxRejectsInWindow`. This is a margin floor, not a halt, and does not flatten positions. Vitest: `tests/isolated.test.ts` (no exchange, no secrets).
+
+A submit is refused when `positionSide`, `hedgeMode`, or `positionMode` is present (`Position side is not supported` / `Hedge mode is not supported` / `Position mode is not supported`). Paper and KuCoin adapters place spot orders only, so a long, short, or hedge flag would be ignored and the base size would trade on the spot book. Omitted, null, and blank still pass. `LONG`, `SHORT`, `BOTH`, and `hedge` are present and are refused. A boolean hedge flag is refused. This runs before the adapter, so it does not burn `maxRejectsInWindow`. This is a product floor, not a halt, and does not flatten positions. Vitest: `tests/position-side.test.ts` (no exchange, no secrets).
+
 A submit is refused when `stp`, `selfTradePrevention`, or `selfTradePreventionMode` is present (`STP is not supported` / `Self-trade prevention is not supported` / `Self-trade prevention mode is not supported`). Paper and KuCoin adapters place the order without a self-trade flag, so an STP intent would be ignored and the account could match its own resting order. Omitted, null, and blank still pass. `CN`, `CO`, `CB`, and `DC` are present and are refused. This runs before the adapter, so it does not burn `maxRejectsInWindow`. This is a matching floor, not a halt, and does not flatten positions. Vitest: `tests/self-trade.test.ts` (no exchange, no secrets).
 
 A submit is refused when `cancelAfter`, `expireTime`, or `goodTillDate` is present (`Cancel after is not supported` / `Expire time is not supported` / `Good till date is not supported`). Paper and KuCoin adapters do not forward an expiry, so the order would rest until a later cancel. Omitted, null, and blank still pass. Zero is present and is refused. GTT time-in-force remains its own floor. This runs before the adapter, so it does not burn `maxRejectsInWindow`. This is an expiry floor, not a halt, and does not flatten positions. Vitest: `tests/order-expiry.test.ts` (no exchange, no secrets).
@@ -67,3 +71,8 @@ Health includes halt, alerts, last reject (reason/side/symbol/age), grid books, 
 Paper is the default. Live needs Trade-only KuCoin keys in server `.env`, a permission audit that blocks Withdraw, `OPERATOR_TOKEN`, and typed `ENABLE LIVE`. A process restart always returns to paper.
 
 Never invent or commit secrets. See [SAFETY.md](./SAFETY.md).
+
+### Unattended worker startup
+The Nitro runtime plugin starts the opt-in paper loop before any HTTP request.
+Run `npm run build && npm run test:worker` to verify startup, quote decisions and persisted history with deterministic quotes and no incoming requests.
+A Railway worker still requires a persistent volume at `/app/data`; build success alone does not prove production persistence.
