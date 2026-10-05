@@ -8,6 +8,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 
 ## Current status
 
+A submit is refused when `pair`, `market`, or `instrument` is present (`Pair alias is not supported` / `Market alias is not supported` / `Instrument is not supported`). Paper and KuCoin adapters read `symbol` only, so a pair alias would be ignored and the canonical symbol would trade. Omitted, null, and blank still pass. Zero is present and is refused. `symbol` itself remains its own floor. This runs before the adapter, so it does not burn `maxRejectsInWindow`. This is a pair floor, not a halt, and does not flatten positions. Vitest: `tests/symbol-alias.test.ts` (no exchange, no secrets).
+
 A submit is refused when `oco`, `orderListId`, or `listClientOrderId` is present (`OCO is not supported` / `Order list id is not supported` / `List client order id is not supported`), or when `aboveType`, `belowType`, or `stopLimitPrice` is present (`Above type is not supported` / `Below type is not supported` / `Stop limit price is not supported`). Paper and KuCoin adapters place one spot order and do not forward a second leg, so an OCO or order-list intent would be ignored and only the canonical order would trade. Omitted, null, and blank still pass. `false` still passes. Zero is present and is refused. This runs before the adapter, so it does not burn `maxRejectsInWindow`. This is a list floor, not a halt, and does not flatten positions. Vitest: `tests/order-list.test.ts` (no exchange, no secrets).
 
 A submit is refused when `orderSide`, `direction`, or `action` is present (`Order side alias is not supported` / `Direction is not supported` / `Action is not supported`). Paper and KuCoin adapters read `side` only, so a side alias would be ignored and the order would buy or sell the canonical side. Omitted, null, and blank still pass. `buy` and `sell` on the alias are present and are refused. `side` itself remains its own floor. This runs before the adapter, so it does not burn `maxRejectsInWindow`. This is a side floor, not a halt, and does not flatten positions. Vitest: `tests/side-alias.test.ts` (no exchange, no secrets).
@@ -90,3 +92,4 @@ Never invent or commit secrets. See [SAFETY.md](./SAFETY.md).
 The Nitro runtime plugin starts the opt-in paper loop before any HTTP request.
 Run `npm run build && npm run test:worker` to verify startup, quote decisions and persisted history with deterministic quotes and no incoming requests.
 A Railway worker still requires a persistent volume at `/app/data`; build success alone does not prove production persistence.
+

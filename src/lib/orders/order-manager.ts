@@ -80,6 +80,7 @@ import { priceAliasReason } from "./price-alias";
 import { clientIdAliasReason } from "./client-id-alias";
 import { sideAliasReason } from "./side-alias";
 import { orderListReason } from "./order-list";
+import { symbolAliasReason } from "./symbol-alias";
 import { spotOnlyReason } from "./spot-only";
 import { normalizeOrderSide } from "./side-form";
 import { normalizePairSymbol } from "./symbol-form";
@@ -222,6 +223,12 @@ export type OrderIntent = {
   belowType?: string;
   /** Stop-limit price. Adapters do not forward it, so a present value is refused. */
   stopLimitPrice?: number | string;
+  /** Pair alias. Adapters read symbol only, so a present value is refused. */
+  pair?: string;
+  /** Market alias. Adapters read symbol only, so a present value is refused. */
+  market?: string;
+  /** Instrument alias. Adapters read symbol only, so a present value is refused. */
+  instrument?: string;
 };
 
 export type SubmitResult =
@@ -433,6 +440,9 @@ export class OrderManager {
       intent.stopLimitPrice,
     );
     if (orderList) return this.fail(orderList);
+
+    const symbolAlias = symbolAliasReason(intent.pair, intent.market, intent.instrument);
+    if (symbolAlias) return this.fail(symbolAlias);
 
     applyHardStops(riskState);
     if (riskState.haltReason) {
@@ -856,3 +866,4 @@ export class OrderManager {
     this.onPortfolioChange?.(this.snapshot());
   }
 }
+
