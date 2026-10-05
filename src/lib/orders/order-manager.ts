@@ -66,6 +66,7 @@ import { validateOnlyReason } from "./validate-only";
 import { requestWindowReason } from "./request-window";
 import { slippageReason } from "./slippage";
 import { priceProtectReason } from "./price-protect";
+import { priceMatchReason } from "./price-match";
 import { normalizeTimeInForce } from "./time-in-force";
 import { tifAliasReason } from "./tif-alias";
 import { icebergReason } from "./iceberg";
@@ -283,6 +284,12 @@ export type OrderIntent = {
   priceProtection?: boolean | string | number;
   /** Percent-price filter. Adapters do not forward it, so a present value is refused. */
   percentPrice?: number | string;
+  /** Book-relative price match. Adapters do not forward it, so a present value is refused. */
+  priceMatch?: string | number | boolean;
+  /** Pegged price type. Adapters do not forward it, so a present value is refused. */
+  pegPriceType?: string | number | boolean;
+  /** Peg offset. Adapters do not forward it, so a present value is refused. */
+  pegOffsetValue?: number | string | boolean;
   /** Rehearsal flag. Adapters place a real spot order, so true is refused. */
   test?: boolean | string | number;
   /** Rehearsal flag. Adapters place a real spot order, so a present value is refused. */
@@ -416,6 +423,13 @@ export class OrderManager {
       intent.percentPrice,
     );
     if (priceProtect) return this.fail(priceProtect);
+
+    const priceMatch = priceMatchReason(
+      intent.priceMatch,
+      intent.pegPriceType,
+      intent.pegOffsetValue,
+    );
+    if (priceMatch) return this.fail(priceMatch);
 
     const typeAlias = orderTypeAliasReason(intent.ordType, intent.orderType, intent.order_type);
     if (typeAlias) return this.fail(typeAlias);
