@@ -81,6 +81,7 @@ import { clientIdAliasReason } from "./client-id-alias";
 import { sideAliasReason } from "./side-alias";
 import { orderListReason } from "./order-list";
 import { symbolAliasReason } from "./symbol-alias";
+import { accountRouteReason } from "./account-route";
 import { spotOnlyReason } from "./spot-only";
 import { normalizeOrderSide } from "./side-form";
 import { normalizePairSymbol } from "./symbol-form";
@@ -229,6 +230,12 @@ export type OrderIntent = {
   market?: string;
   /** Instrument alias. Adapters read symbol only, so a present value is refused. */
   instrument?: string;
+  /** Account-type alias. Adapters do not route an account, so a present value is refused. */
+  accountType?: string;
+  /** Account alias. Adapters do not route an account, so a present value is refused. */
+  account?: string;
+  /** Funds-account alias. Adapters do not route an account, so a present value is refused. */
+  fundsAccount?: string;
 };
 
 export type SubmitResult =
@@ -443,6 +450,9 @@ export class OrderManager {
 
     const symbolAlias = symbolAliasReason(intent.pair, intent.market, intent.instrument);
     if (symbolAlias) return this.fail(symbolAlias);
+
+    const accountRoute = accountRouteReason(intent.accountType, intent.account, intent.fundsAccount);
+    if (accountRoute) return this.fail(accountRoute);
 
     applyHardStops(riskState);
     if (riskState.haltReason) {
