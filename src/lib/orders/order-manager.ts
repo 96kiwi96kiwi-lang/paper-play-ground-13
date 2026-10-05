@@ -82,6 +82,7 @@ import { sideAliasReason } from "./side-alias";
 import { orderListReason } from "./order-list";
 import { symbolAliasReason } from "./symbol-alias";
 import { accountRouteReason } from "./account-route";
+import { credentialBodyReason } from "./credential-body";
 import { spotOnlyReason } from "./spot-only";
 import { normalizeOrderSide } from "./side-form";
 import { normalizePairSymbol } from "./symbol-form";
@@ -236,6 +237,16 @@ export type OrderIntent = {
   account?: string;
   /** Funds-account alias. Adapters do not route an account, so a present value is refused. */
   fundsAccount?: string;
+  /** Client API key. Adapters authenticate from server env only, so a present value is refused. */
+  apiKey?: string;
+  /** Client secret. Adapters authenticate from server env only, so a present value is refused. */
+  apiSecret?: string;
+  /** Client secret alias. Adapters authenticate from server env only, so a present value is refused. */
+  secret?: string;
+  /** Client passphrase. Adapters authenticate from server env only, so a present value is refused. */
+  passphrase?: string;
+  /** Request signature. Adapters sign server-side, so a present value is refused. */
+  signature?: string;
 };
 
 export type SubmitResult =
@@ -453,6 +464,15 @@ export class OrderManager {
 
     const accountRoute = accountRouteReason(intent.accountType, intent.account, intent.fundsAccount);
     if (accountRoute) return this.fail(accountRoute);
+
+    const credentialBody = credentialBodyReason(
+      intent.apiKey,
+      intent.apiSecret,
+      intent.secret,
+      intent.passphrase,
+      intent.signature,
+    );
+    if (credentialBody) return this.fail(credentialBody);
 
     applyHardStops(riskState);
     if (riskState.haltReason) {
