@@ -46,6 +46,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] `maxHourlySellNotionalUsd` (2,500) and `maxHourlySellNotionalPerSymbolUsd` (1,200) match how much you will allow OrderManager to sell inside a rolling 60 minutes (not a halt; does not flatten; buys still allowed)
 - [ ] `maxWorkingNotionalUsd` (5,000) is sized so resting open / partial / pending orders cannot stack past that sleeve
 - [ ] `maxWorkingNotionalPerSymbolUsd` (2,500) is sized so one pair cannot rest the whole working-notional sleeve
+- [ ] A present `priceProtect`, `priceProtection`, or `percentPrice` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not enforce an exchange price band)
 - [ ] Only one process holds `data/worker-lease.json`; a second replica stays standby until the lease expires
 - [ ] `PAPER_SERVER_LOOP=1` is a paper-only market loop. It accepts only fresh provider-timestamped public quotes, runs strategy/risk/order gates, and cannot call the live adapter. Leave it off unless the server worker should own paper decisions.
 

@@ -65,6 +65,7 @@ import { orderTypeAliasReason } from "./order-type-alias";
 import { validateOnlyReason } from "./validate-only";
 import { requestWindowReason } from "./request-window";
 import { slippageReason } from "./slippage";
+import { priceProtectReason } from "./price-protect";
 import { normalizeTimeInForce } from "./time-in-force";
 import { tifAliasReason } from "./tif-alias";
 import { icebergReason } from "./iceberg";
@@ -276,6 +277,12 @@ export type OrderIntent = {
   slippage?: number | string;
   /** Book-move cap. Adapters do not forward it, so a present value is refused. */
   slippageTolerance?: number | string;
+  /** Exchange price band. Adapters do not forward it, so a present value is refused. */
+  priceProtect?: boolean | string | number;
+  /** Exchange price band. Adapters do not forward it, so a present value is refused. */
+  priceProtection?: boolean | string | number;
+  /** Percent-price filter. Adapters do not forward it, so a present value is refused. */
+  percentPrice?: number | string;
   /** Rehearsal flag. Adapters place a real spot order, so true is refused. */
   test?: boolean | string | number;
   /** Rehearsal flag. Adapters place a real spot order, so a present value is refused. */
@@ -402,6 +409,13 @@ export class OrderManager {
       intent.slippageTolerance,
     );
     if (slippage) return this.fail(slippage);
+
+    const priceProtect = priceProtectReason(
+      intent.priceProtect,
+      intent.priceProtection,
+      intent.percentPrice,
+    );
+    if (priceProtect) return this.fail(priceProtect);
 
     const typeAlias = orderTypeAliasReason(intent.ordType, intent.orderType, intent.order_type);
     if (typeAlias) return this.fail(typeAlias);
