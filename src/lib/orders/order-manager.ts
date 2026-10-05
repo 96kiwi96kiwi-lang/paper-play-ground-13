@@ -63,6 +63,7 @@ import { marketReferencePrice, unpricedMarketReason } from "./unpriced-market";
 import { normalizeOrderType } from "./order-type";
 import { orderTypeAliasReason } from "./order-type-alias";
 import { validateOnlyReason } from "./validate-only";
+import { requestWindowReason } from "./request-window";
 import { normalizeTimeInForce } from "./time-in-force";
 import { tifAliasReason } from "./tif-alias";
 import { icebergReason } from "./iceberg";
@@ -262,6 +263,12 @@ export type OrderIntent = {
   orderType?: string;
   /** Type alias. Adapters read type only, so a present value is refused. */
   order_type?: string;
+  /** Client recv window. Adapters do not forward a deadline, so a present value is refused. */
+  recvWindow?: number | string;
+  /** ACK/FULL result shape. Adapters do not forward it, so a present value is refused. */
+  newOrderRespType?: string;
+  /** ACK/FULL result shape. Adapters do not forward it, so a present value is refused. */
+  responseType?: string;
   /** Rehearsal flag. Adapters place a real spot order, so true is refused. */
   test?: boolean | string | number;
   /** Rehearsal flag. Adapters place a real spot order, so a present value is refused. */
@@ -374,6 +381,13 @@ export class OrderManager {
 
     const rehearsal = validateOnlyReason(intent.test, intent.dryRun, intent.validateOnly);
     if (rehearsal) return this.fail(rehearsal);
+
+    const requestWindow = requestWindowReason(
+      intent.recvWindow,
+      intent.newOrderRespType,
+      intent.responseType,
+    );
+    if (requestWindow) return this.fail(requestWindow);
 
     const typeAlias = orderTypeAliasReason(intent.ordType, intent.orderType, intent.order_type);
     if (typeAlias) return this.fail(typeAlias);
