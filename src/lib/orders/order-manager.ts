@@ -62,6 +62,7 @@ import { staleMarketQuoteReason } from "./stale-quote";
 import { marketReferencePrice, unpricedMarketReason } from "./unpriced-market";
 import { normalizeOrderType } from "./order-type";
 import { orderTypeAliasReason } from "./order-type-alias";
+import { validateOnlyReason } from "./validate-only";
 import { normalizeTimeInForce } from "./time-in-force";
 import { tifAliasReason } from "./tif-alias";
 import { icebergReason } from "./iceberg";
@@ -261,6 +262,12 @@ export type OrderIntent = {
   orderType?: string;
   /** Type alias. Adapters read type only, so a present value is refused. */
   order_type?: string;
+  /** Rehearsal flag. Adapters place a real spot order, so true is refused. */
+  test?: boolean | string | number;
+  /** Rehearsal flag. Adapters place a real spot order, so a present value is refused. */
+  dryRun?: boolean | string | number;
+  /** Rehearsal flag. Adapters place a real spot order, so a present value is refused. */
+  validateOnly?: boolean | string | number;
 };
 
 export type SubmitResult =
@@ -364,6 +371,9 @@ export class OrderManager {
   async submit(intent: OrderIntent, riskState: RiskState): Promise<SubmitResult> {
     const now = Date.now();
     const cfg = TRADING_CONFIG.orders;
+
+    const rehearsal = validateOnlyReason(intent.test, intent.dryRun, intent.validateOnly);
+    if (rehearsal) return this.fail(rehearsal);
 
     const typeAlias = orderTypeAliasReason(intent.ordType, intent.orderType, intent.order_type);
     if (typeAlias) return this.fail(typeAlias);
