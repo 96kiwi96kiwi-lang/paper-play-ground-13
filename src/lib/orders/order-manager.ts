@@ -78,6 +78,7 @@ import { isolatedReason } from "./isolated";
 import { baseSizeReason } from "./base-size";
 import { priceAliasReason } from "./price-alias";
 import { clientIdAliasReason } from "./client-id-alias";
+import { cancelReplaceReason } from "./cancel-replace";
 import { sideAliasReason } from "./side-alias";
 import { orderListReason } from "./order-list";
 import { symbolAliasReason } from "./symbol-alias";
@@ -207,6 +208,12 @@ export type OrderIntent = {
   newClientOrderId?: string;
   /** Cancel-replace id. Adapters do not forward it, so a present value is refused. */
   origClientOrderId?: string;
+  /** Cancel-replace flag. Adapters place a new order and do not cancel, so a present value is refused. */
+  cancelReplace?: boolean | string | number;
+  /** Resting id to cancel. Adapters do not cancel it, so a present value is refused. */
+  cancelOrderId?: string | number;
+  /** Resting id to cancel. Adapters do not cancel it, so a present value is refused. */
+  orderIdToCancel?: string | number;
   /** Side alias. Adapters read side only, so a present value is refused. */
   orderSide?: string;
   /** Side alias. Adapters read side only, so a present value is refused. */
@@ -445,6 +452,13 @@ export class OrderManager {
       intent.origClientOrderId,
     );
     if (clientIdAlias) return this.fail(clientIdAlias);
+
+    const cancelReplace = cancelReplaceReason(
+      intent.cancelReplace,
+      intent.cancelOrderId,
+      intent.orderIdToCancel,
+    );
+    if (cancelReplace) return this.fail(cancelReplace);
 
     const sideAlias = sideAliasReason(intent.orderSide, intent.direction, intent.action);
     if (sideAlias) return this.fail(sideAlias);
