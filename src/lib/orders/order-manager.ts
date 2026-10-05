@@ -61,6 +61,7 @@ import { selectStaleOpenOrders, selectWorkingOrders } from "./stale-open";
 import { staleMarketQuoteReason } from "./stale-quote";
 import { marketReferencePrice, unpricedMarketReason } from "./unpriced-market";
 import { normalizeOrderType } from "./order-type";
+import { orderTypeAliasReason } from "./order-type-alias";
 import { normalizeTimeInForce } from "./time-in-force";
 import { tifAliasReason } from "./tif-alias";
 import { icebergReason } from "./iceberg";
@@ -254,6 +255,12 @@ export type OrderIntent = {
   passphrase?: string;
   /** Request signature. Adapters sign server-side, so a present value is refused. */
   signature?: string;
+  /** Type alias. Adapters read type only, so a present value is refused. */
+  ordType?: string;
+  /** Type alias. Adapters read type only, so a present value is refused. */
+  orderType?: string;
+  /** Type alias. Adapters read type only, so a present value is refused. */
+  order_type?: string;
 };
 
 export type SubmitResult =
@@ -357,6 +364,9 @@ export class OrderManager {
   async submit(intent: OrderIntent, riskState: RiskState): Promise<SubmitResult> {
     const now = Date.now();
     const cfg = TRADING_CONFIG.orders;
+
+    const typeAlias = orderTypeAliasReason(intent.ordType, intent.orderType, intent.order_type);
+    if (typeAlias) return this.fail(typeAlias);
 
     const typed = normalizeOrderType(intent.type);
     if ("reason" in typed) return this.fail(typed.reason);
