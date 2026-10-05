@@ -79,6 +79,7 @@ import { baseSizeReason } from "./base-size";
 import { priceAliasReason } from "./price-alias";
 import { clientIdAliasReason } from "./client-id-alias";
 import { sideAliasReason } from "./side-alias";
+import { orderListReason } from "./order-list";
 import { spotOnlyReason } from "./spot-only";
 import { normalizeOrderSide } from "./side-form";
 import { normalizePairSymbol } from "./symbol-form";
@@ -209,6 +210,18 @@ export type OrderIntent = {
   direction?: string;
   /** Side alias. Adapters read side only, so a present value is refused. */
   action?: string;
+  /** OCO flag. Adapters place one spot order, so a present value is refused. */
+  oco?: boolean | string | number;
+  /** Order-list id. Adapters place one spot order, so a present value is refused. */
+  orderListId?: string | number;
+  /** List client id. Adapters place one spot order, so a present value is refused. */
+  listClientOrderId?: string;
+  /** OCO above leg. Adapters do not forward it, so a present value is refused. */
+  aboveType?: string;
+  /** OCO below leg. Adapters do not forward it, so a present value is refused. */
+  belowType?: string;
+  /** Stop-limit price. Adapters do not forward it, so a present value is refused. */
+  stopLimitPrice?: number | string;
 };
 
 export type SubmitResult =
@@ -410,6 +423,16 @@ export class OrderManager {
 
     const sideAlias = sideAliasReason(intent.orderSide, intent.direction, intent.action);
     if (sideAlias) return this.fail(sideAlias);
+
+    const orderList = orderListReason(
+      intent.oco,
+      intent.orderListId,
+      intent.listClientOrderId,
+      intent.aboveType,
+      intent.belowType,
+      intent.stopLimitPrice,
+    );
+    if (orderList) return this.fail(orderList);
 
     applyHardStops(riskState);
     if (riskState.haltReason) {
