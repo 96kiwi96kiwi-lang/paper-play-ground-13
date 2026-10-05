@@ -22,7 +22,7 @@ import {
   persistSeenOrders,
   setBotStatePathForTests,
 } from "@/lib/server/persist";
-import { setWorkerLeasePathForTests } from "@/lib/server/worker-lease";
+import { acquireWorkerLease, setWorkerLeasePathForTests } from "@/lib/server/worker-lease";
 import type { UnifiedOrder } from "@/lib/exchange/types";
 
 let dir: string;
@@ -155,4 +155,24 @@ test("market runtime restores paper inventory after a process restart", async ()
   expect(status.lastOrders).toBe(0);
   expect(loadPaperPortfolio()?.positions["BTC/USDT"]?.amount).toBe(held);
   expect(loadSeenOrders()).toHaveLength(1);
+});
+
+
+test("standby startup resumes after the previous deployment lease expires", async () => {
+  process.env.PAPER_SERVER_LOOP = "1";
+  expect(acquireWorkerLease("previous-deployment").ok).toBe(true);
+  const quotes = vi.fn(async () => ({ fetchedAt: Date.now(), tickers: {} }));
+  setPaperQuoteSourceForTests(quotes);
+  const first = startPaperServerLoop();
+  expect(first.reason).toMatch(/standby/);
+  expect(first.running).toBe(true);
+  startPaperServerLoop();
+  expect(vi.getTimerCount()).toBe(1);
+  await vi.advanceTimersByTimeAsync(45_000);
+  expect(quotes).not.toHaveBeenCalled();
+  await vi.advanceTimersByTimeAsync(90_000);
+  expect(quotes).toHaveBeenCalledTimes(1);
+  stopPaperServerLoop();
+  await vi.advanceTimersByTimeAsync(180_000);
+  expect(quotes).toHaveBeenCalledTimes(1);
 });

@@ -223,6 +223,9 @@ export function startPaperServerLoop(): PaperLoopStatus {
   const claim = claimWorkerLease();
   if (!claim.ok) {
     lastReason = `standby: ${claim.reason ?? "lease held"}`;
+    // A deployment can inherit an unexpired lease from the previous process.
+    // Keep polling; every tick rechecks ownership before quotes or orders.
+    if (!timer) scheduleNextTick();
     return describePaperLoop();
   }
   if (timer) {
