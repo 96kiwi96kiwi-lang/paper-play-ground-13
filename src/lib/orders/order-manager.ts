@@ -71,6 +71,7 @@ import { categoryReason } from "./category";
 import { strategyIdReason } from "./strategy-id";
 import { gridIdReason } from "./grid-id";
 import { attachAlgoReason } from "./attach-algo";
+import { orderRemarkReason } from "./order-remark";
 import { workingTypeReason } from "./working-type";
 import { normalizeTimeInForce } from "./time-in-force";
 import { tifAliasReason } from "./tif-alias";
@@ -325,6 +326,12 @@ export type OrderIntent = {
   tpTriggerPx?: string | number | boolean;
   /** Stop-loss trigger. Adapters do not attach a bracket, so a present value is refused. */
   slTriggerPx?: string | number | boolean;
+  /** Client remark. Adapters do not forward a note, so a present value is refused. */
+  remark?: string | number | boolean;
+  /** Client tag. Adapters do not forward a note, so a present value is refused. */
+  tag?: string | number | boolean;
+  /** Client tag alias. Adapters do not forward a note, so a present value is refused. */
+  clientTag?: string | number | boolean;
   /** Algo strategy id. Adapters place one plain spot order, so a present value is refused. */
   strategyId?: string | number | boolean;
   /** Algo strategy type. Adapters place one plain spot order, so a present value is refused. */
@@ -488,6 +495,9 @@ export class OrderManager {
       intent.slTriggerPx,
     );
     if (attachAlgo) return this.fail(attachAlgo);
+
+    const remark = orderRemarkReason(intent.remark, intent.tag, intent.clientTag);
+    if (remark) return this.fail(remark);
 
     const strategy = strategyIdReason(intent.strategyId, intent.strategyType);
     if (strategy) return this.fail(strategy);
