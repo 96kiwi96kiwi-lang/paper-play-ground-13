@@ -70,6 +70,7 @@ import { priceMatchReason } from "./price-match";
 import { categoryReason } from "./category";
 import { strategyIdReason } from "./strategy-id";
 import { gridIdReason } from "./grid-id";
+import { attachAlgoReason } from "./attach-algo";
 import { workingTypeReason } from "./working-type";
 import { normalizeTimeInForce } from "./time-in-force";
 import { tifAliasReason } from "./tif-alias";
@@ -318,6 +319,12 @@ export type OrderIntent = {
   gridId?: string | number | boolean;
   /** Algo id. Adapters do not attach a grid algo, so a present value is refused. */
   algoId?: string | number | boolean;
+  /** Attached bracket. Adapters place one plain spot order, so a present value is refused. */
+  attachAlgoOrds?: unknown;
+  /** Take-profit trigger. Adapters do not attach a bracket, so a present value is refused. */
+  tpTriggerPx?: string | number | boolean;
+  /** Stop-loss trigger. Adapters do not attach a bracket, so a present value is refused. */
+  slTriggerPx?: string | number | boolean;
   /** Algo strategy id. Adapters place one plain spot order, so a present value is refused. */
   strategyId?: string | number | boolean;
   /** Algo strategy type. Adapters place one plain spot order, so a present value is refused. */
@@ -474,6 +481,13 @@ export class OrderManager {
 
     const gridId = gridIdReason(intent.grid, intent.gridId, intent.algoId);
     if (gridId) return this.fail(gridId);
+
+    const attachAlgo = attachAlgoReason(
+      intent.attachAlgoOrds,
+      intent.tpTriggerPx,
+      intent.slTriggerPx,
+    );
+    if (attachAlgo) return this.fail(attachAlgo);
 
     const strategy = strategyIdReason(intent.strategyId, intent.strategyType);
     if (strategy) return this.fail(strategy);
