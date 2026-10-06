@@ -8,6 +8,7 @@ test("omitted and false iceberg flags pass", () => {
   expect(icebergReason("")).toBeNull();
   expect(icebergReason("  ", "")).toBeNull();
   expect(icebergReason(false, null)).toBeNull();
+  expect(icebergReason(false, null, null, "", "  ")).toBeNull();
 });
 
 test("a true iceberg or hidden flag is refused and does not halt", () => {
@@ -33,5 +34,17 @@ test("a present visible size is refused even when the flag is off", () => {
   );
   expect(icebergReason(false, 0)).toBe(
     "Visible size is not supported; the adapter would show the full size",
+  );
+});
+
+test("iceberg qty aliases are refused and do not halt", () => {
+  expect(icebergReason(false, undefined, 0.01)).toBe(
+    "Iceberg qty is not supported; the adapter would show the full size",
+  );
+  expect(icebergReason(undefined, undefined, undefined, "0.2")).toBe(
+    "Display qty is not supported; the adapter would show the full size",
+  );
+  expect(icebergReason(false, null, null, null, 0)).toBe(
+    "Hidden size is not supported; the adapter would show the full size",
   );
 });
