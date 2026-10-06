@@ -67,6 +67,7 @@ import { requestWindowReason } from "./request-window";
 import { slippageReason } from "./slippage";
 import { priceProtectReason } from "./price-protect";
 import { priceMatchReason } from "./price-match";
+import { categoryReason } from "./category";
 import { strategyIdReason } from "./strategy-id";
 import { workingTypeReason } from "./working-type";
 import { normalizeTimeInForce } from "./time-in-force";
@@ -304,6 +305,12 @@ export type OrderIntent = {
   pegPriceType?: string | number | boolean;
   /** Peg offset. Adapters do not forward it, so a present value is refused. */
   pegOffsetValue?: number | string | boolean;
+  /** Product category. Adapters place spot only, so a non-spot value is refused. */
+  category?: string | number | boolean;
+  /** Product type. Adapters place spot only, so a non-spot value is refused. */
+  productType?: string | number | boolean;
+  /** Instrument type. Adapters place spot only, so a non-spot value is refused. */
+  instType?: string | number | boolean;
   /** Algo strategy id. Adapters place one plain spot order, so a present value is refused. */
   strategyId?: string | number | boolean;
   /** Algo strategy type. Adapters place one plain spot order, so a present value is refused. */
@@ -454,6 +461,9 @@ export class OrderManager {
       intent.pegOffsetValue,
     );
     if (priceMatch) return this.fail(priceMatch);
+
+    const category = categoryReason(intent.category, intent.productType, intent.instType);
+    if (category) return this.fail(category);
 
     const strategy = strategyIdReason(intent.strategyId, intent.strategyType);
     if (strategy) return this.fail(strategy);
