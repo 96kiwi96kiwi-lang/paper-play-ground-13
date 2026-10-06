@@ -71,6 +71,7 @@ import { categoryReason } from "./category";
 import { strategyIdReason } from "./strategy-id";
 import { gridIdReason } from "./grid-id";
 import { attachAlgoReason } from "./attach-algo";
+import { leverageModeReason } from "./leverage-mode";
 import { orderRemarkReason } from "./order-remark";
 import { workingTypeReason } from "./working-type";
 import { normalizeTimeInForce } from "./time-in-force";
@@ -326,6 +327,12 @@ export type OrderIntent = {
   tpTriggerPx?: string | number | boolean;
   /** Stop-loss trigger. Adapters do not attach a bracket, so a present value is refused. */
   slTriggerPx?: string | number | boolean;
+  /** Leverage. Adapters place spot only, so a present value is refused. */
+  leverage?: string | number | boolean;
+  /** Margin mode. Adapters place spot only, so a present value is refused. */
+  marginMode?: string | number | boolean;
+  /** Trade mode. Adapters place spot only, so a present value is refused. */
+  tdMode?: string | number | boolean;
   /** Client remark. Adapters do not forward a note, so a present value is refused. */
   remark?: string | number | boolean;
   /** Client tag. Adapters do not forward a note, so a present value is refused. */
@@ -495,6 +502,9 @@ export class OrderManager {
       intent.slTriggerPx,
     );
     if (attachAlgo) return this.fail(attachAlgo);
+
+    const leverageMode = leverageModeReason(intent.leverage, intent.marginMode, intent.tdMode);
+    if (leverageMode) return this.fail(leverageMode);
 
     const remark = orderRemarkReason(intent.remark, intent.tag, intent.clientTag);
     if (remark) return this.fail(remark);
