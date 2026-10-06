@@ -72,6 +72,7 @@ import { strategyIdReason } from "./strategy-id";
 import { gridIdReason } from "./grid-id";
 import { attachAlgoReason } from "./attach-algo";
 import { leverageModeReason } from "./leverage-mode";
+import { targetCurrencyReason } from "./target-currency";
 import { orderRemarkReason } from "./order-remark";
 import { workingTypeReason } from "./working-type";
 import { normalizeTimeInForce } from "./time-in-force";
@@ -333,6 +334,12 @@ export type OrderIntent = {
   marginMode?: string | number | boolean;
   /** Trade mode. Adapters place spot only, so a present value is refused. */
   tdMode?: string | number | boolean;
+  /** OKX size unit. Adapters size by base amount, so a present value is refused. */
+  tgtCcy?: string | number | boolean;
+  /** Size-unit alias. Adapters size by base amount, so a present value is refused. */
+  targetCurrency?: string | number | boolean;
+  /** Size-currency alias. Adapters size by base amount, so a present value is refused. */
+  szCcy?: string | number | boolean;
   /** Client remark. Adapters do not forward a note, so a present value is refused. */
   remark?: string | number | boolean;
   /** Client tag. Adapters do not forward a note, so a present value is refused. */
@@ -502,6 +509,9 @@ export class OrderManager {
       intent.slTriggerPx,
     );
     if (attachAlgo) return this.fail(attachAlgo);
+
+    const targetCurrency = targetCurrencyReason(intent.tgtCcy, intent.targetCurrency, intent.szCcy);
+    if (targetCurrency) return this.fail(targetCurrency);
 
     const leverageMode = leverageModeReason(intent.leverage, intent.marginMode, intent.tdMode);
     if (leverageMode) return this.fail(leverageMode);
