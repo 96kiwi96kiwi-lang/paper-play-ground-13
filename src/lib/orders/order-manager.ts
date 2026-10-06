@@ -67,6 +67,7 @@ import { requestWindowReason } from "./request-window";
 import { slippageReason } from "./slippage";
 import { priceProtectReason } from "./price-protect";
 import { priceMatchReason } from "./price-match";
+import { workingTypeReason } from "./working-type";
 import { normalizeTimeInForce } from "./time-in-force";
 import { tifAliasReason } from "./tif-alias";
 import { icebergReason } from "./iceberg";
@@ -290,6 +291,12 @@ export type OrderIntent = {
   pegPriceType?: string | number | boolean;
   /** Peg offset. Adapters do not forward it, so a present value is refused. */
   pegOffsetValue?: number | string | boolean;
+  /** Mark or last trigger source. Adapters do not forward it, so a present value is refused. */
+  workingType?: string | number | boolean;
+  /** Stop trigger source. Adapters do not forward it, so a present value is refused. */
+  stopWorkingType?: string | number | boolean;
+  /** Trigger reference. Adapters do not forward it, so a present value is refused. */
+  triggerBy?: string | number | boolean;
   /** Rehearsal flag. Adapters place a real spot order, so true is refused. */
   test?: boolean | string | number;
   /** Rehearsal flag. Adapters place a real spot order, so a present value is refused. */
@@ -430,6 +437,13 @@ export class OrderManager {
       intent.pegOffsetValue,
     );
     if (priceMatch) return this.fail(priceMatch);
+
+    const workingType = workingTypeReason(
+      intent.workingType,
+      intent.stopWorkingType,
+      intent.triggerBy,
+    );
+    if (workingType) return this.fail(workingType);
 
     const typeAlias = orderTypeAliasReason(intent.ordType, intent.orderType, intent.order_type);
     if (typeAlias) return this.fail(typeAlias);
