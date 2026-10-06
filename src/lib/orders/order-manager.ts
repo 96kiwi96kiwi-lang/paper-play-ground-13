@@ -69,6 +69,7 @@ import { priceProtectReason } from "./price-protect";
 import { priceMatchReason } from "./price-match";
 import { categoryReason } from "./category";
 import { strategyIdReason } from "./strategy-id";
+import { gridIdReason } from "./grid-id";
 import { workingTypeReason } from "./working-type";
 import { normalizeTimeInForce } from "./time-in-force";
 import { tifAliasReason } from "./tif-alias";
@@ -311,6 +312,12 @@ export type OrderIntent = {
   productType?: string | number | boolean;
   /** Instrument type. Adapters place spot only, so a non-spot value is refused. */
   instType?: string | number | boolean;
+  /** Grid flag. Adapters place one plain spot order, so true is refused. */
+  grid?: boolean | string | number;
+  /** Grid id. Adapters do not attach a grid, so a present value is refused. */
+  gridId?: string | number | boolean;
+  /** Algo id. Adapters do not attach a grid algo, so a present value is refused. */
+  algoId?: string | number | boolean;
   /** Algo strategy id. Adapters place one plain spot order, so a present value is refused. */
   strategyId?: string | number | boolean;
   /** Algo strategy type. Adapters place one plain spot order, so a present value is refused. */
@@ -464,6 +471,9 @@ export class OrderManager {
 
     const category = categoryReason(intent.category, intent.productType, intent.instType);
     if (category) return this.fail(category);
+
+    const gridId = gridIdReason(intent.grid, intent.gridId, intent.algoId);
+    if (gridId) return this.fail(gridId);
 
     const strategy = strategyIdReason(intent.strategyId, intent.strategyType);
     if (strategy) return this.fail(strategy);
