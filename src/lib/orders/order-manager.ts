@@ -148,6 +148,12 @@ export type OrderIntent = {
   displayQty?: number | string;
   /** Hidden-size alias. Adapters do not forward it, so a present value is refused. */
   hiddenSize?: number | string;
+  /** Display-size alias. Adapters do not forward it, so a present value is refused. */
+  displaySize?: number | string;
+  /** Shown-slice alias. Adapters do not forward it, so a present value is refused. */
+  visibleQty?: number | string;
+  /** Iceberg-size alias. Adapters do not forward it, so a present value is refused. */
+  icebergSize?: number | string;
   /** Quote spend. Adapters size by base amount, so a present value is refused. */
   funds?: number;
   /** Quote spend. Adapters size by base amount, so a present value is refused. */
@@ -501,6 +507,9 @@ export class OrderManager {
       intent.icebergQty,
       intent.displayQty,
       intent.hiddenSize,
+      intent.displaySize,
+      intent.visibleQty,
+      intent.icebergSize,
     );
     if (iceberg) return this.fail(iceberg);
     const hidden = icebergReason(intent.hidden);
