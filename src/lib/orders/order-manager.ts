@@ -67,6 +67,7 @@ import { requestWindowReason } from "./request-window";
 import { slippageReason } from "./slippage";
 import { priceProtectReason } from "./price-protect";
 import { priceMatchReason } from "./price-match";
+import { strategyIdReason } from "./strategy-id";
 import { workingTypeReason } from "./working-type";
 import { normalizeTimeInForce } from "./time-in-force";
 import { tifAliasReason } from "./tif-alias";
@@ -291,6 +292,10 @@ export type OrderIntent = {
   pegPriceType?: string | number | boolean;
   /** Peg offset. Adapters do not forward it, so a present value is refused. */
   pegOffsetValue?: number | string | boolean;
+  /** Algo strategy id. Adapters place one plain spot order, so a present value is refused. */
+  strategyId?: string | number | boolean;
+  /** Algo strategy type. Adapters place one plain spot order, so a present value is refused. */
+  strategyType?: string | number | boolean;
   /** Mark or last trigger source. Adapters do not forward it, so a present value is refused. */
   workingType?: string | number | boolean;
   /** Stop trigger source. Adapters do not forward it, so a present value is refused. */
@@ -437,6 +442,9 @@ export class OrderManager {
       intent.pegOffsetValue,
     );
     if (priceMatch) return this.fail(priceMatch);
+
+    const strategy = strategyIdReason(intent.strategyId, intent.strategyType);
+    if (strategy) return this.fail(strategy);
 
     const workingType = workingTypeReason(
       intent.workingType,
