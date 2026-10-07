@@ -74,6 +74,7 @@ import { attachAlgoReason } from "./attach-algo";
 import { leverageModeReason } from "./leverage-mode";
 import { targetCurrencyReason } from "./target-currency";
 import { orderRemarkReason } from "./order-remark";
+import { subAccountReason } from "./sub-account";
 import { workingTypeReason } from "./working-type";
 import { normalizeTimeInForce } from "./time-in-force";
 import { tifAliasReason } from "./tif-alias";
@@ -346,6 +347,12 @@ export type OrderIntent = {
   tag?: string | number | boolean;
   /** Client tag alias. Adapters do not forward a note, so a present value is refused. */
   clientTag?: string | number | boolean;
+  /** Sub-account route. Adapters use the server key account, so a present value is refused. */
+  subAccount?: string | number | boolean;
+  /** Sub-account uid. Adapters use the server key account, so a present value is refused. */
+  subUid?: string | number | boolean;
+  /** Account uid. Adapters use the server key account, so a present value is refused. */
+  uid?: string | number | boolean;
   /** Algo strategy id. Adapters place one plain spot order, so a present value is refused. */
   strategyId?: string | number | boolean;
   /** Algo strategy type. Adapters place one plain spot order, so a present value is refused. */
@@ -518,6 +525,9 @@ export class OrderManager {
 
     const remark = orderRemarkReason(intent.remark, intent.tag, intent.clientTag);
     if (remark) return this.fail(remark);
+
+    const subAccount = subAccountReason(intent.subAccount, intent.subUid, intent.uid);
+    if (subAccount) return this.fail(subAccount);
 
     const strategy = strategyIdReason(intent.strategyId, intent.strategyType);
     if (strategy) return this.fail(strategy);
