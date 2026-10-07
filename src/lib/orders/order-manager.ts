@@ -353,6 +353,12 @@ export type OrderIntent = {
   subUid?: string | number | boolean;
   /** Account uid. Adapters use the server key account, so a present value is refused. */
   uid?: string | number | boolean;
+  /** KuCoin trade type. Adapters place spot only, so a non-spot value is refused. */
+  tradeType?: string | number | boolean;
+  /** Margin-trade flag. Adapters place spot only, so a present value is refused. */
+  marginTrade?: string | number | boolean;
+  /** Margin flag. Adapters place spot only, so true is refused. */
+  isMargin?: string | number | boolean;
   /** Algo strategy id. Adapters place one plain spot order, so a present value is refused. */
   strategyId?: string | number | boolean;
   /** Algo strategy type. Adapters place one plain spot order, so a present value is refused. */
@@ -596,7 +602,7 @@ export class OrderManager {
     const quoteQty = quoteSizeReason(intent.quoteQty, "Quote qty");
     if (quoteQty) return this.fail(quoteQty);
 
-    const spotOnly = spotOnlyReason(intent.leverage, intent.marginMode, intent.tradeType);
+    const spotOnly = spotOnlyReason(intent.leverage, intent.marginMode, intent.tradeType, intent.marginTrade, intent.isMargin);
     if (spotOnly) return this.fail(spotOnly);
 
     const autoBorrow = autoBorrowReason(intent.autoBorrow, intent.autoRepay);
