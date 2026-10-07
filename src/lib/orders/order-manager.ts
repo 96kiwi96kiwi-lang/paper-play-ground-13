@@ -86,6 +86,7 @@ import { reduceOnlyReason } from "./reduce-only";
 import { stopPriceReason } from "./stop-price";
 import { autoBorrowReason } from "./auto-borrow";
 import { borrowSizeReason } from "./borrow-size";
+import { repaySizeReason } from "./repay-size";
 import { trailingReason } from "./trailing";
 import { orderExpiryReason } from "./order-expiry";
 import { selfTradeReason } from "./self-trade";
@@ -182,6 +183,12 @@ export type OrderIntent = {
   borrowSize?: number | string | boolean;
   /** Loan amount. Adapters do not borrow, so a present value is refused. */
   loanAmount?: number | string | boolean;
+  /** Margin repay size. Adapters size by base amount and do not repay, so a present value is refused. */
+  repayAmount?: number | string | boolean;
+  /** Margin repay-size alias. Adapters do not repay, so a present value is refused. */
+  repaySize?: number | string | boolean;
+  /** Debt amount. Adapters do not repay, so a present value is refused. */
+  debtAmount?: number | string | boolean;
   /** Extra trigger. Adapters do not forward it, so a present value is refused. */
   triggerPrice?: number;
   /** Stop-loss price. Adapters do not forward it, so a present value is refused. */
@@ -639,6 +646,9 @@ export class OrderManager {
 
     const borrowSize = borrowSizeReason(intent.borrowAmount, intent.borrowSize, intent.loanAmount);
     if (borrowSize) return this.fail(borrowSize);
+
+    const repaySize = repaySizeReason(intent.repayAmount, intent.repaySize, intent.debtAmount);
+    if (repaySize) return this.fail(repaySize);
 
     const sideEffect = sideEffectReason(intent.sideEffectType, intent.sideEffect, intent.marginEffect);
     if (sideEffect) return this.fail(sideEffect);
