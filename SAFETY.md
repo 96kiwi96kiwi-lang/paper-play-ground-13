@@ -47,6 +47,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] `maxWorkingNotionalUsd` (5,000) is sized so resting open / partial / pending orders cannot stack past that sleeve
 - [ ] `maxWorkingNotionalPerSymbolUsd` (2,500) is sized so one pair cannot rest the whole working-notional sleeve
 - [ ] A present `strategyId`, `strategyType`, or `workingType` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not attach an algo strategy or a mark/contract working type)
+- [ ] A present `sideEffectType`, `sideEffect`, or `marginEffect` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not borrow or repay on a spot order)
 - [ ] A present `subAccount`, `subUid`, or `uid` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters use the server key account and do not select a sub-account)
 - [ ] A present `priceProtect`, `priceProtection`, or `percentPrice` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not enforce an exchange price band)
 - [ ] Only one process holds `data/worker-lease.json`; a second replica stays standby until the lease expires

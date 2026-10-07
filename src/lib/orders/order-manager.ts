@@ -100,6 +100,7 @@ import { symbolAliasReason } from "./symbol-alias";
 import { accountRouteReason } from "./account-route";
 import { credentialBodyReason } from "./credential-body";
 import { spotOnlyReason } from "./spot-only";
+import { sideEffectReason } from "./side-effect";
 import { normalizeOrderSide } from "./side-form";
 import { normalizePairSymbol } from "./symbol-form";
 import { symbolFlipCooldownReason } from "./symbol-flip";
@@ -359,6 +360,12 @@ export type OrderIntent = {
   marginTrade?: string | number | boolean;
   /** Margin flag. Adapters place spot only, so true is refused. */
   isMargin?: string | number | boolean;
+  /** Margin side-effect type. Adapters place spot only, so a present value is refused. */
+  sideEffectType?: string | number | boolean;
+  /** Margin side-effect alias. Adapters place spot only, so a present value is refused. */
+  sideEffect?: string | number | boolean;
+  /** Margin effect alias. Adapters place spot only, so a present value is refused. */
+  marginEffect?: string | number | boolean;
   /** Algo strategy id. Adapters place one plain spot order, so a present value is refused. */
   strategyId?: string | number | boolean;
   /** Algo strategy type. Adapters place one plain spot order, so a present value is refused. */
@@ -607,6 +614,9 @@ export class OrderManager {
 
     const autoBorrow = autoBorrowReason(intent.autoBorrow, intent.autoRepay);
     if (autoBorrow) return this.fail(autoBorrow);
+
+    const sideEffect = sideEffectReason(intent.sideEffectType, intent.sideEffect, intent.marginEffect);
+    if (sideEffect) return this.fail(sideEffect);
 
     const trailing = trailingReason(
       intent.triggerPrice,
