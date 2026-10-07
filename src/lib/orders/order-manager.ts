@@ -101,6 +101,7 @@ import { accountRouteReason } from "./account-route";
 import { credentialBodyReason } from "./credential-body";
 import { spotOnlyReason } from "./spot-only";
 import { sideEffectReason } from "./side-effect";
+import { feeCurrencyReason } from "./fee-currency";
 import { normalizeOrderSide } from "./side-form";
 import { normalizePairSymbol } from "./symbol-form";
 import { symbolFlipCooldownReason } from "./symbol-flip";
@@ -360,6 +361,12 @@ export type OrderIntent = {
   sideEffect?: string | number | boolean;
   /** Margin effect alias. Adapters place spot only, so a present value is refused. */
   marginEffect?: string | number | boolean;
+  /** Fee asset. Adapters charge the default fee, so a present value is refused. */
+  feeCurrency?: string | number | boolean;
+  /** Fee-asset alias. Adapters charge the default fee, so a present value is refused. */
+  feeCcy?: string | number | boolean;
+  /** Deduct-fee flag. Adapters charge the default fee, so a present value is refused. */
+  deductFee?: string | number | boolean;
   /** Algo strategy id. Adapters place one plain spot order, so a present value is refused. */
   strategyId?: string | number | boolean;
   /** Algo strategy type. Adapters place one plain spot order, so a present value is refused. */
@@ -611,6 +618,9 @@ export class OrderManager {
 
     const sideEffect = sideEffectReason(intent.sideEffectType, intent.sideEffect, intent.marginEffect);
     if (sideEffect) return this.fail(sideEffect);
+
+    const feeCurrency = feeCurrencyReason(intent.feeCurrency, intent.feeCcy, intent.deductFee);
+    if (feeCurrency) return this.fail(feeCurrency);
 
     const trailing = trailingReason(
       intent.triggerPrice,
