@@ -104,6 +104,7 @@ import { sideEffectReason } from "./side-effect";
 import { feeCurrencyReason } from "./fee-currency";
 import { brokerAttributionReason } from "./broker-attribution";
 import { orderLinkReason } from "./order-link";
+import { borrowSizeReason } from "./borrow-size";
 import { normalizeOrderSide } from "./side-form";
 import { normalizePairSymbol } from "./symbol-form";
 import { symbolFlipCooldownReason } from "./symbol-flip";
@@ -363,6 +364,12 @@ export type OrderIntent = {
   sideEffect?: string | number | boolean;
   /** Margin effect alias. Adapters place spot only, so a present value is refused. */
   marginEffect?: string | number | boolean;
+  /** Margin loan size. Spot adapters do not borrow, so a present value is refused. */
+  borrowAmount?: string | number | boolean;
+  /** Margin loan-size alias. Spot adapters do not borrow, so a present value is refused. */
+  borrowSize?: string | number | boolean;
+  /** Loan-size alias. Spot adapters do not borrow, so a present value is refused. */
+  loanAmount?: string | number | boolean;
   /** Fee asset. Adapters charge the default fee, so a present value is refused. */
   feeCurrency?: string | number | boolean;
   /** Fee-asset alias. Adapters charge the default fee, so a present value is refused. */
@@ -632,6 +639,13 @@ export class OrderManager {
 
     const sideEffect = sideEffectReason(intent.sideEffectType, intent.sideEffect, intent.marginEffect);
     if (sideEffect) return this.fail(sideEffect);
+
+    const borrowSize = borrowSizeReason(
+      intent.borrowAmount,
+      intent.borrowSize,
+      intent.loanAmount,
+    );
+    if (borrowSize) return this.fail(borrowSize);
 
     const feeCurrency = feeCurrencyReason(intent.feeCurrency, intent.feeCcy, intent.deductFee);
     if (feeCurrency) return this.fail(feeCurrency);
