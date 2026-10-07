@@ -83,6 +83,7 @@ import { quoteSizeReason } from "./quote-size";
 import { postOnlyReason } from "./post-only";
 import { postOnlyAliasReason } from "./post-only-alias";
 import { reduceOnlyReason } from "./reduce-only";
+import { closePositionReason } from "./close-position";
 import { stopPriceReason } from "./stop-price";
 import { autoBorrowReason } from "./auto-borrow";
 import { borrowSizeReason } from "./borrow-size";
@@ -234,6 +235,10 @@ export type OrderIntent = {
   isIsolated?: string | boolean;
   /** Close entire position. Spot adapters do not forward it, so a present value is refused. */
   closePosition?: boolean | number | string;
+  /** Close-on-trigger. Adapters do not forward it, so a present value is refused. */
+  closeOnTrigger?: boolean | number | string;
+  /** Close-order flag. Adapters place a normal order, so a present value is refused. */
+  closeOrder?: boolean | number | string;
   /** Size alias. Adapters size by amount, so a present value is refused. */
   size?: number | string;
   /** Size alias. Adapters size by amount, so a present value is refused. */
@@ -620,6 +625,13 @@ export class OrderManager {
 
     const reduceOnly = reduceOnlyReason(intent.reduceOnly);
     if (reduceOnly) return this.fail(reduceOnly);
+
+    const closePosition = closePositionReason(
+      intent.closePosition,
+      intent.closeOnTrigger,
+      intent.closeOrder,
+    );
+    if (closePosition) return this.fail(closePosition);
 
     const stopPrice = stopPriceReason(intent.stopPrice);
     if (stopPrice) return this.fail(stopPrice);
