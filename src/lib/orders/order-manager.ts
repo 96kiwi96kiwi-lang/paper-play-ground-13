@@ -85,6 +85,7 @@ import { postOnlyAliasReason } from "./post-only-alias";
 import { reduceOnlyReason } from "./reduce-only";
 import { stopPriceReason } from "./stop-price";
 import { autoBorrowReason } from "./auto-borrow";
+import { borrowSizeReason } from "./borrow-size";
 import { trailingReason } from "./trailing";
 import { orderExpiryReason } from "./order-expiry";
 import { selfTradeReason } from "./self-trade";
@@ -175,6 +176,12 @@ export type OrderIntent = {
   autoBorrow?: boolean;
   /** Margin auto-repay. Spot adapters do not forward it, so true is refused. */
   autoRepay?: boolean;
+  /** Margin borrow size. Adapters size by base amount and do not borrow, so a present value is refused. */
+  borrowAmount?: number | string | boolean;
+  /** Margin borrow-size alias. Adapters do not borrow, so a present value is refused. */
+  borrowSize?: number | string | boolean;
+  /** Loan amount. Adapters do not borrow, so a present value is refused. */
+  loanAmount?: number | string | boolean;
   /** Extra trigger. Adapters do not forward it, so a present value is refused. */
   triggerPrice?: number;
   /** Stop-loss price. Adapters do not forward it, so a present value is refused. */
@@ -629,6 +636,9 @@ export class OrderManager {
 
     const autoBorrow = autoBorrowReason(intent.autoBorrow, intent.autoRepay);
     if (autoBorrow) return this.fail(autoBorrow);
+
+    const borrowSize = borrowSizeReason(intent.borrowAmount, intent.borrowSize, intent.loanAmount);
+    if (borrowSize) return this.fail(borrowSize);
 
     const sideEffect = sideEffectReason(intent.sideEffectType, intent.sideEffect, intent.marginEffect);
     if (sideEffect) return this.fail(sideEffect);
