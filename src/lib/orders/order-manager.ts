@@ -87,6 +87,7 @@ import { stopPriceReason } from "./stop-price";
 import { autoBorrowReason } from "./auto-borrow";
 import { borrowSizeReason } from "./borrow-size";
 import { repaySizeReason } from "./repay-size";
+import { settleCurrencyReason } from "./settle-currency";
 import { trailingReason } from "./trailing";
 import { orderExpiryReason } from "./order-expiry";
 import { selfTradeReason } from "./self-trade";
@@ -189,6 +190,12 @@ export type OrderIntent = {
   repaySize?: number | string | boolean;
   /** Debt amount. Adapters do not repay, so a present value is refused. */
   debtAmount?: number | string | boolean;
+  /** Settlement currency. Adapters do not set it, so a present value is refused. */
+  settleCcy?: string | number | boolean;
+  /** Settlement coin alias. Adapters do not set it, so a present value is refused. */
+  settleCoin?: string | number | boolean;
+  /** Quote coin. Adapters do not set a settlement asset, so a present value is refused. */
+  quoteCoin?: string | number | boolean;
   /** Extra trigger. Adapters do not forward it, so a present value is refused. */
   triggerPrice?: number;
   /** Stop-loss price. Adapters do not forward it, so a present value is refused. */
@@ -649,6 +656,9 @@ export class OrderManager {
 
     const repaySize = repaySizeReason(intent.repayAmount, intent.repaySize, intent.debtAmount);
     if (repaySize) return this.fail(repaySize);
+
+    const settleCurrency = settleCurrencyReason(intent.settleCcy, intent.settleCoin, intent.quoteCoin);
+    if (settleCurrency) return this.fail(settleCurrency);
 
     const sideEffect = sideEffectReason(intent.sideEffectType, intent.sideEffect, intent.marginEffect);
     if (sideEffect) return this.fail(sideEffect);
