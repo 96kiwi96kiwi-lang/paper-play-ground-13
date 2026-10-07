@@ -168,12 +168,6 @@ export type OrderIntent = {
   quoteOrderQty?: number;
   /** Quote spend. Adapters size by base amount, so a present value is refused. */
   quoteQty?: number;
-  /** Leverage. Spot adapters do not forward it, so a present value is refused. */
-  leverage?: number;
-  /** Margin mode. Spot adapters do not forward it, so a present value is refused. */
-  marginMode?: string;
-  /** KuCoin trade type. Only spot/TRADE is accepted; margin is refused. */
-  tradeType?: string;
   /** Margin auto-borrow. Spot adapters do not forward it, so true is refused. */
   autoBorrow?: boolean;
   /** Margin auto-repay. Spot adapters do not forward it, so true is refused. */
@@ -1119,4 +1113,3 @@ export class OrderManager {
     this.onPortfolioChange?.(this.snapshot());
   }
 }
-
