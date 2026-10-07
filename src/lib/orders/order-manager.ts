@@ -103,6 +103,7 @@ import { spotOnlyReason } from "./spot-only";
 import { sideEffectReason } from "./side-effect";
 import { feeCurrencyReason } from "./fee-currency";
 import { brokerAttributionReason } from "./broker-attribution";
+import { orderLinkReason } from "./order-link";
 import { normalizeOrderSide } from "./side-form";
 import { normalizePairSymbol } from "./symbol-form";
 import { symbolFlipCooldownReason } from "./symbol-flip";
@@ -374,6 +375,12 @@ export type OrderIntent = {
   brokerClientId?: string | number | boolean;
   /** Rebate flag. Adapters do not set a rebate, so a present value is refused. */
   rebate?: string | number | boolean;
+  /** OKX client id. Adapters identify by clientOrderId, so a present value is refused. */
+  clOrdId?: string | number | boolean;
+  /** Bybit order link. Adapters identify by clientOrderId, so a present value is refused. */
+  orderLinkId?: string | number | boolean;
+  /** Link id. Adapters identify by clientOrderId, so a present value is refused. */
+  linkId?: string | number | boolean;
   /** Algo strategy id. Adapters place one plain spot order, so a present value is refused. */
   strategyId?: string | number | boolean;
   /** Algo strategy type. Adapters place one plain spot order, so a present value is refused. */
@@ -635,6 +642,9 @@ export class OrderManager {
       intent.rebate,
     );
     if (brokerAttribution) return this.fail(brokerAttribution);
+
+    const orderLink = orderLinkReason(intent.clOrdId, intent.orderLinkId, intent.linkId);
+    if (orderLink) return this.fail(orderLink);
 
     const trailing = trailingReason(
       intent.triggerPrice,
