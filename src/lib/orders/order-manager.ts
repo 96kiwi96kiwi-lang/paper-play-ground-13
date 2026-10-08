@@ -94,6 +94,7 @@ import { orderExpiryReason } from "./order-expiry";
 import { selfTradeReason } from "./self-trade";
 import { positionSideReason } from "./position-side";
 import { positionIndexReason } from "./position-index";
+import { openOffsetReason } from "./open-offset";
 import { isolatedReason } from "./isolated";
 import { baseSizeReason } from "./base-size";
 import { priceAliasReason } from "./price-alias";
@@ -236,6 +237,12 @@ export type OrderIntent = {
   posSide?: string | number | boolean;
   /** Position-index alias. Spot adapters do not forward it, so a present value is refused. */
   positionIndex?: number | string | boolean;
+  /** Open or close offset. Spot adapters do not forward it, so a present value is refused. */
+  openClose?: string | number | boolean;
+  /** Position-offset alias. Spot adapters do not forward it, so a present value is refused. */
+  posOffset?: string | number | boolean;
+  /** Close fraction. Adapters size by base amount, so a present value is refused. */
+  closeFraction?: number | string | boolean;
   /** Isolated margin. Spot adapters do not forward it, so a present value is refused. */
   isolated?: string | boolean;
   /** Isolated flag. Spot adapters do not forward it, so a present value is refused. */
@@ -729,6 +736,13 @@ export class OrderManager {
       intent.positionIndex,
     );
     if (positionIndex) return this.fail(positionIndex);
+
+    const openOffset = openOffsetReason(
+      intent.openClose,
+      intent.posOffset,
+      intent.closeFraction,
+    );
+    if (openOffset) return this.fail(openOffset);
 
     const isolated = isolatedReason(intent.isolated, intent.isIsolated, intent.closePosition);
     if (isolated) return this.fail(isolated);
