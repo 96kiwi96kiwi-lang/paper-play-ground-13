@@ -95,6 +95,7 @@ import { selfTradeReason } from "./self-trade";
 import { stpModeReason } from "./stp-mode";
 import { execInstReason } from "./exec-inst";
 import { mmpReason } from "./mmp";
+import { bboReason } from "./bbo";
 import { positionSideReason } from "./position-side";
 import { positionIndexReason } from "./position-index";
 import { openOffsetReason } from "./open-offset";
@@ -247,6 +248,12 @@ export type OrderIntent = {
   mmpGroup?: string | number | boolean;
   /** Market-maker protection alias. Adapters do not forward it, so a present value is refused. */
   marketMakerProtection?: string | number | boolean;
+  /** Best bid/offer price. Adapters price by price or market, so a present value is refused. */
+  bbo?: string | number | boolean;
+  /** Best-bid-offer alias. Adapters do not queue at the book, so a present value is refused. */
+  bestBidOffer?: string | number | boolean;
+  /** Book-price alias. Adapters do not queue at the book, so a present value is refused. */
+  bookPrice?: string | number | boolean;
   /** Futures position side. Spot adapters do not forward it, so a present value is refused. */
   positionSide?: string;
   /** Hedge mode. Spot adapters do not forward it, so a present value is refused. */
@@ -759,6 +766,9 @@ export class OrderManager {
 
     const mmp = mmpReason(intent.mmp, intent.mmpGroup, intent.marketMakerProtection);
     if (mmp) return this.fail(mmp);
+
+    const bbo = bboReason(intent.bbo, intent.bestBidOffer, intent.bookPrice);
+    if (bbo) return this.fail(bbo);
 
     const positionSide = positionSideReason(
       intent.positionSide,
