@@ -78,6 +78,7 @@ import { subAccountReason } from "./sub-account";
 import { workingTypeReason } from "./working-type";
 import { normalizeTimeInForce } from "./time-in-force";
 import { tifAliasReason } from "./tif-alias";
+import { orderForceReason } from "./order-force";
 import { icebergReason } from "./iceberg";
 import { quoteSizeReason } from "./quote-size";
 import { postOnlyReason } from "./post-only";
@@ -143,6 +144,12 @@ export type OrderIntent = {
   tif?: string;
   /** Time-in-force alias. Adapters read timeInForce only, so a present value is refused. */
   time_in_force?: string;
+  /** Bitget order force. Adapters read timeInForce only, so a present value is refused. */
+  force?: string | number | boolean;
+  /** Order-force alias. Adapters read timeInForce only, so a present value is refused. */
+  forceType?: string | number | boolean;
+  /** Order-force alias. Adapters read timeInForce only, so a present value is refused. */
+  orderForce?: string | number | boolean;
   /** Immediate-or-cancel flag. Adapters do not forward it, so a present value is refused. */
   immediateOrCancel?: boolean | string | number;
   /** Fill-or-kill flag. Adapters do not forward it, so a present value is refused. */
@@ -664,6 +671,9 @@ export class OrderManager {
       intent.fillOrKill,
     );
     if (tifAlias) return this.fail(tifAlias);
+
+    const orderForce = orderForceReason(intent.force, intent.forceType, intent.orderForce);
+    if (orderForce) return this.fail(orderForce);
 
     const tif = normalizeTimeInForce(intent.timeInForce);
     if ("reason" in tif) return this.fail(tif.reason);
