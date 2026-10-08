@@ -92,6 +92,7 @@ import { settleCurrencyReason } from "./settle-currency";
 import { trailingReason } from "./trailing";
 import { orderExpiryReason } from "./order-expiry";
 import { selfTradeReason } from "./self-trade";
+import { stpModeReason } from "./stp-mode";
 import { positionSideReason } from "./position-side";
 import { positionIndexReason } from "./position-index";
 import { openOffsetReason } from "./open-offset";
@@ -226,6 +227,12 @@ export type OrderIntent = {
   selfTradePrevention?: string;
   /** Self-trade prevention mode. Adapters do not forward it, so a present value is refused. */
   selfTradePreventionMode?: string;
+  /** OKX STP mode. Adapters do not forward it, so a present value is refused. */
+  stpMode?: string | number | boolean;
+  /** Binance SMP type. Adapters do not forward it, so a present value is refused. */
+  smpType?: string | number | boolean;
+  /** Prevent-self-trade flag. Adapters do not forward it, so a present value is refused. */
+  preventSelfTrade?: string | number | boolean;
   /** Futures position side. Spot adapters do not forward it, so a present value is refused. */
   positionSide?: string;
   /** Hedge mode. Spot adapters do not forward it, so a present value is refused. */
@@ -729,6 +736,9 @@ export class OrderManager {
       intent.selfTradePreventionMode,
     );
     if (selfTrade) return this.fail(selfTrade);
+
+    const stpMode = stpModeReason(intent.stpMode, intent.smpType, intent.preventSelfTrade);
+    if (stpMode) return this.fail(stpMode);
 
     const positionSide = positionSideReason(
       intent.positionSide,
