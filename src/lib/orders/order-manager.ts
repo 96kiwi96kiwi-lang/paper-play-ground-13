@@ -93,6 +93,7 @@ import { trailingReason } from "./trailing";
 import { orderExpiryReason } from "./order-expiry";
 import { selfTradeReason } from "./self-trade";
 import { positionSideReason } from "./position-side";
+import { positionIndexReason } from "./position-index";
 import { isolatedReason } from "./isolated";
 import { baseSizeReason } from "./base-size";
 import { priceAliasReason } from "./price-alias";
@@ -229,6 +230,12 @@ export type OrderIntent = {
   hedgeMode?: string | boolean;
   /** Position mode. Spot adapters do not forward it, so a present value is refused. */
   positionMode?: string;
+  /** Hedge position index. Spot adapters do not forward it, so a present value is refused. */
+  positionIdx?: number | string | boolean;
+  /** OKX position side. Spot adapters do not forward it, so a present value is refused. */
+  posSide?: string | number | boolean;
+  /** Position-index alias. Spot adapters do not forward it, so a present value is refused. */
+  positionIndex?: number | string | boolean;
   /** Isolated margin. Spot adapters do not forward it, so a present value is refused. */
   isolated?: string | boolean;
   /** Isolated flag. Spot adapters do not forward it, so a present value is refused. */
@@ -715,6 +722,13 @@ export class OrderManager {
       intent.positionMode,
     );
     if (positionSide) return this.fail(positionSide);
+
+    const positionIndex = positionIndexReason(
+      intent.positionIdx,
+      intent.posSide,
+      intent.positionIndex,
+    );
+    if (positionIndex) return this.fail(positionIndex);
 
     const isolated = isolatedReason(intent.isolated, intent.isIsolated, intent.closePosition);
     if (isolated) return this.fail(isolated);
