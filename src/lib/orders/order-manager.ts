@@ -93,6 +93,7 @@ import { trailingReason } from "./trailing";
 import { orderExpiryReason } from "./order-expiry";
 import { selfTradeReason } from "./self-trade";
 import { stpModeReason } from "./stp-mode";
+import { execInstReason } from "./exec-inst";
 import { positionSideReason } from "./position-side";
 import { positionIndexReason } from "./position-index";
 import { openOffsetReason } from "./open-offset";
@@ -233,6 +234,12 @@ export type OrderIntent = {
   smpType?: string | number | boolean;
   /** Prevent-self-trade flag. Adapters do not forward it, so a present value is refused. */
   preventSelfTrade?: string | number | boolean;
+  /** Bybit execution instruction. Adapters do not forward it, so a present value is refused. */
+  execInst?: string | number | boolean;
+  /** Execution-instruction alias. Adapters do not forward it, so a present value is refused. */
+  execInstruction?: string | number | boolean;
+  /** Instruction alias. Adapters do not forward it, so a present value is refused. */
+  instruction?: string | number | boolean;
   /** Futures position side. Spot adapters do not forward it, so a present value is refused. */
   positionSide?: string;
   /** Hedge mode. Spot adapters do not forward it, so a present value is refused. */
@@ -739,6 +746,9 @@ export class OrderManager {
 
     const stpMode = stpModeReason(intent.stpMode, intent.smpType, intent.preventSelfTrade);
     if (stpMode) return this.fail(stpMode);
+
+    const execInst = execInstReason(intent.execInst, intent.execInstruction, intent.instruction);
+    if (execInst) return this.fail(execInst);
 
     const positionSide = positionSideReason(
       intent.positionSide,

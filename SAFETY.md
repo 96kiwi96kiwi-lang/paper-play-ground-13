@@ -50,6 +50,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] A present `brokerId`, `brokerClientId`, or `rebate` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not attribute a partner or set a rebate)
 - [ ] A present `sideEffectType`, `sideEffect`, or `marginEffect` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not borrow or repay on a spot order)
 - [ ] A present `settleCcy`, `settleCoin`, or `quoteCoin` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not set a settlement currency on a spot order)
+- [ ] A present `execInst`, `execInstruction`, or `instruction` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not send PostOnly, ReduceOnly, or CloseOnTrigger packed in an execution instruction)
 - [ ] A present `tradeSide`, `holdSide`, or `openType` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not send a futures trade side, hold side, or open type)
 - [ ] A present `subAccount`, `subUid`, or `uid` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters use the server key account and do not select a sub-account)
 - [ ] A present `priceProtect`, `priceProtection`, or `percentPrice` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not enforce an exchange price band)
