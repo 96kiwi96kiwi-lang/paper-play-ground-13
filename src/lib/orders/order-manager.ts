@@ -96,6 +96,7 @@ import { stpModeReason } from "./stp-mode";
 import { execInstReason } from "./exec-inst";
 import { mmpReason } from "./mmp";
 import { bboReason } from "./bbo";
+import { cancelOnDisconnectReason } from "./cancel-on-disconnect";
 import { positionSideReason } from "./position-side";
 import { positionIndexReason } from "./position-index";
 import { openOffsetReason } from "./open-offset";
@@ -254,6 +255,12 @@ export type OrderIntent = {
   bestBidOffer?: string | number | boolean;
   /** Book-price alias. Adapters do not queue at the book, so a present value is refused. */
   bookPrice?: string | number | boolean;
+  /** Cancel on disconnect. Adapters do not arm it, so a present value is refused. */
+  cancelOnDisconnect?: string | number | boolean;
+  /** Dead-man switch. Adapters do not arm it, so a present value is refused. */
+  deadman?: string | number | boolean;
+  /** COD flag. Adapters do not arm it, so a present value is refused. */
+  cod?: string | number | boolean;
   /** Futures position side. Spot adapters do not forward it, so a present value is refused. */
   positionSide?: string;
   /** Hedge mode. Spot adapters do not forward it, so a present value is refused. */
@@ -769,6 +776,13 @@ export class OrderManager {
 
     const bbo = bboReason(intent.bbo, intent.bestBidOffer, intent.bookPrice);
     if (bbo) return this.fail(bbo);
+
+    const cancelOnDisconnect = cancelOnDisconnectReason(
+      intent.cancelOnDisconnect,
+      intent.deadman,
+      intent.cod,
+    );
+    if (cancelOnDisconnect) return this.fail(cancelOnDisconnect);
 
     const positionSide = positionSideReason(
       intent.positionSide,
