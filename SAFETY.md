@@ -53,6 +53,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] A present `execInst`, `execInstruction`, or `instruction` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not send PostOnly, ReduceOnly, or CloseOnTrigger packed in an execution instruction)
 - [ ] A present `mmp`, `mmpGroup`, or `marketMakerProtection` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not enable market-maker protection)
 - [ ] A present `tradeSide`, `holdSide`, or `openType` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not send a futures trade side, hold side, or open type)
+- [ ] A present `mgnMode`, `tradeMode`, or `isCross` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not open cross margin; `marginMode` and `tdMode` stay on the leverage-mode floor)
 - [ ] A present `subAccount`, `subUid`, or `uid` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters use the server key account and do not select a sub-account)
 - [ ] A present `priceProtect`, `priceProtection`, or `percentPrice` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not enforce an exchange price band)
 - [ ] Only one process holds `data/worker-lease.json`; a second replica stays standby until the lease expires

@@ -72,6 +72,7 @@ import { strategyIdReason } from "./strategy-id";
 import { gridIdReason } from "./grid-id";
 import { attachAlgoReason } from "./attach-algo";
 import { leverageModeReason } from "./leverage-mode";
+import { crossMarginReason } from "./cross-margin";
 import { targetCurrencyReason } from "./target-currency";
 import { orderRemarkReason } from "./order-remark";
 import { subAccountReason } from "./sub-account";
@@ -422,6 +423,12 @@ export type OrderIntent = {
   marginMode?: string | number | boolean;
   /** Trade mode. Adapters place spot only, so a present value is refused. */
   tdMode?: string | number | boolean;
+  /** OKX margin-mode alias. Adapters place spot only, so a present value is refused. */
+  mgnMode?: string | number | boolean;
+  /** Trade-mode alias. Adapters place spot only, so a present value is refused. */
+  tradeMode?: string | number | boolean;
+  /** Cross-margin flag. Adapters place spot only, so a present value is refused. */
+  isCross?: string | number | boolean;
   /** OKX size unit. Adapters size by base amount, so a present value is refused. */
   tgtCcy?: string | number | boolean;
   /** Size-unit alias. Adapters size by base amount, so a present value is refused. */
@@ -639,6 +646,9 @@ export class OrderManager {
 
     const leverageMode = leverageModeReason(intent.leverage, intent.marginMode, intent.tdMode);
     if (leverageMode) return this.fail(leverageMode);
+
+    const crossMargin = crossMarginReason(intent.mgnMode, intent.tradeMode, intent.isCross);
+    if (crossMargin) return this.fail(crossMargin);
 
     const remark = orderRemarkReason(intent.remark, intent.tag, intent.clientTag);
     if (remark) return this.fail(remark);
