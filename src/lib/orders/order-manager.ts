@@ -94,6 +94,7 @@ import { orderExpiryReason } from "./order-expiry";
 import { selfTradeReason } from "./self-trade";
 import { stpModeReason } from "./stp-mode";
 import { execInstReason } from "./exec-inst";
+import { mmpReason } from "./mmp";
 import { positionSideReason } from "./position-side";
 import { positionIndexReason } from "./position-index";
 import { openOffsetReason } from "./open-offset";
@@ -240,6 +241,12 @@ export type OrderIntent = {
   execInstruction?: string | number | boolean;
   /** Instruction alias. Adapters do not forward it, so a present value is refused. */
   instruction?: string | number | boolean;
+  /** Market-maker protection. Adapters do not forward it, so a present value is refused. */
+  mmp?: string | number | boolean;
+  /** MMP group. Adapters do not forward it, so a present value is refused. */
+  mmpGroup?: string | number | boolean;
+  /** Market-maker protection alias. Adapters do not forward it, so a present value is refused. */
+  marketMakerProtection?: string | number | boolean;
   /** Futures position side. Spot adapters do not forward it, so a present value is refused. */
   positionSide?: string;
   /** Hedge mode. Spot adapters do not forward it, so a present value is refused. */
@@ -749,6 +756,9 @@ export class OrderManager {
 
     const execInst = execInstReason(intent.execInst, intent.execInstruction, intent.instruction);
     if (execInst) return this.fail(execInst);
+
+    const mmp = mmpReason(intent.mmp, intent.mmpGroup, intent.marketMakerProtection);
+    if (mmp) return this.fail(mmp);
 
     const positionSide = positionSideReason(
       intent.positionSide,
