@@ -47,6 +47,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] `maxWorkingNotionalUsd` (5,000) is sized so resting open / partial / pending orders cannot stack past that sleeve
 - [ ] `maxWorkingNotionalPerSymbolUsd` (2,500) is sized so one pair cannot rest the whole working-notional sleeve
 - [ ] A present `quickMgnType`, `quickMargin`, or `autoLoan` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not set a quick-margin type, so an auto-borrow intent would trade on cash)
+- [ ] A present `tpOrderType`, `slOrderType`, or `tpslMode` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not attach a TP/SL order type, so a partial or full exit would rest or fill as a plain spot order)
 - [ ] A present `triggerDirection`, `stopDirection`, or `triggerDir` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not send a trigger direction, so an up or down stop would rest or fill as a plain spot order)
 - [ ] A present `goodTillTime`, `gtd`, or `expireAt` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not expire the order, so a GTD intent would rest until a later cancel)
 - [ ] A present `isLeverage`, `leverageFlag`, or `marginLeverage` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not send a margin-leverage flag, so a borrow-on-spot intent would trade on cash)
