@@ -93,6 +93,7 @@ import { repaySizeReason } from "./repay-size";
 import { settleCurrencyReason } from "./settle-currency";
 import { trailingReason } from "./trailing";
 import { orderExpiryReason } from "./order-expiry";
+import { goodTillTimeReason } from "./good-till-time";
 import { selfTradeReason } from "./self-trade";
 import { stpModeReason } from "./stp-mode";
 import { execInstReason } from "./exec-inst";
@@ -233,6 +234,12 @@ export type OrderIntent = {
   expireTime?: number;
   /** Good-till date. Adapters do not forward it, so a present value is refused. */
   goodTillDate?: number | string;
+  /** Binance good-till time. Adapters do not forward it, so a present value is refused. */
+  goodTillTime?: number | string | boolean;
+  /** GTD alias. Adapters do not expire the order, so a present value is refused. */
+  gtd?: number | string | boolean;
+  /** Expire-at alias. Adapters do not forward it, so a present value is refused. */
+  expireAt?: number | string | boolean;
   /** KuCoin STP. Adapters do not forward it, so a present value is refused. */
   stp?: string;
   /** Self-trade prevention. Adapters do not forward it, so a present value is refused. */
@@ -777,6 +784,9 @@ export class OrderManager {
 
     const expiry = orderExpiryReason(intent.cancelAfter, intent.expireTime, intent.goodTillDate);
     if (expiry) return this.fail(expiry);
+
+    const goodTillTime = goodTillTimeReason(intent.goodTillTime, intent.gtd, intent.expireAt);
+    if (goodTillTime) return this.fail(goodTillTime);
 
     const selfTrade = selfTradeReason(
       intent.stp,
