@@ -81,6 +81,7 @@ import { responseTypeReason } from "./response-type";
 import { tpslOrderTypeReason } from "./tpsl-order-type";
 import { tpslOrderPriceReason } from "./tpsl-order-price";
 import { tpslTriggerPriceReason } from "./tpsl-trigger-price";
+import { tpslTriggerByReason } from "./tpsl-trigger-by";
 import { targetCurrencyReason } from "./target-currency";
 import { orderRemarkReason } from "./order-remark";
 import { subAccountReason } from "./sub-account";
@@ -432,6 +433,12 @@ export type OrderIntent = {
   tpTriggerPx?: string | number | boolean;
   /** Stop-loss trigger. Adapters do not attach a bracket, so a present value is refused. */
   slTriggerPx?: string | number | boolean;
+  /** Take-profit trigger source. Adapters do not price a bracket off last, mark, or index, so a present value is refused. */
+  tpTriggerBy?: string | number | boolean;
+  /** Stop-loss trigger source. Adapters do not price a bracket off last, mark, or index, so a present value is refused. */
+  slTriggerBy?: string | number | boolean;
+  /** Trigger price type. Adapters do not price a bracket off last, mark, or index, so a present value is refused. */
+  triggerPxType?: string | number | boolean;
   /** Leverage. Adapters place spot only, so a present value is refused. */
   leverage?: string | number | boolean;
   /** Margin mode. Adapters place spot only, so a present value is refused. */
@@ -752,6 +759,13 @@ export class OrderManager {
       intent.tpslTriggerPx,
     );
     if (tpslTriggerPrice) return this.fail(tpslTriggerPrice);
+
+    const tpslTriggerBy = tpslTriggerByReason(
+      intent.tpTriggerBy,
+      intent.slTriggerBy,
+      intent.triggerPxType,
+    );
+    if (tpslTriggerBy) return this.fail(tpslTriggerBy);
 
     const remark = orderRemarkReason(intent.remark, intent.tag, intent.clientTag);
     if (remark) return this.fail(remark);
