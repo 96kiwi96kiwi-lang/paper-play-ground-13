@@ -79,6 +79,7 @@ import { quickMarginReason } from "./quick-margin";
 import { triggerDirectionReason } from "./trigger-direction";
 import { responseTypeReason } from "./response-type";
 import { tpslOrderTypeReason } from "./tpsl-order-type";
+import { tpslOrderPriceReason } from "./tpsl-order-price";
 import { targetCurrencyReason } from "./target-currency";
 import { orderRemarkReason } from "./order-remark";
 import { subAccountReason } from "./sub-account";
@@ -478,6 +479,12 @@ export type OrderIntent = {
   slOrderType?: string | number | boolean;
   /** TP/SL mode. Adapters do not attach a partial or full exit, so a present value is refused. */
   tpslMode?: string | number | boolean;
+  /** Take-profit order price. Adapters place one spot order and do not attach an exit limit. */
+  tpOrdPx?: number | string | boolean;
+  /** Stop-loss order price. Adapters place one spot order and do not attach an exit limit. */
+  slOrdPx?: number | string | boolean;
+  /** Shared TP/SL order price. Adapters do not attach an exit limit, so a present value is refused. */
+  tpslPx?: number | string | boolean;
   /** OKX size unit. Adapters size by base amount, so a present value is refused. */
   tgtCcy?: string | number | boolean;
   /** Size-unit alias. Adapters size by base amount, so a present value is refused. */
@@ -728,6 +735,9 @@ export class OrderManager {
       intent.tpslMode,
     );
     if (tpslOrderType) return this.fail(tpslOrderType);
+
+    const tpslOrderPrice = tpslOrderPriceReason(intent.tpOrdPx, intent.slOrdPx, intent.tpslPx);
+    if (tpslOrderPrice) return this.fail(tpslOrderPrice);
 
     const remark = orderRemarkReason(intent.remark, intent.tag, intent.clientTag);
     if (remark) return this.fail(remark);
