@@ -80,6 +80,7 @@ import { triggerDirectionReason } from "./trigger-direction";
 import { responseTypeReason } from "./response-type";
 import { tpslOrderTypeReason } from "./tpsl-order-type";
 import { tpslOrderPriceReason } from "./tpsl-order-price";
+import { tpslTriggerPriceReason } from "./tpsl-trigger-price";
 import { targetCurrencyReason } from "./target-currency";
 import { orderRemarkReason } from "./order-remark";
 import { subAccountReason } from "./sub-account";
@@ -485,6 +486,12 @@ export type OrderIntent = {
   slOrdPx?: number | string | boolean;
   /** Shared TP/SL order price. Adapters do not attach an exit limit, so a present value is refused. */
   tpslPx?: number | string | boolean;
+  /** Take-profit trigger price. Adapters place one spot order and do not wait for a trigger. */
+  tpTriggerPx?: number | string | boolean;
+  /** Stop-loss trigger price. Adapters place one spot order and do not wait for a trigger. */
+  slTriggerPx?: number | string | boolean;
+  /** Shared TP/SL trigger price. Adapters do not wait for a trigger, so a present value is refused. */
+  tpslTriggerPx?: number | string | boolean;
   /** OKX size unit. Adapters size by base amount, so a present value is refused. */
   tgtCcy?: string | number | boolean;
   /** Size-unit alias. Adapters size by base amount, so a present value is refused. */
@@ -738,6 +745,13 @@ export class OrderManager {
 
     const tpslOrderPrice = tpslOrderPriceReason(intent.tpOrdPx, intent.slOrdPx, intent.tpslPx);
     if (tpslOrderPrice) return this.fail(tpslOrderPrice);
+
+    const tpslTriggerPrice = tpslTriggerPriceReason(
+      intent.tpTriggerPx,
+      intent.slTriggerPx,
+      intent.tpslTriggerPx,
+    );
+    if (tpslTriggerPrice) return this.fail(tpslTriggerPrice);
 
     const remark = orderRemarkReason(intent.remark, intent.tag, intent.clientTag);
     if (remark) return this.fail(remark);
