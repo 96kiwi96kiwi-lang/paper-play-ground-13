@@ -47,6 +47,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] `maxWorkingNotionalUsd` (5,000) is sized so resting open / partial / pending orders cannot stack past that sleeve
 - [ ] `maxWorkingNotionalPerSymbolUsd` (2,500) is sized so one pair cannot rest the whole working-notional sleeve
 - [ ] A present `goodTillTime`, `gtd`, or `expireAt` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not expire the order, so a GTD intent would rest until a later cancel)
+- [ ] A present `isLeverage`, `leverageFlag`, or `marginLeverage` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not send a margin-leverage flag, so a borrow-on-spot intent would trade on cash)
 - [ ] A present `strategyId`, `strategyType`, or `workingType` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not attach an algo strategy or a mark/contract working type)
 - [ ] A present `brokerId`, `brokerClientId`, or `rebate` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not attribute a partner or set a rebate)
 - [ ] A present `sideEffectType`, `sideEffect`, or `marginEffect` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not borrow or repay on a spot order)
