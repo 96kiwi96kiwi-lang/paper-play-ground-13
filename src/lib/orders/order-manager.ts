@@ -74,6 +74,7 @@ import { attachAlgoReason } from "./attach-algo";
 import { leverageModeReason } from "./leverage-mode";
 import { crossMarginReason } from "./cross-margin";
 import { isLeverageReason } from "./is-leverage";
+import { marginAssetReason } from "./margin-asset";
 import { targetCurrencyReason } from "./target-currency";
 import { orderRemarkReason } from "./order-remark";
 import { subAccountReason } from "./sub-account";
@@ -443,6 +444,12 @@ export type OrderIntent = {
   leverageFlag?: string | number | boolean;
   /** Margin-leverage alias. Adapters place spot only, so a present value is refused. */
   marginLeverage?: string | number | boolean;
+  /** Margin asset. Adapters do not set it, so a present value is refused. */
+  marginAsset?: string | number | boolean;
+  /** Margin coin alias. Adapters do not set it, so a present value is refused. */
+  marginCoin?: string | number | boolean;
+  /** OKX margin currency. Adapters do not set it, so a present value is refused. */
+  mgnCcy?: string | number | boolean;
   /** OKX size unit. Adapters size by base amount, so a present value is refused. */
   tgtCcy?: string | number | boolean;
   /** Size-unit alias. Adapters size by base amount, so a present value is refused. */
@@ -666,6 +673,9 @@ export class OrderManager {
 
     const isLeverage = isLeverageReason(intent.isLeverage, intent.leverageFlag, intent.marginLeverage);
     if (isLeverage) return this.fail(isLeverage);
+
+    const marginAsset = marginAssetReason(intent.marginAsset, intent.marginCoin, intent.mgnCcy);
+    if (marginAsset) return this.fail(marginAsset);
 
     const remark = orderRemarkReason(intent.remark, intent.tag, intent.clientTag);
     if (remark) return this.fail(remark);
