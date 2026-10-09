@@ -76,6 +76,7 @@ import { crossMarginReason } from "./cross-margin";
 import { isLeverageReason } from "./is-leverage";
 import { marginAssetReason } from "./margin-asset";
 import { quickMarginReason } from "./quick-margin";
+import { triggerDirectionReason } from "./trigger-direction";
 import { targetCurrencyReason } from "./target-currency";
 import { orderRemarkReason } from "./order-remark";
 import { subAccountReason } from "./sub-account";
@@ -457,6 +458,12 @@ export type OrderIntent = {
   quickMargin?: string | number | boolean;
   /** Auto-loan alias. Adapters do not borrow, so a present value is refused. */
   autoLoan?: string | number | boolean;
+  /** Trigger direction. Adapters do not send it, so a present value is refused. */
+  triggerDirection?: string | number | boolean;
+  /** Stop-direction alias. Adapters do not send it, so a present value is refused. */
+  stopDirection?: string | number | boolean;
+  /** Trigger-dir alias. Adapters do not send it, so a present value is refused. */
+  triggerDir?: string | number | boolean;
   /** OKX size unit. Adapters size by base amount, so a present value is refused. */
   tgtCcy?: string | number | boolean;
   /** Size-unit alias. Adapters size by base amount, so a present value is refused. */
@@ -686,6 +693,13 @@ export class OrderManager {
 
     const quickMargin = quickMarginReason(intent.quickMgnType, intent.quickMargin, intent.autoLoan);
     if (quickMargin) return this.fail(quickMargin);
+
+    const triggerDirection = triggerDirectionReason(
+      intent.triggerDirection,
+      intent.stopDirection,
+      intent.triggerDir,
+    );
+    if (triggerDirection) return this.fail(triggerDirection);
 
     const remark = orderRemarkReason(intent.remark, intent.tag, intent.clientTag);
     if (remark) return this.fail(remark);
