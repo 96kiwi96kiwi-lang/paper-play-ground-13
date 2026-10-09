@@ -77,6 +77,7 @@ import { isLeverageReason } from "./is-leverage";
 import { marginAssetReason } from "./margin-asset";
 import { quickMarginReason } from "./quick-margin";
 import { triggerDirectionReason } from "./trigger-direction";
+import { responseTypeReason } from "./response-type";
 import { targetCurrencyReason } from "./target-currency";
 import { orderRemarkReason } from "./order-remark";
 import { subAccountReason } from "./sub-account";
@@ -464,6 +465,12 @@ export type OrderIntent = {
   stopDirection?: string | number | boolean;
   /** Trigger-dir alias. Adapters do not send it, so a present value is refused. */
   triggerDir?: string | number | boolean;
+  /** Binance new-order response type. Adapters return a unified order and do not request ACK, RESULT, or FULL. */
+  newOrderRespType?: string | number | boolean;
+  /** Response-type alias. Adapters do not request it, so a present value is refused. */
+  orderRespType?: string | number | boolean;
+  /** Resp-type alias. Adapters do not request it, so a present value is refused. */
+  respType?: string | number | boolean;
   /** OKX size unit. Adapters size by base amount, so a present value is refused. */
   tgtCcy?: string | number | boolean;
   /** Size-unit alias. Adapters size by base amount, so a present value is refused. */
@@ -700,6 +707,13 @@ export class OrderManager {
       intent.triggerDir,
     );
     if (triggerDirection) return this.fail(triggerDirection);
+
+    const responseType = responseTypeReason(
+      intent.newOrderRespType,
+      intent.orderRespType,
+      intent.respType,
+    );
+    if (responseType) return this.fail(responseType);
 
     const remark = orderRemarkReason(intent.remark, intent.tag, intent.clientTag);
     if (remark) return this.fail(remark);
