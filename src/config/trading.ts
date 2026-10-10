@@ -31,6 +31,8 @@ export const TRADING_CONFIG = {
     maxDrawdownPct: -18,
     maxOpenPositions: 3,
     losingStreakHardStop: 4,
+    /** Max relative price jump vs last tick before hard-stop (percent). */
+    priceGapLimitPct: 3.5,
     /** Max accepted orders (buy or sell) per UTC day. Not a hard-stop — just refuse new submits. */
     maxDailyTrades: 12,
     /** Max accepted orders (buy or sell) per symbol per UTC day. Not a halt. */
