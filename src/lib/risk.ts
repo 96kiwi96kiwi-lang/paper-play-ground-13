@@ -6,6 +6,7 @@
  * Network errors, partial fills, and price gaps are first-class risk events.
  * Daily trade cap refuses further submits without setting haltReason.
  * minCashReserveUsd refuses buys that would drain cash below the reserve.
+ * Price gap hard-stop uses risk.priceGapLimitPct from TRADING_CONFIG.
  */
 
 import { TRADING_CONFIG } from "@/config/trading";
@@ -66,10 +67,13 @@ export type RiskLogEntry = {
 const riskLog: RiskLogEntry[] = [];
 const MAX_LOG = 200;
 
-/** Max relative jump vs last tick before we refuse the order (gap risk). */
-export const PRICE_GAP_LIMIT = 0.035; // 3.5%
 /** Consecutive network failures that hard-stop the bot. */
 export const NETWORK_ERROR_HARD_STOP = 5;
+
+/** Relative price jump limit from config (decimal). */
+function priceGapLimit(): number {
+  return TRADING_CONFIG.risk.priceGapLimitPct / 100;
+}
 
 export function utcDayKey(now = Date.now()): string {
   return new Date(now).toISOString().slice(0, 10);
@@ -150,7 +154,8 @@ export function classifyPriceGap(
 ): { gap: boolean; pct: number } {
   if (!previous || previous <= 0 || current <= 0) return { gap: false, pct: 0 };
   const pct = (current - previous) / previous;
-  return { gap: Math.abs(pct) >= PRICE_GAP_LIMIT, pct };
+  const limit = priceGapLimit();
+  return { gap: Math.abs(pct) >= limit, pct };
 }
 
 /** Persist the latest mark so the next applyHardStops can detect a gap. */
@@ -222,7 +227,7 @@ export function applyHardStops(state: RiskState, currentPrice?: { symbol: string
     if (gap) {
       return halt(
         state,
-        `HARD-STOP price gap on ${currentPrice.symbol} (${(pct * 100).toFixed(2)}%)`,
+        `HARD-STOP price gap on ${currentPrice.symbol} (${(pct * 100).toFixed(2)}% ≥ ${risk.priceGapLimitPct}%)`,
         "price_gap",
         currentPrice.symbol,
       );
