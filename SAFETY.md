@@ -68,6 +68,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] A present `source`, `orderSource`, or `src` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not set an order source or partner tag, so a source intent would rest or fill as a plain spot order)
 - [ ] A present `channel`, `orderChannel`, or `origin` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not set an order channel or origin tag, so a channel intent would rest or fill as a plain spot order)
 - [ ] A present `label`, `orderLabel`, or `clientLabel` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not set an order label, so a label intent would rest or fill as a plain spot order)
+- [ ] A present `group`, `orderGroup`, or `clientGroup` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not set an order group, so a group intent would rest or fill as a plain spot order)
 - [ ] Only one process holds `data/worker-lease.json`; a second replica stays standby until the lease expires
 - [ ] `PAPER_SERVER_LOOP=1` is a paper-only market loop. It accepts only fresh provider-timestamped public quotes, runs strategy/risk/order gates, and cannot call the live adapter. Leave it off unless the server worker should own paper decisions.
 
