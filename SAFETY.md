@@ -25,6 +25,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 ## Risk hard-stops
 
 - [ ] Daily loss limit, max drawdown, and losing streak will halt the bot
+- [ ] Price gap hard-stop uses `risk.priceGapLimitPct` (default 3.5%) from config; a relative jump vs last tick at or above that limit halts the bot
 - [ ] On halt in LIVE mode the server cancels visible open orders (does not market-dump positions)
 - [ ] On halt in PAPER mode persisted working orders are marked canceled on disk (positions stay)
 - [ ] You know how to inspect `data/bot-state.json` and server logs after a halt
