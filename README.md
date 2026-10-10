@@ -12,4 +12,25 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 
 A submit is refused when `isMargin`, `margin`, or `is_margin` is present (`Is-margin is not supported` / `Margin flag is not supported` / `Is-margin alias is not supported`). Paper and KuCoin adapters place one plain spot order and do not open a margin account, so a margin intent would be ignored and the base size would trade on cash. Omitted, null, false, and blank still pass. Zero is present and is refused. `leverage`, `marginMode`, and `tdMode` remain the leverage-mode floor. `OrderManager.submit` calls `isMarginReason` before the adapter, so a refuse does not burn `maxRejectsInWindow`. This is a margin floor, not a halt, and does not flatten positions. Vitest: `tests/is-margin.test.ts` (no exchange, no secrets).
 
-(Full floor list and architecture remain unchanged; see prior content and file history for the complete phase table.)
+A submit is refused when `tpTriggerBy`, `slTriggerBy`, or `triggerPxType` is present (`Take-profit trigger source is not supported` / `Stop-loss trigger source is not supported` / `Trigger price type is not supported`). Paper and KuCoin adapters place one plain spot order and do not price a bracket off last, mark, or index, so a mark or index stop would be ignored and the base size would rest or fill immediately. Omitted, null, false, and blank still pass. Zero is present and is refused. `tpTriggerPx`, `slTriggerPx`, and `tpslTriggerPx` remain the trigger-price floor. `OrderManager.submit` calls `tpslTriggerByReason` before the adapter, so a refuse does not burn `maxRejectsInWindow`. This is a TP/SL trigger-source floor, not a halt, and does not flatten positions. Vitest: `tests/tpsl-trigger-by.test.ts` (no exchange, no secrets).
+
+(See the repository history for the complete list of floors, architecture, and prior status paragraphs. Default remains paper. Live keys stay on the server.)
+
+## Architecture
+
+UI → Bot engine → OrderManager → PaperExchange or KuCoin (keys server-side only).
+
+Persist: `data/bot-state.json` (atomic tmp+rename) plus `data/last-reject.json` for the last refused submit.
+
+Health includes halt, alerts, last reject (reason/side/symbol/age), grid books, daily cap, exposure, paper lots, working-order slots, the worker lease, and the optional paper loop.
+
+## Paper / Live
+
+Paper is the default. Live needs Trade-only KuCoin keys in server `.env`, a permission audit that blocks Withdraw, `OPERATOR_TOKEN`, and typed `ENABLE LIVE`. A process restart always returns to paper.
+
+Never invent or commit secrets. See [SAFETY.md](./SAFETY.md).
+
+### Unattended worker startup
+The Nitro runtime plugin starts the opt-in paper loop before any HTTP request.
+Run `npm run build && npm run test:worker` to verify startup, quote decisions and persisted history with deterministic quotes and no incoming requests.
+A Railway worker still requires a persistent volume at `/app/data`; build success alone does not prove production persistence.
