@@ -8,6 +8,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 
 ## Current status
 
+**Hour 9 (odd):** Wired the order note floor into the restored OrderManager. `submit` calls `orderNoteReason` after the priority floor and before the adapter: a present `note`, `orderNote`, or `clientNote` is refused (`Order note is not supported` / alias messages) and does not burn `maxRejectsInWindow`. Paper and KuCoin adapters place one plain spot order and do not forward a note. Omitted, null, false, and blank still pass; zero is refused. This is a metadata floor, not a halt, and does not flatten positions. Vitest: `tests/order-note.test.ts` (no exchange, no secrets). Default mode is paper.
+
 **Hour 7 (odd):** Restored a functional OrderManager (previous commits left `order-manager.ts` as a placeholder). `submit` calls `orderPriorityReason` before the adapter: a present `priority`, `orderPriority`, or `timePriority` is refused (`Order priority is not supported` / alias messages) and does not burn `maxRejectsInWindow`. Paper and KuCoin adapters place one plain spot order and do not set a priority. Omitted, null, false, and blank still pass; zero is refused. This is a metadata floor, not a halt, and does not flatten positions. Vitest: `tests/order-priority.test.ts` (no exchange, no secrets). Default mode is paper.
 
 **Hour 5 (odd):** Documented the order priority floor after earlier restore attempts. A submit is refused when `priority`, `orderPriority`, or `timePriority` is present. Paper remains the default.
