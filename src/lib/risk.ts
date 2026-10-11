@@ -70,9 +70,12 @@ const MAX_LOG = 200;
 /** Consecutive network failures that hard-stop the bot. */
 export const NETWORK_ERROR_HARD_STOP = 5;
 
+/** Relative price jump limit (decimal), kept as a public invariant for tests and callers. */
+export const PRICE_GAP_LIMIT = TRADING_CONFIG.risk.priceGapLimitPct / 100;
+
 /** Relative price jump limit from config (decimal). */
 function priceGapLimit(): number {
-  return TRADING_CONFIG.risk.priceGapLimitPct / 100;
+  return PRICE_GAP_LIMIT;
 }
 
 export function utcDayKey(now = Date.now()): string {
