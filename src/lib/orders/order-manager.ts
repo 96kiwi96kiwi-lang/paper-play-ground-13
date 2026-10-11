@@ -2,7 +2,7 @@
  * OrderManager – single path from bot/strategy to Paper or KuCoin adapter.
  * Default is always paper. Live keys stay server-side only.
  *
- * Metadata floors (priority, note, remark, source, channel, group, label, link, comment, etc.) refuse before the adapter and do not
+ * Metadata floors (priority, note, remark, source, channel, group, label, link, comment, memo, etc.) refuse before the adapter and do not
  * burn maxRejectsInWindow. Not a halt; does not flatten positions.
  */
 
@@ -14,6 +14,7 @@ import { orderCommentReason } from "./order-comment";
 import { orderGroupReason } from "./order-group";
 import { orderLabelReason } from "./order-label";
 import { orderLinkReason } from "./order-link";
+import { orderMemoReason } from "./order-memo";
 import { orderNoteReason } from "./order-note";
 import { orderPriorityReason } from "./order-priority";
 import { orderRemarkReason } from "./order-remark";
@@ -56,6 +57,9 @@ export interface OrderIntent {
   comment?: unknown;
   orderComment?: unknown;
   clientComment?: unknown;
+  memo?: unknown;
+  orderMemo?: unknown;
+  clientMemo?: unknown;
 }
 
 export interface SubmitResult {
@@ -82,7 +86,7 @@ export class OrderManager {
   }
 
   /**
-   * Submit an order. Priority, note, remark, source, channel, group, label, link, and comment floors run first so a refuse does not count as an adapter reject.
+   * Submit an order. Priority, note, remark, source, channel, group, label, link, comment, and memo floors run first so a refuse does not count as an adapter reject.
    */
   async submit(intent: OrderIntent, _riskState?: RiskState): Promise<SubmitResult> {
     const priorityRefuse = orderPriorityReason(
@@ -164,6 +168,15 @@ export class OrderManager {
     );
     if (commentRefuse) {
       return { ok: false, reason: commentRefuse };
+    }
+
+    const memoRefuse = orderMemoReason(
+      intent.memo,
+      intent.orderMemo,
+      intent.clientMemo,
+    );
+    if (memoRefuse) {
+      return { ok: false, reason: memoRefuse };
     }
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as (typeof TRADING_CONFIG.pairs)[number])) {
