@@ -2,13 +2,14 @@
  * OrderManager – single path from bot/strategy to Paper or KuCoin adapter.
  * Default is always paper. Live keys stay server-side only.
  *
- * Metadata floors (priority, note, remark, source, etc.) refuse before the adapter and do not
+ * Metadata floors (priority, note, remark, source, channel, etc.) refuse before the adapter and do not
  * burn maxRejectsInWindow. Not a halt; does not flatten positions.
  */
 
 import { TRADING_CONFIG } from "@/config/trading";
 import type { ExchangeAdapter, Side, UnifiedOrder } from "@/lib/exchange/types";
 import type { RiskState } from "@/lib/risk";
+import { orderChannelReason } from "./order-channel";
 import { orderNoteReason } from "./order-note";
 import { orderPriorityReason } from "./order-priority";
 import { orderRemarkReason } from "./order-remark";
@@ -36,6 +37,9 @@ export interface OrderIntent {
   source?: unknown;
   orderSource?: unknown;
   src?: unknown;
+  channel?: unknown;
+  orderChannel?: unknown;
+  origin?: unknown;
 }
 
 export interface SubmitResult {
@@ -62,7 +66,7 @@ export class OrderManager {
   }
 
   /**
-   * Submit an order. Priority, note, remark, and source floors run first so a refuse does not count as an adapter reject.
+   * Submit an order. Priority, note, remark, source, and channel floors run first so a refuse does not count as an adapter reject.
    */
   async submit(intent: OrderIntent, _riskState?: RiskState): Promise<SubmitResult> {
     const priorityRefuse = orderPriorityReason(
@@ -99,6 +103,15 @@ export class OrderManager {
     );
     if (sourceRefuse) {
       return { ok: false, reason: sourceRefuse };
+    }
+
+    const channelRefuse = orderChannelReason(
+      intent.channel,
+      intent.orderChannel,
+      intent.origin,
+    );
+    if (channelRefuse) {
+      return { ok: false, reason: channelRefuse };
     }
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as (typeof TRADING_CONFIG.pairs)[number])) {
