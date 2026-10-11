@@ -2,7 +2,7 @@
  * OrderManager – single path from bot/strategy to Paper or KuCoin adapter.
  * Default is always paper. Live keys stay server-side only.
  *
- * Metadata floors (priority, note, remark, source, channel, group, label, link, etc.) refuse before the adapter and do not
+ * Metadata floors (priority, note, remark, source, channel, group, label, link, comment, etc.) refuse before the adapter and do not
  * burn maxRejectsInWindow. Not a halt; does not flatten positions.
  */
 
@@ -10,6 +10,7 @@ import { TRADING_CONFIG } from "@/config/trading";
 import type { ExchangeAdapter, Side, UnifiedOrder } from "@/lib/exchange/types";
 import type { RiskState } from "@/lib/risk";
 import { orderChannelReason } from "./order-channel";
+import { orderCommentReason } from "./order-comment";
 import { orderGroupReason } from "./order-group";
 import { orderLabelReason } from "./order-label";
 import { orderLinkReason } from "./order-link";
@@ -52,6 +53,9 @@ export interface OrderIntent {
   clOrdId?: unknown;
   orderLinkId?: unknown;
   linkId?: unknown;
+  comment?: unknown;
+  orderComment?: unknown;
+  clientComment?: unknown;
 }
 
 export interface SubmitResult {
@@ -78,7 +82,7 @@ export class OrderManager {
   }
 
   /**
-   * Submit an order. Priority, note, remark, source, channel, group, label, and link floors run first so a refuse does not count as an adapter reject.
+   * Submit an order. Priority, note, remark, source, channel, group, label, link, and comment floors run first so a refuse does not count as an adapter reject.
    */
   async submit(intent: OrderIntent, _riskState?: RiskState): Promise<SubmitResult> {
     const priorityRefuse = orderPriorityReason(
@@ -151,6 +155,15 @@ export class OrderManager {
     );
     if (linkRefuse) {
       return { ok: false, reason: linkRefuse };
+    }
+
+    const commentRefuse = orderCommentReason(
+      intent.comment,
+      intent.orderComment,
+      intent.clientComment,
+    );
+    if (commentRefuse) {
+      return { ok: false, reason: commentRefuse };
     }
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as (typeof TRADING_CONFIG.pairs)[number])) {
