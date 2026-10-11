@@ -2,7 +2,7 @@
  * OrderManager – single path from bot/strategy to Paper or KuCoin adapter.
  * Default is always paper. Live keys stay server-side only.
  *
- * Metadata floors (priority, note, remark, source, channel, group, etc.) refuse before the adapter and do not
+ * Metadata floors (priority, note, remark, source, channel, group, label, etc.) refuse before the adapter and do not
  * burn maxRejectsInWindow. Not a halt; does not flatten positions.
  */
 
@@ -11,6 +11,7 @@ import type { ExchangeAdapter, Side, UnifiedOrder } from "@/lib/exchange/types";
 import type { RiskState } from "@/lib/risk";
 import { orderChannelReason } from "./order-channel";
 import { orderGroupReason } from "./order-group";
+import { orderLabelReason } from "./order-label";
 import { orderNoteReason } from "./order-note";
 import { orderPriorityReason } from "./order-priority";
 import { orderRemarkReason } from "./order-remark";
@@ -44,6 +45,9 @@ export interface OrderIntent {
   group?: unknown;
   orderGroup?: unknown;
   clientGroup?: unknown;
+  label?: unknown;
+  orderLabel?: unknown;
+  clientLabel?: unknown;
 }
 
 export interface SubmitResult {
@@ -70,7 +74,7 @@ export class OrderManager {
   }
 
   /**
-   * Submit an order. Priority, note, remark, source, channel, and group floors run first so a refuse does not count as an adapter reject.
+   * Submit an order. Priority, note, remark, source, channel, group, and label floors run first so a refuse does not count as an adapter reject.
    */
   async submit(intent: OrderIntent, _riskState?: RiskState): Promise<SubmitResult> {
     const priorityRefuse = orderPriorityReason(
@@ -125,6 +129,15 @@ export class OrderManager {
     );
     if (groupRefuse) {
       return { ok: false, reason: groupRefuse };
+    }
+
+    const labelRefuse = orderLabelReason(
+      intent.label,
+      intent.orderLabel,
+      intent.clientLabel,
+    );
+    if (labelRefuse) {
+      return { ok: false, reason: labelRefuse };
     }
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as (typeof TRADING_CONFIG.pairs)[number])) {
