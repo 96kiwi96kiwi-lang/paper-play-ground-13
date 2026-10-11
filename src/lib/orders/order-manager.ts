@@ -2,13 +2,14 @@
  * OrderManager – single path from bot/strategy to Paper or KuCoin adapter.
  * Default is always paper. Live keys stay server-side only.
  *
- * Metadata floors (priority, etc.) refuse before the adapter and do not
+ * Metadata floors (priority, note, etc.) refuse before the adapter and do not
  * burn maxRejectsInWindow. Not a halt; does not flatten positions.
  */
 
 import { TRADING_CONFIG } from "@/config/trading";
 import type { ExchangeAdapter, Side, UnifiedOrder } from "@/lib/exchange/types";
 import type { RiskState } from "@/lib/risk";
+import { orderNoteReason } from "./order-note";
 import { orderPriorityReason } from "./order-priority";
 
 export interface OrderIntent {
@@ -24,6 +25,9 @@ export interface OrderIntent {
   priority?: unknown;
   orderPriority?: unknown;
   timePriority?: unknown;
+  note?: unknown;
+  orderNote?: unknown;
+  clientNote?: unknown;
 }
 
 export interface SubmitResult {
@@ -50,7 +54,7 @@ export class OrderManager {
   }
 
   /**
-   * Submit an order. Priority floor runs first so a refuse does not count as an adapter reject.
+   * Submit an order. Priority and note floors run first so a refuse does not count as an adapter reject.
    */
   async submit(intent: OrderIntent, _riskState?: RiskState): Promise<SubmitResult> {
     const priorityRefuse = orderPriorityReason(
@@ -60,6 +64,15 @@ export class OrderManager {
     );
     if (priorityRefuse) {
       return { ok: false, reason: priorityRefuse };
+    }
+
+    const noteRefuse = orderNoteReason(
+      intent.note,
+      intent.orderNote,
+      intent.clientNote,
+    );
+    if (noteRefuse) {
+      return { ok: false, reason: noteRefuse };
     }
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as (typeof TRADING_CONFIG.pairs)[number])) {
