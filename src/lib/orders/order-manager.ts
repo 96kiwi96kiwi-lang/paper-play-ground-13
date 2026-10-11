@@ -2,7 +2,7 @@
  * OrderManager – single path from bot/strategy to Paper or KuCoin adapter.
  * Default is always paper. Live keys stay server-side only.
  *
- * Metadata floors (priority, note, remark, etc.) refuse before the adapter and do not
+ * Metadata floors (priority, note, remark, source, etc.) refuse before the adapter and do not
  * burn maxRejectsInWindow. Not a halt; does not flatten positions.
  */
 
@@ -12,6 +12,7 @@ import type { RiskState } from "@/lib/risk";
 import { orderNoteReason } from "./order-note";
 import { orderPriorityReason } from "./order-priority";
 import { orderRemarkReason } from "./order-remark";
+import { orderSourceReason } from "./order-source";
 
 export interface OrderIntent {
   symbol: string;
@@ -32,6 +33,9 @@ export interface OrderIntent {
   remark?: unknown;
   tag?: unknown;
   clientTag?: unknown;
+  source?: unknown;
+  orderSource?: unknown;
+  src?: unknown;
 }
 
 export interface SubmitResult {
@@ -58,7 +62,7 @@ export class OrderManager {
   }
 
   /**
-   * Submit an order. Priority, note, and remark floors run first so a refuse does not count as an adapter reject.
+   * Submit an order. Priority, note, remark, and source floors run first so a refuse does not count as an adapter reject.
    */
   async submit(intent: OrderIntent, _riskState?: RiskState): Promise<SubmitResult> {
     const priorityRefuse = orderPriorityReason(
@@ -86,6 +90,15 @@ export class OrderManager {
     );
     if (remarkRefuse) {
       return { ok: false, reason: remarkRefuse };
+    }
+
+    const sourceRefuse = orderSourceReason(
+      intent.source,
+      intent.orderSource,
+      intent.src,
+    );
+    if (sourceRefuse) {
+      return { ok: false, reason: sourceRefuse };
     }
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as (typeof TRADING_CONFIG.pairs)[number])) {
