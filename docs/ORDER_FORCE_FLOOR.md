@@ -6,4 +6,4 @@ Omitted, null, false, and blank pass. Zero is present and is refused. `timeInFor
 
 This is a force floor, not a halt, and does not flatten positions. Vitest: `tests/order-force.test.ts` (no exchange, no secrets).
 
-`OrderManager.submit` does not call `orderForceReason` yet. Until that call is wired, a submit can still carry these fields. No secrets.
+`OrderManager.submit` calls `orderForceReason` after the memo floor and before the adapter, so a refuse does not burn `maxRejectsInWindow`. A submit cannot carry these fields past the manager. No secrets.
