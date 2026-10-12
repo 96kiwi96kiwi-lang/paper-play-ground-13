@@ -2,7 +2,7 @@
  * OrderManager – single path from bot/strategy to Paper or KuCoin adapter.
  * Default is always paper. Live keys stay server-side only.
  *
- * Metadata floors (priority, note, remark, source, channel, group, label, link, comment, memo, force, response type, STP mode, good-till-time, strategy-id, iceberg, post-only, etc.) refuse before the adapter and do not
+ * Metadata floors (priority, note, remark, source, channel, group, label, link, comment, memo, force, response type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, etc.) refuse before the adapter and do not
  * burn maxRejectsInWindow. Not a halt; does not flatten positions.
  */
 
@@ -26,6 +26,7 @@ import { goodTillTimeReason } from "./good-till-time";
 import { strategyIdReason } from "./strategy-id";
 import { icebergReason } from "./iceberg";
 import { postOnlyReason } from "./post-only";
+import { execInstReason } from "./exec-inst";
 
 export interface OrderIntent {
   symbol: string;
@@ -93,6 +94,9 @@ export interface OrderIntent {
   postOnly?: unknown;
   postOnlyFlag?: unknown;
   makerOnly?: unknown;
+  execInst?: unknown;
+  execInstruction?: unknown;
+  instruction?: unknown;
 }
 
 export interface SubmitResult {
@@ -119,7 +123,7 @@ export class OrderManager {
   }
 
   /**
-   * Submit an order. Priority, note, remark, source, channel, group, label, link, comment, memo, force, response-type, STP mode, good-till-time, strategy-id, iceberg, and post-only floors run first so a refuse does not count as an adapter reject.
+   * Submit an order. Priority, note, remark, source, channel, group, label, link, comment, memo, force, response-type, STP mode, good-till-time, strategy-id, iceberg, post-only, and exec-inst floors run first so a refuse does not count as an adapter reject.
    */
   async submit(intent: OrderIntent, _riskState?: RiskState): Promise<SubmitResult> {
     const priorityRefuse = orderPriorityReason(
@@ -278,6 +282,15 @@ export class OrderManager {
     );
     if (postOnlyRefuse) {
       return { ok: false, reason: postOnlyRefuse };
+    }
+
+    const execInstRefuse = execInstReason(
+      intent.execInst,
+      intent.execInstruction,
+      intent.instruction,
+    );
+    if (execInstRefuse) {
+      return { ok: false, reason: execInstRefuse };
     }
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as (typeof TRADING_CONFIG.pairs)[number])) {
