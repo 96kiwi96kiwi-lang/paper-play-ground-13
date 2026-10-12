@@ -2,7 +2,7 @@
  * OrderManager – single path from bot/strategy to Paper or KuCoin adapter.
  * Default is always paper. Live keys stay server-side only.
  *
- * Metadata floors (priority, note, remark, source, channel, group, label, link, comment, memo, force, response type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, etc.) refuse before the adapter and do not
+ * Metadata floors (priority, note, remark, source, channel, group, label, link, comment, memo, force, response type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, etc.) refuse before the adapter and do not
  * burn maxRejectsInWindow. Not a halt; does not flatten positions.
  */
 
@@ -28,6 +28,7 @@ import { icebergReason } from "./iceberg";
 import { postOnlyReason } from "./post-only";
 import { execInstReason } from "./exec-inst";
 import { mmpReason } from "./mmp";
+import { priceProtectReason } from "./price-protect";
 
 export interface OrderIntent {
   symbol: string;
@@ -101,6 +102,9 @@ export interface OrderIntent {
   mmp?: unknown;
   mmpGroup?: unknown;
   marketMakerProtection?: unknown;
+  priceProtect?: unknown;
+  priceProtection?: unknown;
+  percentPrice?: unknown;
 }
 
 export interface SubmitResult {
@@ -127,7 +131,7 @@ export class OrderManager {
   }
 
   /**
-   * Submit an order. Priority, note, remark, source, channel, group, label, link, comment, memo, force, response-type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, and mmp floors run first so a refuse does not count as an adapter reject.
+   * Submit an order. Priority, note, remark, source, channel, group, label, link, comment, memo, force, response-type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, and price-protect floors run first so a refuse does not count as an adapter reject.
    */
   async submit(intent: OrderIntent, _riskState?: RiskState): Promise<SubmitResult> {
     const priorityRefuse = orderPriorityReason(
@@ -304,6 +308,15 @@ export class OrderManager {
     );
     if (mmpRefuse) {
       return { ok: false, reason: mmpRefuse };
+    }
+
+    const priceProtectRefuse = priceProtectReason(
+      intent.priceProtect,
+      intent.priceProtection,
+      intent.percentPrice,
+    );
+    if (priceProtectRefuse) {
+      return { ok: false, reason: priceProtectRefuse };
     }
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as (typeof TRADING_CONFIG.pairs)[number])) {
