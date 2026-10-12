@@ -89,6 +89,7 @@ import { orderSourceReason } from "./order-source";
 import { orderChannelReason } from "./order-channel";
 import { orderLabelReason } from "./order-label";
 import { orderCommentReason } from "./order-comment";
+import { orderMemoReason } from "./order-memo";
 import { orderGroupReason } from "./order-group";
 import { orderNoteReason } from "./order-note";
 import { orderPriorityReason } from "./order-priority";
@@ -537,6 +538,12 @@ export type OrderIntent = {
   orderComment?: string | number | boolean;
   /** Client-comment alias. Adapters do not forward it, so a present value is refused. */
   clientComment?: string | number | boolean;
+  /** Order memo. Adapters do not forward it, so a present value is refused. */
+  memo?: string | number | boolean;
+  /** Order-memo alias. Adapters do not forward it, so a present value is refused. */
+  orderMemo?: string | number | boolean;
+  /** Client-memo alias. Adapters do not forward it, so a present value is refused. */
+  clientMemo?: string | number | boolean;
   /** Order group. Adapters do not set it, so a present value is refused. */
   group?: string | number | boolean;
   /** Order group alias. Adapters do not set it, so a present value is refused. */
@@ -836,6 +843,9 @@ export class OrderManager {
       intent.clientComment,
     );
     if (comment) return this.fail(comment);
+
+    const memo = orderMemoReason(intent.memo, intent.orderMemo, intent.clientMemo);
+    if (memo) return this.fail(memo);
 
     const group = orderGroupReason(intent.group, intent.orderGroup, intent.clientGroup);
     if (group) return this.fail(group);
