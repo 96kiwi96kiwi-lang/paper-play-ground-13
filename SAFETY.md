@@ -74,6 +74,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] A present `clOrdId`, `orderLinkId`, or `linkId` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters identify by clientOrderId only and do not forward an external link, so a link intent would not be idempotent and could double-place)
 - [ ] A present `force`, `forceType`, or `orderForce` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters read timeInForce only, so IOC/FOK/post-only packed in force would rest as GTC)
 - [ ] A present `newOrderRespType`, `orderRespType`, or `respType` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters return one unified order and do not request ACK, RESULT, or FULL)
+- [ ] A present `stpMode`, `smpType`, or `preventSelfTrade` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not send a self-trade prevention mode, so cancel-newest or expire-taker would be ignored and the order could match the same account)
 - [ ] Only one process holds `data/worker-lease.json`; a second replica stays standby until the lease expires
 - [ ] `PAPER_SERVER_LOOP=1` is a paper-only market loop. It accepts only fresh provider-timestamped public quotes, runs strategy/risk/order gates, and cannot call the live adapter. Leave it off unless the server worker should own paper decisions.
 
