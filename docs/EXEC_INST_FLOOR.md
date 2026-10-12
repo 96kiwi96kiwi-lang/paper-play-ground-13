@@ -5,3 +5,5 @@ Paper and KuCoin adapters place one spot order and do not send `execInst`, `exec
 Omitted, null, false, and blank pass. Zero is present and is refused. `postOnly`, `reduceOnly`, and `closeOnTrigger` remain their own floors.
 
 This is an instruction floor, not a halt, and does not flatten positions. A refuse does not burn `maxRejectsInWindow`. No secrets.
+
+`OrderManager.submit` calls `execInstReason` before the adapter. Vitest: `tests/exec-inst.test.ts` (no exchange, no secrets).
