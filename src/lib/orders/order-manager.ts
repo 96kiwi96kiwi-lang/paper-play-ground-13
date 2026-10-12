@@ -2,7 +2,7 @@
  * OrderManager – single path from bot/strategy to Paper or KuCoin adapter.
  * Default is always paper. Live keys stay server-side only.
  *
- * Metadata floors (priority, note, remark, source, channel, group, label, link, comment, memo, force, response type, etc.) refuse before the adapter and do not
+ * Metadata floors (priority, note, remark, source, channel, group, label, link, comment, memo, force, response type, STP mode, etc.) refuse before the adapter and do not
  * burn maxRejectsInWindow. Not a halt; does not flatten positions.
  */
 
@@ -21,6 +21,7 @@ import { orderPriorityReason } from "./order-priority";
 import { orderRemarkReason } from "./order-remark";
 import { orderSourceReason } from "./order-source";
 import { responseTypeReason } from "./response-type";
+import { stpModeReason } from "./stp-mode";
 
 export interface OrderIntent {
   symbol: string;
@@ -68,6 +69,9 @@ export interface OrderIntent {
   newOrderRespType?: unknown;
   orderRespType?: unknown;
   respType?: unknown;
+  stpMode?: unknown;
+  smpType?: unknown;
+  preventSelfTrade?: unknown;
 }
 
 export interface SubmitResult {
@@ -94,7 +98,7 @@ export class OrderManager {
   }
 
   /**
-   * Submit an order. Priority, note, remark, source, channel, group, label, link, comment, memo, force, and response-type floors run first so a refuse does not count as an adapter reject.
+   * Submit an order. Priority, note, remark, source, channel, group, label, link, comment, memo, force, response-type, and STP mode floors run first so a refuse does not count as an adapter reject.
    */
   async submit(intent: OrderIntent, _riskState?: RiskState): Promise<SubmitResult> {
     const priorityRefuse = orderPriorityReason(
@@ -203,6 +207,15 @@ export class OrderManager {
     );
     if (responseTypeRefuse) {
       return { ok: false, reason: responseTypeRefuse };
+    }
+
+    const stpModeRefuse = stpModeReason(
+      intent.stpMode,
+      intent.smpType,
+      intent.preventSelfTrade,
+    );
+    if (stpModeRefuse) {
+      return { ok: false, reason: stpModeRefuse };
     }
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as (typeof TRADING_CONFIG.pairs)[number])) {
