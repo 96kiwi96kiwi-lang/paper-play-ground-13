@@ -176,6 +176,8 @@ export type OrderIntent = {
   fillOrKill?: boolean | string | number;
   /** Maker-only flag. Adapters do not forward it, so true is refused. */
   postOnly?: boolean;
+  /** Maker-only alias. Adapters do not forward it, so a present value is refused. */
+  postOnlyFlag?: boolean | string | number;
   /** Maker-only alias. Adapters read postOnly only, so a present value is refused. */
   post_only?: boolean | string | number;
   /** Maker-only alias. Adapters do not forward it, so a present value is refused. */
@@ -903,7 +905,7 @@ export class OrderManager {
     );
     if (postOnlyAlias) return this.fail(postOnlyAlias);
 
-    const postOnly = postOnlyReason(intent.postOnly);
+    const postOnly = postOnlyReason(intent.postOnly, intent.postOnlyFlag);
     if (postOnly) return this.fail(postOnly);
 
     const reduceOnly = reduceOnlyReason(intent.reduceOnly);
