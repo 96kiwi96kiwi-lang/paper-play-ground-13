@@ -2,7 +2,7 @@
  * OrderManager – single path from bot/strategy to Paper or KuCoin adapter.
  * Default is always paper. Live keys stay server-side only.
  *
- * Metadata floors (priority, note, remark, source, channel, group, label, link, comment, memo, force, response type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, close-position, reduce-only, time-in-force, etc.) refuse before the adapter and do not
+ * Metadata floors (priority, note, remark, source, channel, group, label, link, comment, memo, force, response type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, close-position, reduce-only, time-in-force, is-margin, etc.) refuse before the adapter and do not
  * burn maxRejectsInWindow. Not a halt; does not flatten positions.
  */
 
@@ -37,6 +37,7 @@ import { closePositionReason } from "./close-position";
 import { reduceOnlyReason } from "./reduce-only";
 import { normalizeTimeInForce } from "./time-in-force";
 import { tifAliasReason } from "./tif-alias";
+import { isMarginReason } from "./is-margin";
 
 export interface OrderIntent {
   symbol: string;
@@ -134,6 +135,9 @@ export interface OrderIntent {
   timeInForceAlias?: unknown;
   immediateOrCancel?: unknown;
   fillOrKill?: unknown;
+  isMargin?: unknown;
+  margin?: unknown;
+  is_margin?: unknown;
 }
 
 export interface SubmitResult {
@@ -160,7 +164,7 @@ export class OrderManager {
   }
 
   /**
-   * Submit an order. Priority, note, remark, source, channel, group, label, link, comment, memo, force, response-type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, close-position, reduce-only, and time-in-force floors run first so a refuse does not count as an adapter reject.
+   * Submit an order. Priority, note, remark, source, channel, group, label, link, comment, memo, force, response-type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, close-position, reduce-only, time-in-force, and is-margin floors run first so a refuse does not count as an adapter reject.
    */
   async submit(intent: OrderIntent, _riskState?: RiskState): Promise<SubmitResult> {
     const priorityRefuse = orderPriorityReason(
@@ -411,6 +415,15 @@ export class OrderManager {
     const tifNorm = normalizeTimeInForce(intent.timeInForce);
     if ("reason" in tifNorm) {
       return { ok: false, reason: tifNorm.reason };
+    }
+
+    const isMarginRefuse = isMarginReason(
+      intent.isMargin,
+      intent.margin,
+      intent.is_margin,
+    );
+    if (isMarginRefuse) {
+      return { ok: false, reason: isMarginRefuse };
     }
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as (typeof TRADING_CONFIG.pairs)[number])) {
