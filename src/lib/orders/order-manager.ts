@@ -2,7 +2,7 @@
  * OrderManager – single path from bot/strategy to Paper or KuCoin adapter.
  * Default is always paper. Live keys stay server-side only.
  *
- * Metadata floors (priority, note, remark, source, channel, group, label, link, comment, memo, force, response type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, close-position, etc.) refuse before the adapter and do not
+ * Metadata floors (priority, note, remark, source, channel, group, label, link, comment, memo, force, response type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, close-position, reduce-only, etc.) refuse before the adapter and do not
  * burn maxRejectsInWindow. Not a halt; does not flatten positions.
  */
 
@@ -34,6 +34,7 @@ import { priceMatchReason } from "./price-match";
 import { cancelOnDisconnectReason } from "./cancel-on-disconnect";
 import { gridIdReason } from "./grid-id";
 import { closePositionReason } from "./close-position";
+import { reduceOnlyReason } from "./reduce-only";
 
 export interface OrderIntent {
   symbol: string;
@@ -125,6 +126,7 @@ export interface OrderIntent {
   closePosition?: unknown;
   closeOnTrigger?: unknown;
   closeOrder?: unknown;
+  reduceOnly?: unknown;
 }
 
 export interface SubmitResult {
@@ -151,7 +153,7 @@ export class OrderManager {
   }
 
   /**
-   * Submit an order. Priority, note, remark, source, channel, group, label, link, comment, memo, force, response-type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, and close-position floors run first so a refuse does not count as an adapter reject.
+   * Submit an order. Priority, note, remark, source, channel, group, label, link, comment, memo, force, response-type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, close-position, and reduce-only floors run first so a refuse does not count as an adapter reject.
    */
   async submit(intent: OrderIntent, _riskState?: RiskState): Promise<SubmitResult> {
     const priorityRefuse = orderPriorityReason(
@@ -382,6 +384,11 @@ export class OrderManager {
     );
     if (closePositionRefuse) {
       return { ok: false, reason: closePositionRefuse };
+    }
+
+    const reduceOnlyRefuse = reduceOnlyReason(intent.reduceOnly);
+    if (reduceOnlyRefuse) {
+      return { ok: false, reason: reduceOnlyRefuse };
     }
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as (typeof TRADING_CONFIG.pairs)[number])) {
