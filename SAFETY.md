@@ -25,6 +25,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 ## Risk hard-stops
 
 - [ ] Daily loss limit, max drawdown, and losing streak will halt the bot
+- [ ] Price gap hard-stop uses `risk.priceGapLimitPct` (default 3.5%) from config; a relative jump vs last tick at or above that limit halts the bot
 - [ ] On halt in LIVE mode the server cancels visible open orders (does not market-dump positions)
 - [ ] On halt in PAPER mode persisted working orders are marked canceled on disk (positions stay)
 - [ ] You know how to inspect `data/bot-state.json` and server logs after a halt
@@ -32,25 +33,8 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] You will not clear a halt without reviewing why it fired
 - [ ] Resume only via `clearOperatorHalt()` after presenting `OPERATOR_TOKEN` — do not just delete `haltReason` from the JSON; `lastHardStop.reason` used to restore it
 - [ ] Health reports last tick age; a stale heartbeat (no tick for ~135s) fails health and fires a watchdog alert
-- [ ] `maxClientOrderIdLength` (40) matches KuCoin `clientOid`: non-blank ids outside letters, digits, and hyphens are refused before the adapter (not a halt; blank ids still pass)
-- [ ] `minCashReserveUsd` is sized so buys cannot empty the account cash sleeve
-- [ ] `maxDailyTrades` (12) and `maxDailyTradesPerSymbol` (5) match how much churn you will allow before OrderManager refuses
-- [ ] `sameSideCooldownMs` (25s) matches how soon you will allow another buy or another sell on the same pair (not a halt; does not flatten; opposite side still uses the 90s flip cooldown)
-- [ ] `maxRejectsInWindow` (4) and `maxRejectsPerSymbolInWindow` (3) match how many adapter rejects you will allow inside 10 minutes before OrderManager pauses new submits (not a halt; does not flatten; floor refusals do not count)
-- [ ] `maxLimitDeviationPct` (2.5) matches how far a limit may sit from `markPrice` before OrderManager refuses it (not a halt; does not flatten; market orders skip this and still need a fresh quote)
-- [ ] `blockCrossMark` refuses a buy limit at or above the mark and a sell limit at or below it (not a halt; does not flatten; market orders skip this)
-- [ ] `lossReentryCooldownMs` (20 minutes) and `lossReentryMinLossPct` (1) match how long you will pause buys on a pair after a losing sell (not a halt; does not flatten; sells and other pairs still pass)
-- [ ] `maxAverageDownPct` (3) matches how far under the open average you will still allow an add (not a halt; does not flatten; sells and new names still pass; no mark skips the floor)
-- [ ] `maxDailySellNotionalUsd` (6,000) and `maxDailySellNotionalPerSymbolUsd` (2,500) match how much inventory you will allow OrderManager to sell in one UTC day (not a halt; does not flatten)
-- [ ] `maxHourlyBuyNotionalUsd` (1,500) and `maxHourlyBuyNotionalPerSymbolUsd` (800) match how much you will allow OrderManager to buy inside a rolling 60 minutes (not a halt; sells still allowed)
-- [ ] `maxHourlySellNotionalUsd` (2,500) and `maxHourlySellNotionalPerSymbolUsd` (1,200) match how much you will allow OrderManager to sell inside a rolling 60 minutes (not a halt; does not flatten; buys still allowed)
-- [ ] `maxWorkingNotionalUsd` (5,000) is sized so resting open / partial / pending orders cannot stack past that sleeve
-- [ ] `maxWorkingNotionalPerSymbolUsd` (2,500) is sized so one pair cannot rest the whole working-notional sleeve
-- [ ] A present `strategyId`, `strategyType`, or `workingType` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not attach an algo strategy or a mark/contract working type)
-- [ ] A present `brokerId`, `brokerClientId`, or `rebate` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not attribute a partner or set a rebate)
-- [ ] A present `sideEffectType`, `sideEffect`, or `marginEffect` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not borrow or repay on a spot order)
-- [ ] A present `subAccount`, `subUid`, or `uid` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters use the server key account and do not select a sub-account)
-- [ ] A present `priceProtect`, `priceProtection`, or `percentPrice` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not enforce an exchange price band)
+- [ ] A present `cancelOnDisconnect`, `deadman`, or `cod` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not arm a cancel-on-disconnect timer, so a dead-man intent would leave a resting order live after the process drops)
+- [ ] A present `grid`, `gridId`, or `algoId` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters place one plain spot order and do not attach a grid, so a grid intent would otherwise be ignored and the base size would trade)
 - [ ] Only one process holds `data/worker-lease.json`; a second replica stays standby until the lease expires
 - [ ] `PAPER_SERVER_LOOP=1` is a paper-only market loop. It accepts only fresh provider-timestamped public quotes, runs strategy/risk/order gates, and cannot call the live adapter. Leave it off unless the server worker should own paper decisions.
 

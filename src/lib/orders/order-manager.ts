@@ -72,25 +72,56 @@ import { strategyIdReason } from "./strategy-id";
 import { gridIdReason } from "./grid-id";
 import { attachAlgoReason } from "./attach-algo";
 import { leverageModeReason } from "./leverage-mode";
+import { crossMarginReason } from "./cross-margin";
+import { isLeverageReason } from "./is-leverage";
+import { isMarginReason } from "./is-margin";
+import { marginAssetReason } from "./margin-asset";
+import { quickMarginReason } from "./quick-margin";
+import { triggerDirectionReason } from "./trigger-direction";
+import { responseTypeReason } from "./response-type";
+import { tpslOrderTypeReason } from "./tpsl-order-type";
+import { tpslOrderPriceReason } from "./tpsl-order-price";
+import { tpslTriggerPriceReason } from "./tpsl-trigger-price";
+import { tpslTriggerByReason } from "./tpsl-trigger-by";
 import { targetCurrencyReason } from "./target-currency";
 import { orderRemarkReason } from "./order-remark";
+import { orderSourceReason } from "./order-source";
+import { orderChannelReason } from "./order-channel";
+import { orderLabelReason } from "./order-label";
+import { orderCommentReason } from "./order-comment";
+import { orderMemoReason } from "./order-memo";
+import { orderGroupReason } from "./order-group";
+import { orderNoteReason } from "./order-note";
+import { orderPriorityReason } from "./order-priority";
 import { subAccountReason } from "./sub-account";
 import { workingTypeReason } from "./working-type";
 import { normalizeTimeInForce } from "./time-in-force";
 import { tifAliasReason } from "./tif-alias";
+import { orderForceReason } from "./order-force";
 import { icebergReason } from "./iceberg";
 import { quoteSizeReason } from "./quote-size";
 import { postOnlyReason } from "./post-only";
 import { postOnlyAliasReason } from "./post-only-alias";
 import { reduceOnlyReason } from "./reduce-only";
+import { closePositionReason } from "./close-position";
 import { stopPriceReason } from "./stop-price";
 import { autoBorrowReason } from "./auto-borrow";
 import { borrowSizeReason } from "./borrow-size";
 import { repaySizeReason } from "./repay-size";
+import { settleCurrencyReason } from "./settle-currency";
 import { trailingReason } from "./trailing";
 import { orderExpiryReason } from "./order-expiry";
+import { goodTillTimeReason } from "./good-till-time";
 import { selfTradeReason } from "./self-trade";
+import { stpModeReason } from "./stp-mode";
+import { execInstReason } from "./exec-inst";
+import { mmpReason } from "./mmp";
+import { bboReason } from "./bbo";
+import { cancelOnDisconnectReason } from "./cancel-on-disconnect";
 import { positionSideReason } from "./position-side";
+import { positionIndexReason } from "./position-index";
+import { openOffsetReason } from "./open-offset";
+import { tradeSideReason } from "./trade-side";
 import { isolatedReason } from "./isolated";
 import { baseSizeReason } from "./base-size";
 import { priceAliasReason } from "./price-alias";
@@ -133,12 +164,20 @@ export type OrderIntent = {
   tif?: string;
   /** Time-in-force alias. Adapters read timeInForce only, so a present value is refused. */
   time_in_force?: string;
+  /** Bitget order force. Adapters read timeInForce only, so a present value is refused. */
+  force?: string | number | boolean;
+  /** Order-force alias. Adapters read timeInForce only, so a present value is refused. */
+  forceType?: string | number | boolean;
+  /** Order-force alias. Adapters read timeInForce only, so a present value is refused. */
+  orderForce?: string | number | boolean;
   /** Immediate-or-cancel flag. Adapters do not forward it, so a present value is refused. */
   immediateOrCancel?: boolean | string | number;
   /** Fill-or-kill flag. Adapters do not forward it, so a present value is refused. */
   fillOrKill?: boolean | string | number;
   /** Maker-only flag. Adapters do not forward it, so true is refused. */
   postOnly?: boolean;
+  /** Maker-only alias. Adapters do not forward it, so a present value is refused. */
+  postOnlyFlag?: boolean | string | number;
   /** Maker-only alias. Adapters read postOnly only, so a present value is refused. */
   post_only?: boolean | string | number;
   /** Maker-only alias. Adapters do not forward it, so a present value is refused. */
@@ -189,6 +228,12 @@ export type OrderIntent = {
   repaySize?: number | string | boolean;
   /** Debt amount. Adapters do not repay, so a present value is refused. */
   debtAmount?: number | string | boolean;
+  /** Settlement currency. Adapters do not set it, so a present value is refused. */
+  settleCcy?: string | number | boolean;
+  /** Settlement coin alias. Adapters do not set it, so a present value is refused. */
+  settleCoin?: string | number | boolean;
+  /** Quote coin. Adapters do not set a settlement asset, so a present value is refused. */
+  quoteCoin?: string | number | boolean;
   /** Extra trigger. Adapters do not forward it, so a present value is refused. */
   triggerPrice?: number;
   /** Stop-loss price. Adapters do not forward it, so a present value is refused. */
@@ -209,24 +254,82 @@ export type OrderIntent = {
   expireTime?: number;
   /** Good-till date. Adapters do not forward it, so a present value is refused. */
   goodTillDate?: number | string;
+  /** Binance good-till time. Adapters do not forward it, so a present value is refused. */
+  goodTillTime?: number | string | boolean;
+  /** GTD alias. Adapters do not expire the order, so a present value is refused. */
+  gtd?: number | string | boolean;
+  /** Expire-at alias. Adapters do not forward it, so a present value is refused. */
+  expireAt?: number | string | boolean;
   /** KuCoin STP. Adapters do not forward it, so a present value is refused. */
   stp?: string;
   /** Self-trade prevention. Adapters do not forward it, so a present value is refused. */
   selfTradePrevention?: string;
   /** Self-trade prevention mode. Adapters do not forward it, so a present value is refused. */
   selfTradePreventionMode?: string;
+  /** OKX STP mode. Adapters do not forward it, so a present value is refused. */
+  stpMode?: string | number | boolean;
+  /** Binance SMP type. Adapters do not forward it, so a present value is refused. */
+  smpType?: string | number | boolean;
+  /** Prevent-self-trade flag. Adapters do not forward it, so a present value is refused. */
+  preventSelfTrade?: string | number | boolean;
+  /** Bybit execution instruction. Adapters do not forward it, so a present value is refused. */
+  execInst?: string | number | boolean;
+  /** Execution-instruction alias. Adapters do not forward it, so a present value is refused. */
+  execInstruction?: string | number | boolean;
+  /** Instruction alias. Adapters do not forward it, so a present value is refused. */
+  instruction?: string | number | boolean;
+  /** Market-maker protection. Adapters do not forward it, so a present value is refused. */
+  mmp?: string | number | boolean;
+  /** MMP group. Adapters do not forward it, so a present value is refused. */
+  mmpGroup?: string | number | boolean;
+  /** Market-maker protection alias. Adapters do not forward it, so a present value is refused. */
+  marketMakerProtection?: string | number | boolean;
+  /** Best bid/offer price. Adapters price by price or market, so a present value is refused. */
+  bbo?: string | number | boolean;
+  /** Best-bid-offer alias. Adapters do not queue at the book, so a present value is refused. */
+  bestBidOffer?: string | number | boolean;
+  /** Book-price alias. Adapters do not queue at the book, so a present value is refused. */
+  bookPrice?: string | number | boolean;
+  /** Cancel on disconnect. Adapters do not arm it, so a present value is refused. */
+  cancelOnDisconnect?: string | number | boolean;
+  /** Dead-man switch. Adapters do not arm it, so a present value is refused. */
+  deadman?: string | number | boolean;
+  /** COD flag. Adapters do not arm it, so a present value is refused. */
+  cod?: string | number | boolean;
   /** Futures position side. Spot adapters do not forward it, so a present value is refused. */
   positionSide?: string;
   /** Hedge mode. Spot adapters do not forward it, so a present value is refused. */
   hedgeMode?: string | boolean;
   /** Position mode. Spot adapters do not forward it, so a present value is refused. */
   positionMode?: string;
+  /** Hedge position index. Spot adapters do not forward it, so a present value is refused. */
+  positionIdx?: number | string | boolean;
+  /** OKX position side. Spot adapters do not forward it, so a present value is refused. */
+  posSide?: string | number | boolean;
+  /** Position-index alias. Spot adapters do not forward it, so a present value is refused. */
+  positionIndex?: number | string | boolean;
+  /** Open or close offset. Spot adapters do not forward it, so a present value is refused. */
+  openClose?: string | number | boolean;
+  /** Position-offset alias. Spot adapters do not forward it, so a present value is refused. */
+  posOffset?: string | number | boolean;
+  /** Close fraction. Adapters size by base amount, so a present value is refused. */
+  closeFraction?: number | string | boolean;
+  /** Futures trade side. Spot adapters do not forward it, so a present value is refused. */
+  tradeSide?: string | number | boolean;
+  /** Futures hold side. Spot adapters do not forward it, so a present value is refused. */
+  holdSide?: string | number | boolean;
+  /** Futures open type. Spot adapters do not forward it, so a present value is refused. */
+  openType?: string | number | boolean;
   /** Isolated margin. Spot adapters do not forward it, so a present value is refused. */
   isolated?: string | boolean;
   /** Isolated flag. Spot adapters do not forward it, so a present value is refused. */
   isIsolated?: string | boolean;
   /** Close entire position. Spot adapters do not forward it, so a present value is refused. */
   closePosition?: boolean | number | string;
+  /** Close-on-trigger. Adapters do not forward it, so a present value is refused. */
+  closeOnTrigger?: boolean | number | string;
+  /** Close-order flag. Adapters place a normal order, so a present value is refused. */
+  closeOrder?: boolean | number | string;
   /** Size alias. Adapters size by amount, so a present value is refused. */
   size?: number | string;
   /** Size alias. Adapters size by amount, so a present value is refused. */
@@ -302,7 +405,7 @@ export type OrderIntent = {
   /** Client recv window. Adapters do not forward a deadline, so a present value is refused. */
   recvWindow?: number | string;
   /** ACK/FULL result shape. Adapters do not forward it, so a present value is refused. */
-  newOrderRespType?: string;
+  newOrderRespType?: string | number | boolean;
   /** ACK/FULL result shape. Adapters do not forward it, so a present value is refused. */
   responseType?: string;
   /** Book-move cap. Adapters do not forward it, so a present value is refused. */
@@ -341,12 +444,66 @@ export type OrderIntent = {
   tpTriggerPx?: string | number | boolean;
   /** Stop-loss trigger. Adapters do not attach a bracket, so a present value is refused. */
   slTriggerPx?: string | number | boolean;
+  /** Take-profit trigger source. Adapters do not price a bracket off last, mark, or index, so a present value is refused. */
+  tpTriggerBy?: string | number | boolean;
+  /** Stop-loss trigger source. Adapters do not price a bracket off last, mark, or index, so a present value is refused. */
+  slTriggerBy?: string | number | boolean;
+  /** Trigger price type. Adapters do not price a bracket off last, mark, or index, so a present value is refused. */
+  triggerPxType?: string | number | boolean;
   /** Leverage. Adapters place spot only, so a present value is refused. */
   leverage?: string | number | boolean;
   /** Margin mode. Adapters place spot only, so a present value is refused. */
   marginMode?: string | number | boolean;
   /** Trade mode. Adapters place spot only, so a present value is refused. */
   tdMode?: string | number | boolean;
+  /** OKX margin-mode alias. Adapters place spot only, so a present value is refused. */
+  mgnMode?: string | number | boolean;
+  /** Trade-mode alias. Adapters place spot only, so a present value is refused. */
+  tradeMode?: string | number | boolean;
+  /** Cross-margin flag. Adapters place spot only, so a present value is refused. */
+  isCross?: string | number | boolean;
+  /** Binance margin leverage flag. Adapters place spot only, so a present value is refused. */
+  isLeverage?: string | number | boolean;
+  /** Leverage-flag alias. Adapters place spot only, so a present value is refused. */
+  leverageFlag?: string | number | boolean;
+  /** Margin-leverage alias. Adapters place spot only, so a present value is refused. */
+  marginLeverage?: string | number | boolean;
+  /** Margin asset. Adapters do not set it, so a present value is refused. */
+  marginAsset?: string | number | boolean;
+  /** Margin coin alias. Adapters do not set it, so a present value is refused. */
+  marginCoin?: string | number | boolean;
+  /** OKX margin currency. Adapters do not set it, so a present value is refused. */
+  mgnCcy?: string | number | boolean;
+  /** OKX quick-margin type. Adapters do not borrow, so a present value is refused. */
+  quickMgnType?: string | number | boolean;
+  /** Quick-margin alias. Adapters place cash spot, so a present value is refused. */
+  quickMargin?: string | number | boolean;
+  /** Auto-loan alias. Adapters do not borrow, so a present value is refused. */
+  autoLoan?: string | number | boolean;
+  /** Trigger direction. Adapters do not send it, so a present value is refused. */
+  triggerDirection?: string | number | boolean;
+  /** Stop-direction alias. Adapters do not send it, so a present value is refused. */
+  stopDirection?: string | number | boolean;
+  /** Trigger-dir alias. Adapters do not send it, so a present value is refused. */
+  triggerDir?: string | number | boolean;
+  /** Response-type alias. Adapters do not request it, so a present value is refused. */
+  orderRespType?: string | number | boolean;
+  /** Resp-type alias. Adapters do not request it, so a present value is refused. */
+  respType?: string | number | boolean;
+  /** Take-profit order type. Adapters place one spot order and do not attach a TP type. */
+  tpOrderType?: string | number | boolean;
+  /** Stop-loss order type. Adapters place one spot order and do not attach an SL type. */
+  slOrderType?: string | number | boolean;
+  /** TP/SL mode. Adapters do not attach a partial or full exit, so a present value is refused. */
+  tpslMode?: string | number | boolean;
+  /** Take-profit order price. Adapters place one spot order and do not attach an exit limit. */
+  tpOrdPx?: number | string | boolean;
+  /** Stop-loss order price. Adapters place one spot order and do not attach an exit limit. */
+  slOrdPx?: number | string | boolean;
+  /** Shared TP/SL order price. Adapters do not attach an exit limit, so a present value is refused. */
+  tpslPx?: number | string | boolean;
+  /** Shared TP/SL trigger price. Adapters do not wait for a trigger, so a present value is refused. */
+  tpslTriggerPx?: number | string | boolean;
   /** OKX size unit. Adapters size by base amount, so a present value is refused. */
   tgtCcy?: string | number | boolean;
   /** Size-unit alias. Adapters size by base amount, so a present value is refused. */
@@ -359,6 +516,54 @@ export type OrderIntent = {
   tag?: string | number | boolean;
   /** Client tag alias. Adapters do not forward a note, so a present value is refused. */
   clientTag?: string | number | boolean;
+  /** Order source. Adapters do not set it, so a present value is refused. */
+  source?: string | number | boolean;
+  /** Order source alias. Adapters do not set it, so a present value is refused. */
+  orderSource?: string | number | boolean;
+  /** Source alias. Adapters do not set it, so a present value is refused. */
+  src?: string | number | boolean;
+  /** Order channel. Adapters do not set it, so a present value is refused. */
+  channel?: string | number | boolean;
+  /** Order channel alias. Adapters do not set it, so a present value is refused. */
+  orderChannel?: string | number | boolean;
+  /** Origin alias. Adapters do not set it, so a present value is refused. */
+  origin?: string | number | boolean;
+  /** Order label. Adapters do not set it, so a present value is refused. */
+  label?: string | number | boolean;
+  /** Order label alias. Adapters do not set it, so a present value is refused. */
+  orderLabel?: string | number | boolean;
+  /** Client label alias. Adapters do not set it, so a present value is refused. */
+  clientLabel?: string | number | boolean;
+  /** Order comment. Adapters do not forward it, so a present value is refused. */
+  comment?: string | number | boolean;
+  /** Order-comment alias. Adapters do not forward it, so a present value is refused. */
+  orderComment?: string | number | boolean;
+  /** Client-comment alias. Adapters do not forward it, so a present value is refused. */
+  clientComment?: string | number | boolean;
+  /** Order memo. Adapters do not forward it, so a present value is refused. */
+  memo?: string | number | boolean;
+  /** Order-memo alias. Adapters do not forward it, so a present value is refused. */
+  orderMemo?: string | number | boolean;
+  /** Client-memo alias. Adapters do not forward it, so a present value is refused. */
+  clientMemo?: string | number | boolean;
+  /** Order group. Adapters do not set it, so a present value is refused. */
+  group?: string | number | boolean;
+  /** Order group alias. Adapters do not set it, so a present value is refused. */
+  orderGroup?: string | number | boolean;
+  /** Client group alias. Adapters do not set it, so a present value is refused. */
+  clientGroup?: string | number | boolean;
+  /** Order note. Adapters do not forward it, so a present value is refused. */
+  note?: string | number | boolean;
+  /** Order note alias. Adapters do not forward it, so a present value is refused. */
+  orderNote?: string | number | boolean;
+  /** Client note alias. Adapters do not forward it, so a present value is refused. */
+  clientNote?: string | number | boolean;
+  /** Order priority. Adapters do not set it, so a present value is refused. */
+  priority?: string | number | boolean;
+  /** Order priority alias. Adapters do not set it, so a present value is refused. */
+  orderPriority?: string | number | boolean;
+  /** Time priority alias. Adapters do not set it, so a present value is refused. */
+  timePriority?: string | number | boolean;
   /** Sub-account route. Adapters use the server key account, so a present value is refused. */
   subAccount?: string | number | boolean;
   /** Sub-account uid. Adapters use the server key account, so a present value is refused. */
@@ -371,6 +576,10 @@ export type OrderIntent = {
   marginTrade?: string | number | boolean;
   /** Margin flag. Adapters place spot only, so true is refused. */
   isMargin?: string | number | boolean;
+  /** Margin flag alias. Adapters place spot only, so a present value is refused. */
+  margin?: string | number | boolean;
+  /** Is-margin alias. Adapters place spot only, so a present value is refused. */
+  is_margin?: string | number | boolean;
   /** Margin side-effect type. Adapters place spot only, so a present value is refused. */
   sideEffectType?: string | number | boolean;
   /** Margin side-effect alias. Adapters place spot only, so a present value is refused. */
@@ -565,8 +774,93 @@ export class OrderManager {
     const leverageMode = leverageModeReason(intent.leverage, intent.marginMode, intent.tdMode);
     if (leverageMode) return this.fail(leverageMode);
 
+    const crossMargin = crossMarginReason(intent.mgnMode, intent.tradeMode, intent.isCross);
+    if (crossMargin) return this.fail(crossMargin);
+
+    const isLeverage = isLeverageReason(intent.isLeverage, intent.leverageFlag, intent.marginLeverage);
+    if (isLeverage) return this.fail(isLeverage);
+
+    const isMargin = isMarginReason(intent.isMargin, intent.margin, intent.is_margin);
+    if (isMargin) return this.fail(isMargin);
+
+    const marginAsset = marginAssetReason(intent.marginAsset, intent.marginCoin, intent.mgnCcy);
+    if (marginAsset) return this.fail(marginAsset);
+
+    const quickMargin = quickMarginReason(intent.quickMgnType, intent.quickMargin, intent.autoLoan);
+    if (quickMargin) return this.fail(quickMargin);
+
+    const triggerDirection = triggerDirectionReason(
+      intent.triggerDirection,
+      intent.stopDirection,
+      intent.triggerDir,
+    );
+    if (triggerDirection) return this.fail(triggerDirection);
+
+    const responseType = responseTypeReason(
+      intent.newOrderRespType,
+      intent.orderRespType,
+      intent.respType,
+    );
+    if (responseType) return this.fail(responseType);
+
+    const tpslOrderType = tpslOrderTypeReason(
+      intent.tpOrderType,
+      intent.slOrderType,
+      intent.tpslMode,
+    );
+    if (tpslOrderType) return this.fail(tpslOrderType);
+
+    const tpslOrderPrice = tpslOrderPriceReason(intent.tpOrdPx, intent.slOrdPx, intent.tpslPx);
+    if (tpslOrderPrice) return this.fail(tpslOrderPrice);
+
+    const tpslTriggerPrice = tpslTriggerPriceReason(
+      intent.tpTriggerPx,
+      intent.slTriggerPx,
+      intent.tpslTriggerPx,
+    );
+    if (tpslTriggerPrice) return this.fail(tpslTriggerPrice);
+
+    const tpslTriggerBy = tpslTriggerByReason(
+      intent.tpTriggerBy,
+      intent.slTriggerBy,
+      intent.triggerPxType,
+    );
+    if (tpslTriggerBy) return this.fail(tpslTriggerBy);
+
     const remark = orderRemarkReason(intent.remark, intent.tag, intent.clientTag);
     if (remark) return this.fail(remark);
+
+    const source = orderSourceReason(intent.source, intent.orderSource, intent.src);
+    if (source) return this.fail(source);
+
+    const channel = orderChannelReason(intent.channel, intent.orderChannel, intent.origin);
+    if (channel) return this.fail(channel);
+
+    const label = orderLabelReason(intent.label, intent.orderLabel, intent.clientLabel);
+    if (label) return this.fail(label);
+
+    const comment = orderCommentReason(
+      intent.comment,
+      intent.orderComment,
+      intent.clientComment,
+    );
+    if (comment) return this.fail(comment);
+
+    const memo = orderMemoReason(intent.memo, intent.orderMemo, intent.clientMemo);
+    if (memo) return this.fail(memo);
+
+    const group = orderGroupReason(intent.group, intent.orderGroup, intent.clientGroup);
+    if (group) return this.fail(group);
+
+    const note = orderNoteReason(intent.note, intent.orderNote, intent.clientNote);
+    if (note) return this.fail(note);
+
+    const priority = orderPriorityReason(
+      intent.priority,
+      intent.orderPriority,
+      intent.timePriority,
+    );
+    if (priority) return this.fail(priority);
 
     const subAccount = subAccountReason(intent.subAccount, intent.subUid, intent.uid);
     if (subAccount) return this.fail(subAccount);
@@ -597,6 +891,9 @@ export class OrderManager {
     );
     if (tifAlias) return this.fail(tifAlias);
 
+    const orderForce = orderForceReason(intent.force, intent.forceType, intent.orderForce);
+    if (orderForce) return this.fail(orderForce);
+
     const tif = normalizeTimeInForce(intent.timeInForce);
     if ("reason" in tif) return this.fail(tif.reason);
     intent = { ...intent, timeInForce: tif.timeInForce };
@@ -608,11 +905,18 @@ export class OrderManager {
     );
     if (postOnlyAlias) return this.fail(postOnlyAlias);
 
-    const postOnly = postOnlyReason(intent.postOnly);
+    const postOnly = postOnlyReason(intent.postOnly, intent.postOnlyFlag);
     if (postOnly) return this.fail(postOnly);
 
     const reduceOnly = reduceOnlyReason(intent.reduceOnly);
     if (reduceOnly) return this.fail(reduceOnly);
+
+    const closePosition = closePositionReason(
+      intent.closePosition,
+      intent.closeOnTrigger,
+      intent.closeOrder,
+    );
+    if (closePosition) return this.fail(closePosition);
 
     const stopPrice = stopPriceReason(intent.stopPrice);
     if (stopPrice) return this.fail(stopPrice);
@@ -650,6 +954,9 @@ export class OrderManager {
     const repaySize = repaySizeReason(intent.repayAmount, intent.repaySize, intent.debtAmount);
     if (repaySize) return this.fail(repaySize);
 
+    const settleCurrency = settleCurrencyReason(intent.settleCcy, intent.settleCoin, intent.quoteCoin);
+    if (settleCurrency) return this.fail(settleCurrency);
+
     const sideEffect = sideEffectReason(intent.sideEffectType, intent.sideEffect, intent.marginEffect);
     if (sideEffect) return this.fail(sideEffect);
 
@@ -680,6 +987,9 @@ export class OrderManager {
     const expiry = orderExpiryReason(intent.cancelAfter, intent.expireTime, intent.goodTillDate);
     if (expiry) return this.fail(expiry);
 
+    const goodTillTime = goodTillTimeReason(intent.goodTillTime, intent.gtd, intent.expireAt);
+    if (goodTillTime) return this.fail(goodTillTime);
+
     const selfTrade = selfTradeReason(
       intent.stp,
       intent.selfTradePrevention,
@@ -687,12 +997,48 @@ export class OrderManager {
     );
     if (selfTrade) return this.fail(selfTrade);
 
+    const stpMode = stpModeReason(intent.stpMode, intent.smpType, intent.preventSelfTrade);
+    if (stpMode) return this.fail(stpMode);
+
+    const execInst = execInstReason(intent.execInst, intent.execInstruction, intent.instruction);
+    if (execInst) return this.fail(execInst);
+
+    const mmp = mmpReason(intent.mmp, intent.mmpGroup, intent.marketMakerProtection);
+    if (mmp) return this.fail(mmp);
+
+    const bbo = bboReason(intent.bbo, intent.bestBidOffer, intent.bookPrice);
+    if (bbo) return this.fail(bbo);
+
+    const cancelOnDisconnect = cancelOnDisconnectReason(
+      intent.cancelOnDisconnect,
+      intent.deadman,
+      intent.cod,
+    );
+    if (cancelOnDisconnect) return this.fail(cancelOnDisconnect);
+
     const positionSide = positionSideReason(
       intent.positionSide,
       intent.hedgeMode,
       intent.positionMode,
     );
     if (positionSide) return this.fail(positionSide);
+
+    const positionIndex = positionIndexReason(
+      intent.positionIdx,
+      intent.posSide,
+      intent.positionIndex,
+    );
+    if (positionIndex) return this.fail(positionIndex);
+
+    const openOffset = openOffsetReason(
+      intent.openClose,
+      intent.posOffset,
+      intent.closeFraction,
+    );
+    if (openOffset) return this.fail(openOffset);
+
+    const tradeSide = tradeSideReason(intent.tradeSide, intent.holdSide, intent.openType);
+    if (tradeSide) return this.fail(tradeSide);
 
     const isolated = isolatedReason(intent.isolated, intent.isIsolated, intent.closePosition);
     if (isolated) return this.fail(isolated);
