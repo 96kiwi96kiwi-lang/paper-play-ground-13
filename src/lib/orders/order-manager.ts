@@ -1,6 +1,8 @@
 /**
  * OrderManager — last gate before Paper or KuCoin adapters.
  * Floors refuse bad submits; they are not hard-stops and contain no secrets.
+ * Close-position, reduce-only, and non-GTC time-in-force requests are refused
+ * before the adapter so unsupported semantics can never degrade into a normal order.
  */
 
 import { TRADING_CONFIG } from "@/config/trading";
@@ -164,6 +166,8 @@ export type OrderIntent = {
   tif?: string;
   /** Time-in-force alias. Adapters read timeInForce only, so a present value is refused. */
   time_in_force?: string;
+  /** Time-in-force alias. Adapters read timeInForce only, so a present value is refused. */
+  timeInForceAlias?: string;
   /** Bitget order force. Adapters read timeInForce only, so a present value is refused. */
   force?: string | number | boolean;
   /** Order-force alias. Adapters read timeInForce only, so a present value is refused. */
@@ -885,7 +889,7 @@ export class OrderManager {
 
     const tifAlias = tifAliasReason(
       intent.tif,
-      intent.time_in_force,
+      intent.timeInForceAlias ?? intent.time_in_force,
       intent.immediateOrCancel,
       intent.fillOrKill,
     );
