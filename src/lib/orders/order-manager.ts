@@ -1,8 +1,9 @@
 /**
  * OrderManager — last gate before Paper or KuCoin adapters.
  * Floors refuse bad submits; they are not hard-stops and contain no secrets.
- * Close-position, reduce-only, and non-GTC time-in-force requests are refused
- * before the adapter so unsupported semantics can never degrade into a normal order.
+ * Close-position, reduce-only, non-GTC time-in-force, margin, and leverage
+ * requests are refused before the adapter so unsupported semantics can never
+ * degrade into a normal spot order.
  */
 
 import { TRADING_CONFIG } from "@/config/trading";
