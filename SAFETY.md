@@ -34,6 +34,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] Resume only via `clearOperatorHalt()` after presenting `OPERATOR_TOKEN` — do not just delete `haltReason` from the JSON; `lastHardStop.reason` used to restore it
 - [ ] Health reports last tick age; a stale heartbeat (no tick for ~135s) fails health and fires a watchdog alert
 - [ ] A present `cancelOnDisconnect`, `deadman`, or `cod` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not arm a cancel-on-disconnect timer, so a dead-man intent would leave a resting order live after the process drops)
+- [ ] A present `grid`, `gridId`, or `algoId` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters place one plain spot order and do not attach a grid, so a grid intent would otherwise be ignored and the base size would trade)
 - [ ] Only one process holds `data/worker-lease.json`; a second replica stays standby until the lease expires
 - [ ] `PAPER_SERVER_LOOP=1` is a paper-only market loop. It accepts only fresh provider-timestamped public quotes, runs strategy/risk/order gates, and cannot call the live adapter. Leave it off unless the server worker should own paper decisions.
 
