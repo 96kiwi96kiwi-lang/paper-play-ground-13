@@ -2,7 +2,7 @@
  * OrderManager – single path from bot/strategy to Paper or KuCoin adapter.
  * Default is always paper. Live keys stay server-side only.
  *
- * Metadata floors (priority, note, remark, source, channel, group, label, link, comment, memo, force, response type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, close-position, reduce-only, time-in-force, is-margin, is-leverage, margin-asset, trade-side, position-side, leverage, auto-borrow, cross-margin, tpsl-order-price, attach-algo, tpsl-order-type, broker-attribution, stop-price, trailing, quote-qty, etc.) refuse before the adapter and do not
+ * Metadata floors (priority, note, remark, source, channel, group, label, link, comment, memo, force, response type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, close-position, reduce-only, time-in-force, is-margin, is-leverage, margin-asset, trade-side, position-side, leverage, auto-borrow, cross-margin, tpsl-order-price, attach-algo, tpsl-order-type, broker-attribution, stop-price, trailing, quote-qty, tpsl-trigger-by, etc.) refuse before the adapter and do not
  * burn maxRejectsInWindow. Not a halt; does not flatten positions.
  */
 
@@ -52,6 +52,7 @@ import { brokerAttributionReason } from "./broker-attribution";
 import { stopPriceReason } from "./stop-price";
 import { trailingReason } from "./trailing";
 import { quoteQtyReason } from "./quote-qty";
+import { tpslTriggerByReason } from "./tpsl-trigger-by";
 
 export interface OrderIntent {
   symbol: string;
@@ -194,6 +195,9 @@ export interface OrderIntent {
   quoteQty?: unknown;
   quoteOrderQty?: unknown;
   notional?: unknown;
+  tpTriggerBy?: unknown;
+  slTriggerBy?: unknown;
+  triggerPxType?: unknown;
 }
 
 export interface SubmitResult {
@@ -220,7 +224,7 @@ export class OrderManager {
   }
 
   /**
-   * Submit an order. Priority, note, remark, source, channel, group, label, link, comment, memo, force, response-type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, close-position, reduce-only, time-in-force, is-margin, is-leverage, margin-asset, trade-side, position-side, leverage, auto-borrow, cross-margin, tpsl-order-price, attach-algo, tpsl-order-type, broker-attribution, stop-price, trailing, and quote-qty floors run first so a refuse does not count as an adapter reject.
+   * Submit an order. Priority, note, remark, source, channel, group, label, link, comment, memo, force, response-type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, close-position, reduce-only, time-in-force, is-margin, is-leverage, margin-asset, trade-side, position-side, leverage, auto-borrow, cross-margin, tpsl-order-price, attach-algo, tpsl-order-type, broker-attribution, stop-price, trailing, quote-qty, and tpsl-trigger-by floors run first so a refuse does not count as an adapter reject.
    */
   async submit(intent: OrderIntent, _riskState?: RiskState): Promise<SubmitResult> {
     const priorityRefuse = orderPriorityReason(
@@ -606,6 +610,15 @@ export class OrderManager {
     );
     if (quoteQtyRefuse) {
       return { ok: false, reason: quoteQtyRefuse };
+    }
+
+    const tpslTriggerByRefuse = tpslTriggerByReason(
+      intent.tpTriggerBy,
+      intent.slTriggerBy,
+      intent.triggerPxType,
+    );
+    if (tpslTriggerByRefuse) {
+      return { ok: false, reason: tpslTriggerByRefuse };
     }
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as (typeof TRADING_CONFIG.pairs)[number])) {
