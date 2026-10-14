@@ -1,0 +1,1 @@
+$(cat /tmp/order-manager.ts)
