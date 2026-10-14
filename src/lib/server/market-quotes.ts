@@ -4,6 +4,7 @@ import { COINS, type CoinId, type PricePoint } from "@/lib/trading";
 
 export type MarketSnapshot = {
   fetchedAt: number;
+  provider: "coingecko" | "bybit";
   tickers: Record<string, UnifiedTicker>;
 };
 
@@ -13,12 +14,27 @@ const COINGECKO_URL =
   "https://api.coingecko.com/api/v3/simple/price?ids=" +
   `${COINS.map((coin) => coin.id).join(",")}&vs_currencies=usd&include_last_updated_at=true`;
 
+const BYBIT_URL = "https://api.bybit.com/v5/market/tickers?category=spot";
+
 const SYMBOL_BY_ID: Record<CoinId, string> = {
   bitcoin: "BTC/USDT",
   ethereum: "ETH/USDT",
   solana: "SOL/USDT",
   binancecoin: "BNB/USDT",
 };
+
+const BYBIT_SYMBOLS: Record<string, string> = {
+  BTCUSDT: "BTC/USDT",
+  ETHUSDT: "ETH/USDT",
+  SOLUSDT: "SOL/USDT",
+  BNBUSDT: "BNB/USDT",
+};
+
+function assertFreshProviderTimestamp(provider: string, timestamp: number, now: number): void {
+  if (!(timestamp > 0) || timestamp > now || now - timestamp > TRADING_CONFIG.orders.maxPriceAgeMs) {
+    throw new Error(`${provider} stale provider timestamp`);
+  }
+}
 
 export async function fetchCoinGeckoMarketSnapshot(now = Date.now()): Promise<MarketSnapshot> {
   const timeout = AbortSignal.timeout(Math.min(15_000, TRADING_CONFIG.orders.maxPriceAgeMs));
@@ -45,7 +61,55 @@ export async function fetchCoinGeckoMarketSnapshot(now = Date.now()): Promise<Ma
     const symbol = SYMBOL_BY_ID[coin.id];
     tickers[symbol] = { symbol, last: price, bid: price, ask: price, timestamp };
   }
-  return { fetchedAt: now, tickers };
+  return { fetchedAt: now, provider: "coingecko", tickers };
+}
+
+/** Public, unauthenticated fallback. Uses Bybit's response time as provider provenance. */
+export async function fetchBybitMarketSnapshot(now = Date.now()): Promise<MarketSnapshot> {
+  const timeout = AbortSignal.timeout(Math.min(15_000, TRADING_CONFIG.orders.maxPriceAgeMs));
+  const response = await fetch(BYBIT_URL, {
+    headers: { accept: "application/json", "user-agent": "paper-play-ground/1.0" },
+    signal: timeout,
+  });
+  if (!response.ok) throw new Error(`Bybit quote HTTP ${response.status}`);
+
+  const raw = (await response.json()) as {
+    retCode?: unknown;
+    time?: unknown;
+    result?: { list?: Array<Record<string, unknown>> };
+  };
+  if (Number(raw.retCode) !== 0) throw new Error(`Bybit quote retCode ${String(raw.retCode)}`);
+  const timestamp = Number(raw.time);
+  assertFreshProviderTimestamp("Bybit", timestamp, now);
+
+  const rows = new Map((raw.result?.list ?? []).map((row) => [String(row.symbol), row]));
+  const tickers: Record<string, UnifiedTicker> = {};
+  for (const [providerSymbol, symbol] of Object.entries(BYBIT_SYMBOLS)) {
+    const row = rows.get(providerSymbol);
+    const last = Number(row?.lastPrice);
+    const bid = Number(row?.bid1Price);
+    const ask = Number(row?.ask1Price);
+    if (!(last > 0) || !(bid > 0) || !(ask > 0) || bid > ask) {
+      throw new Error(`Bybit missing valid ${providerSymbol} quote`);
+    }
+    tickers[symbol] = { symbol, last, bid, ask, timestamp };
+  }
+  return { fetchedAt: now, provider: "bybit", tickers };
+}
+
+/** Prefer CoinGecko, then fall back as a complete snapshot; never mix providers. */
+export async function fetchPublicMarketSnapshot(now = Date.now()): Promise<MarketSnapshot> {
+  try {
+    return await fetchCoinGeckoMarketSnapshot(now);
+  } catch (primaryError) {
+    try {
+      return await fetchBybitMarketSnapshot(now);
+    } catch (fallbackError) {
+      const primary = primaryError instanceof Error ? primaryError.message : String(primaryError);
+      const fallback = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
+      throw new Error(`public quotes unavailable: CoinGecko=${primary}; Bybit=${fallback}`);
+    }
+  }
 }
 
 export function appendMarketHistory(
