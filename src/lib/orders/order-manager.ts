@@ -2,7 +2,7 @@
  * OrderManager – single path from bot/strategy to Paper or KuCoin adapter.
  * Default is always paper. Live keys stay server-side only.
  *
- * Metadata floors (priority, note, remark, source, channel, group, label, link, comment, memo, force, response type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, close-position, reduce-only, time-in-force, is-margin, is-leverage, margin-asset, trade-side, position-side, leverage, etc.) refuse before the adapter and do not
+ * Metadata floors (priority, note, remark, source, channel, group, label, link, comment, memo, force, response type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, close-position, reduce-only, time-in-force, is-margin, is-leverage, margin-asset, trade-side, position-side, leverage, auto-borrow, etc.) refuse before the adapter and do not
  * burn maxRejectsInWindow. Not a halt; does not flatten positions.
  */
 
@@ -43,6 +43,7 @@ import { marginAssetReason } from "./margin-asset";
 import { tradeSideReason } from "./trade-side";
 import { positionSideReason } from "./position-side";
 import { leverageReason } from "./leverage";
+import { autoBorrowReason } from "./auto-borrow";
 
 export interface OrderIntent {
   symbol: string;
@@ -158,6 +159,8 @@ export interface OrderIntent {
   leverage?: unknown;
   isolated?: unknown;
   marginMode?: unknown;
+  autoBorrow?: unknown;
+  autoRepay?: unknown;
 }
 
 export interface SubmitResult {
@@ -184,7 +187,7 @@ export class OrderManager {
   }
 
   /**
-   * Submit an order. Priority, note, remark, source, channel, group, label, link, comment, memo, force, response-type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, close-position, reduce-only, time-in-force, is-margin, is-leverage, margin-asset, trade-side, position-side, and leverage floors run first so a refuse does not count as an adapter reject.
+   * Submit an order. Priority, note, remark, source, channel, group, label, link, comment, memo, force, response-type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, close-position, reduce-only, time-in-force, is-margin, is-leverage, margin-asset, trade-side, position-side, leverage, and auto-borrow floors run first so a refuse does not count as an adapter reject.
    */
   async submit(intent: OrderIntent, _riskState?: RiskState): Promise<SubmitResult> {
     const priorityRefuse = orderPriorityReason(
@@ -489,6 +492,14 @@ export class OrderManager {
     );
     if (leverageRefuse) {
       return { ok: false, reason: leverageRefuse };
+    }
+
+    const autoBorrowRefuse = autoBorrowReason(
+      intent.autoBorrow,
+      intent.autoRepay,
+    );
+    if (autoBorrowRefuse) {
+      return { ok: false, reason: autoBorrowRefuse };
     }
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as (typeof TRADING_CONFIG.pairs)[number])) {
