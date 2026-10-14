@@ -2,7 +2,7 @@
  * OrderManager – single path from bot/strategy to Paper or KuCoin adapter.
  * Default is always paper. Live keys stay server-side only.
  *
- * Metadata floors (priority, note, remark, source, channel, group, label, link, comment, memo, force, response type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, close-position, reduce-only, time-in-force, is-margin, is-leverage, margin-asset, trade-side, position-side, leverage, auto-borrow, cross-margin, tpsl-order-price, etc.) refuse before the adapter and do not
+ * Metadata floors (priority, note, remark, source, channel, group, label, link, comment, memo, force, response type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, close-position, reduce-only, time-in-force, is-margin, is-leverage, margin-asset, trade-side, position-side, leverage, auto-borrow, cross-margin, tpsl-order-price, attach-algo, etc.) refuse before the adapter and do not
  * burn maxRejectsInWindow. Not a halt; does not flatten positions.
  */
 
@@ -46,6 +46,7 @@ import { leverageReason } from "./leverage";
 import { autoBorrowReason } from "./auto-borrow";
 import { crossMarginReason } from "./cross-margin";
 import { tpslOrderPriceReason } from "./tpsl-order-price";
+import { attachAlgoReason } from "./attach-algo";
 
 export interface OrderIntent {
   symbol: string;
@@ -169,6 +170,9 @@ export interface OrderIntent {
   tpOrdPx?: unknown;
   slOrdPx?: unknown;
   tpslPx?: unknown;
+  attachAlgoOrds?: unknown;
+  tpTriggerPx?: unknown;
+  slTriggerPx?: unknown;
 }
 
 export interface SubmitResult {
@@ -195,7 +199,7 @@ export class OrderManager {
   }
 
   /**
-   * Submit an order. Priority, note, remark, source, channel, group, label, link, comment, memo, force, response-type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, close-position, reduce-only, time-in-force, is-margin, is-leverage, margin-asset, trade-side, position-side, leverage, auto-borrow, cross-margin, and tpsl-order-price floors run first so a refuse does not count as an adapter reject.
+   * Submit an order. Priority, note, remark, source, channel, group, label, link, comment, memo, force, response-type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, close-position, reduce-only, time-in-force, is-margin, is-leverage, margin-asset, trade-side, position-side, leverage, auto-borrow, cross-margin, tpsl-order-price, and attach-algo floors run first so a refuse does not count as an adapter reject.
    */
   async submit(intent: OrderIntent, _riskState?: RiskState): Promise<SubmitResult> {
     const priorityRefuse = orderPriorityReason(
@@ -526,6 +530,15 @@ export class OrderManager {
     );
     if (tpslOrderPriceRefuse) {
       return { ok: false, reason: tpslOrderPriceRefuse };
+    }
+
+    const attachAlgoRefuse = attachAlgoReason(
+      intent.attachAlgoOrds,
+      intent.tpTriggerPx,
+      intent.slTriggerPx,
+    );
+    if (attachAlgoRefuse) {
+      return { ok: false, reason: attachAlgoRefuse };
     }
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as (typeof TRADING_CONFIG.pairs)[number])) {
