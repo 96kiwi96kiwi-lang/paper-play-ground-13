@@ -1,12 +1,4 @@
-# Algo Paper Trader → KuCoin Live Bot
-
-Paper trading simulator with a clear path to **real KuCoin Spot trading**.
-
-> **Default mode is always PAPER.** Live trading requires server-side API keys, a Trade-only permission audit, `OPERATOR_TOKEN` on the server, and explicit confirmation. After every process restart the bot boots in paper again.
-
-**Risk warning:** Live crypto trading can lose all capital in the account. This software does not guarantee profits. Never attach a key that can Withdraw. Use only money you can afford to lose. See [SAFETY.md](./SAFETY.md).
-
-## Current status
+**Hour 71 (odd):** Wired the fee-currency floor into OrderManager. `submit` calls `feeCurrencyReason` after the self-trade floor and before the adapter: a present `feeCurrency`, `feeCcy`, or `deductFee` is refused (`Fee currency is not supported; the adapter would charge the default fee asset` / `Fee asset is not supported; the adapter would charge the default fee asset` / `Deduct fee is not supported; the adapter would charge the default fee asset`) and does not burn `maxRejectsInWindow`. Paper and KuCoin adapters place one plain spot order and do not forward a fee asset or deduct flag, so a discount-token or fee-deduct intent would otherwise be ignored and the order would still rest or fill on the default fee asset. Omitted, null, false, and blank still pass; zero is refused. This is a fee floor, not a halt, and does not flatten positions. Vitest: `tests/fee-currency.test.ts` (no exchange, no secrets). Default mode is paper.
 
 **Hour 69 (odd):** Wired the self-trade floor into OrderManager. `submit` calls `selfTradeReason` after the account-route floor and before the adapter: a present `stp`, `selfTradePrevention`, or `selfTradePreventionMode` is refused (`STP is not supported; the adapter would place without self-trade prevention` / `Self-trade prevention is not supported; the adapter would place without it` / `Self-trade prevention mode is not supported; the adapter would place without it`) and does not burn `maxRejectsInWindow`. Paper and KuCoin adapters place one plain spot order and do not forward self-trade prevention, so a cancel-newest or expire-taker intent would otherwise be ignored and the order could match the same account. Omitted, null, and blank still pass; zero is refused. This is a matching floor, not a halt, and does not flatten positions. Vitest: `tests/self-trade.test.ts` (no exchange, no secrets). Default mode is paper.
 
