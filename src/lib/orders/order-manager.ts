@@ -2,7 +2,7 @@
  * OrderManager – single path from bot/strategy to Paper or KuCoin adapter.
  * Default is always paper. Live keys stay server-side only.
  *
- * Metadata floors (priority, note, remark, source, channel, group, label, link, comment, memo, force, response type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, close-position, reduce-only, time-in-force, is-margin, is-leverage, margin-asset, trade-side, position-side, leverage, auto-borrow, cross-margin, tpsl-order-price, attach-algo, tpsl-order-type, broker-attribution, stop-price, trailing, quote-qty, funds, tpsl-trigger-by, recv-window, side-effect, validate-only, etc.) refuse before the adapter and do not
+ * Metadata floors (priority, note, remark, source, channel, group, label, link, comment, memo, force, response type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, close-position, reduce-only, time-in-force, is-margin, is-leverage, margin-asset, trade-side, position-side, leverage, auto-borrow, cross-margin, tpsl-order-price, attach-algo, tpsl-order-type, broker-attribution, stop-price, trailing, quote-qty, funds, tpsl-trigger-by, recv-window, side-effect, validate-only, order-type-alias, etc.) refuse before the adapter and do not
  * burn maxRejectsInWindow. Not a halt; does not flatten positions.
  */
 
@@ -57,6 +57,7 @@ import { tpslTriggerByReason } from "./tpsl-trigger-by";
 import { recvWindowReason } from "./recv-window";
 import { sideEffectReason } from "./side-effect";
 import { validateOnlyReason } from "./validate-only";
+import { orderTypeAliasReason } from "./order-type-alias";
 
 export interface OrderIntent {
   symbol: string;
@@ -212,6 +213,9 @@ export interface OrderIntent {
   test?: unknown;
   dryRun?: unknown;
   validateOnly?: unknown;
+  ordType?: unknown;
+  orderType?: unknown;
+  order_type?: unknown;
 }
 
 export interface SubmitResult {
@@ -238,7 +242,7 @@ export class OrderManager {
   }
 
   /**
-   * Submit an order. Priority, note, remark, source, channel, group, label, link, comment, memo, force, response-type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, close-position, reduce-only, time-in-force, is-margin, is-leverage, margin-asset, trade-side, position-side, leverage, auto-borrow, cross-margin, tpsl-order-price, attach-algo, tpsl-order-type, broker-attribution, stop-price, trailing, quote-qty, funds, tpsl-trigger-by, recv-window, side-effect, and validate-only floors run first so a refuse does not count as an adapter reject.
+   * Submit an order. Priority, note, remark, source, channel, group, label, link, comment, memo, force, response-type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, close-position, reduce-only, time-in-force, is-margin, is-leverage, margin-asset, trade-side, position-side, leverage, auto-borrow, cross-margin, tpsl-order-price, attach-algo, tpsl-order-type, broker-attribution, stop-price, trailing, quote-qty, funds, tpsl-trigger-by, recv-window, side-effect, validate-only, and order-type-alias floors run first so a refuse does not count as an adapter reject.
    */
   async submit(intent: OrderIntent, _riskState?: RiskState): Promise<SubmitResult> {
     const priorityRefuse = orderPriorityReason(
@@ -665,6 +669,15 @@ export class OrderManager {
     );
     if (validateOnlyRefuse) {
       return { ok: false, reason: validateOnlyRefuse };
+    }
+
+    const orderTypeAliasRefuse = orderTypeAliasReason(
+      intent.ordType,
+      intent.orderType,
+      intent.order_type,
+    );
+    if (orderTypeAliasRefuse) {
+      return { ok: false, reason: orderTypeAliasRefuse };
     }
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as (typeof TRADING_CONFIG.pairs)[number])) {
