@@ -102,7 +102,8 @@ import { normalizeTimeInForce } from "./time-in-force";
 import { tifAliasReason } from "./tif-alias";
 import { orderForceReason } from "./order-force";
 import { icebergReason } from "./iceberg";
-import { quoteSizeReason } from "./quote-size";
+import { quoteQtyReason } from "./quote-qty";
+import { fundsReason } from "./funds";
 import { postOnlyReason } from "./post-only";
 import { postOnlyAliasReason } from "./post-only-alias";
 import { reduceOnlyReason } from "./reduce-only";
@@ -213,10 +214,16 @@ export type OrderIntent = {
   icebergSize?: number | string;
   /** Quote spend. Adapters size by base amount, so a present value is refused. */
   funds?: number;
+  /** Quote-spend alias. Adapters size by base amount, so a present value is refused. */
+  quoteFunds?: unknown;
+  /** Quote-spend alias. Adapters size by base amount, so a present value is refused. */
+  fundsAmount?: unknown;
   /** Quote spend. Adapters size by base amount, so a present value is refused. */
   quoteOrderQty?: number;
   /** Quote spend. Adapters size by base amount, so a present value is refused. */
   quoteQty?: number;
+  /** Quote-notional alias. Adapters size by base amount, so a present value is refused. */
+  notional?: unknown;
   /** Margin auto-borrow. Spot adapters do not forward it, so true is refused. */
   autoBorrow?: boolean;
   /** Margin auto-repay. Spot adapters do not forward it, so true is refused. */
@@ -241,12 +248,16 @@ export type OrderIntent = {
   quoteCoin?: string | number | boolean;
   /** Extra trigger. Adapters do not forward it, so a present value is refused. */
   triggerPrice?: number;
+  /** Stop-price alias. Adapters do not forward it, so a present value is refused. */
+  stopPx?: unknown;
   /** Stop-loss price. Adapters do not forward it, so a present value is refused. */
   stopLossPrice?: number;
   /** Take-profit price. Adapters do not forward it, so a present value is refused. */
   takeProfitPrice?: number;
   /** Trailing offset. Adapters do not forward it, so a present value is refused. */
   trailingDelta?: number;
+  /** Trailing-stop flag/offset. Adapters do not forward it, so a present value is refused. */
+  trailingStop?: unknown;
   /** Trailing percent. Adapters do not forward it, so a present value is refused. */
   trailingPercent?: number;
   /** Callback rate. Adapters do not forward it, so a present value is refused. */
@@ -923,8 +934,12 @@ export class OrderManager {
     );
     if (closePosition) return this.fail(closePosition);
 
-    const stopPrice = stopPriceReason(intent.stopPrice);
+    const stopPrice = stopPriceReason(intent.stopPrice, intent.triggerPrice, intent.stopPx);
     if (stopPrice) return this.fail(stopPrice);
+    const stopLossPrice = stopPriceReason(intent.stopLossPrice);
+    if (stopLossPrice) return this.fail(stopLossPrice);
+    const takeProfitPrice = stopPriceReason(intent.takeProfitPrice);
+    if (takeProfitPrice) return this.fail(takeProfitPrice);
 
     const iceberg = icebergReason(
       intent.iceberg,
@@ -940,11 +955,9 @@ export class OrderManager {
     const hidden = icebergReason(intent.hidden);
     if (hidden) return this.fail(hidden);
 
-    const funds = quoteSizeReason(intent.funds, "Funds");
+    const funds = fundsReason(intent.funds, intent.quoteFunds, intent.fundsAmount);
     if (funds) return this.fail(funds);
-    const quoteOrderQty = quoteSizeReason(intent.quoteOrderQty, "Quote order qty");
-    if (quoteOrderQty) return this.fail(quoteOrderQty);
-    const quoteQty = quoteSizeReason(intent.quoteQty, "Quote qty");
+    const quoteQty = quoteQtyReason(intent.quoteQty, intent.quoteOrderQty, intent.notional);
     if (quoteQty) return this.fail(quoteQty);
 
     const spotOnly = spotOnlyReason(intent.leverage, intent.marginMode, intent.tradeType, intent.marginTrade, intent.isMargin);
@@ -979,15 +992,14 @@ export class OrderManager {
     if (orderLink) return this.fail(orderLink);
 
     const trailing = trailingReason(
-      intent.triggerPrice,
-      intent.stopLossPrice,
-      intent.takeProfitPrice,
+      intent.trailingStop,
       intent.trailingDelta,
-      intent.trailingPercent,
       intent.callbackRate,
       intent.activationPrice,
     );
     if (trailing) return this.fail(trailing);
+    const trailingPercent = trailingReason(intent.trailingPercent);
+    if (trailingPercent) return this.fail(trailingPercent);
 
     const expiry = orderExpiryReason(intent.cancelAfter, intent.expireTime, intent.goodTillDate);
     if (expiry) return this.fail(expiry);
@@ -1518,3 +1530,4 @@ export class OrderManager {
     this.onPortfolioChange?.(this.snapshot());
   }
 }
+
