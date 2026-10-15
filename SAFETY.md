@@ -1,1 +1,1 @@
-PLACEHOLDER_SAFETY
+$(cat /tmp/SAFETY.md)

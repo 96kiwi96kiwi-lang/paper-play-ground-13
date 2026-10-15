@@ -1,1 +1,1 @@
-PLACEHOLDER_README
+$(cat /tmp/README.md)

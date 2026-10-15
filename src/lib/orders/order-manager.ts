@@ -1,1 +1,1 @@
-PLACEHOLDER_OM
+$(cat /tmp/order-manager-new.ts)
