@@ -248,8 +248,518 @@ export class OrderManager {
     return 0;
   }
 
+  /** Paper fills immediately; no-op for stale limits. Live would cancel old open orders. */
+  async cancelStaleOpenOrders(): Promise<void> {
+    // Paper has no resting limits. Live cancel of stale orders is a future hour.
+  }
+
+  /**
+   * Submit an order. Priority, note, remark, source, channel, group, label, link, comment, memo, force, response-type, STP mode, good-till-time, strategy-id, iceberg, post-only, exec-inst, mmp, price-protect, bbo, price-match, cancel-on-disconnect, grid-id, close-position, reduce-only, time-in-force, is-margin, is-leverage, margin-asset, trade-side, position-side, leverage, auto-borrow, cross-margin, tpsl-order-price, attach-algo, tpsl-order-type, broker-attribution, stop-price, trailing, quote-qty, funds, tpsl-trigger-by, recv-window, side-effect, validate-only, order-type-alias, client-id-alias, and open-offset floors run first so a refuse does not count as an adapter reject.
+   */
   async submit(intent: OrderIntent, _riskState?: RiskState): Promise<SubmitResult> {
-    // ... (truncated in this example for the response, but in real call it would be full)
-    // For the actual call, the full content is needed.
+    const priorityRefuse = orderPriorityReason(
+      intent.priority,
+      intent.orderPriority,
+      intent.timePriority,
+    );
+    if (priorityRefuse) {
+      return { ok: false, reason: priorityRefuse };
+    }
+
+    const noteRefuse = orderNoteReason(
+      intent.note,
+      intent.orderNote,
+      intent.clientNote,
+    );
+    if (noteRefuse) {
+      return { ok: false, reason: noteRefuse };
+    }
+
+    const remarkRefuse = orderRemarkReason(
+      intent.remark,
+      intent.tag,
+      intent.clientTag,
+    );
+    if (remarkRefuse) {
+      return { ok: false, reason: remarkRefuse };
+    }
+
+    const sourceRefuse = orderSourceReason(
+      intent.source,
+      intent.orderSource,
+      intent.src,
+    );
+    if (sourceRefuse) {
+      return { ok: false, reason: sourceRefuse };
+    }
+
+    const channelRefuse = orderChannelReason(
+      intent.channel,
+      intent.orderChannel,
+      intent.origin,
+    );
+    if (channelRefuse) {
+      return { ok: false, reason: channelRefuse };
+    }
+
+    const groupRefuse = orderGroupReason(
+      intent.group,
+      intent.orderGroup,
+      intent.clientGroup,
+    );
+    if (groupRefuse) {
+      return { ok: false, reason: groupRefuse };
+    }
+
+    const labelRefuse = orderLabelReason(
+      intent.label,
+      intent.orderLabel,
+      intent.clientLabel,
+    );
+    if (labelRefuse) {
+      return { ok: false, reason: labelRefuse };
+    }
+
+    const linkRefuse = orderLinkReason(
+      intent.clOrdId,
+      intent.orderLinkId,
+      intent.linkId,
+    );
+    if (linkRefuse) {
+      return { ok: false, reason: linkRefuse };
+    }
+
+    const commentRefuse = orderCommentReason(
+      intent.comment,
+      intent.orderComment,
+      intent.clientComment,
+    );
+    if (commentRefuse) {
+      return { ok: false, reason: commentRefuse };
+    }
+
+    const memoRefuse = orderMemoReason(
+      intent.memo,
+      intent.orderMemo,
+      intent.clientMemo,
+    );
+    if (memoRefuse) {
+      return { ok: false, reason: memoRefuse };
+    }
+
+    const forceRefuse = orderForceReason(
+      intent.force,
+      intent.forceType,
+      intent.orderForce,
+    );
+    if (forceRefuse) {
+      return { ok: false, reason: forceRefuse };
+    }
+
+    const responseTypeRefuse = responseTypeReason(
+      intent.newOrderRespType,
+      intent.orderRespType,
+      intent.respType,
+    );
+    if (responseTypeRefuse) {
+      return { ok: false, reason: responseTypeRefuse };
+    }
+
+    const stpModeRefuse = stpModeReason(
+      intent.stpMode,
+      intent.smpType,
+      intent.preventSelfTrade,
+    );
+    if (stpModeRefuse) {
+      return { ok: false, reason: stpModeRefuse };
+    }
+
+    const goodTillTimeRefuse = goodTillTimeReason(
+      intent.goodTillTime,
+      intent.gtd,
+      intent.expireAt,
+    );
+    if (goodTillTimeRefuse) {
+      return { ok: false, reason: goodTillTimeRefuse };
+    }
+
+    const strategyIdRefuse = strategyIdReason(
+      intent.strategyId,
+      intent.strategyType,
+      intent.workingType,
+    );
+    if (strategyIdRefuse) {
+      return { ok: false, reason: strategyIdRefuse };
+    }
+
+    const icebergRefuse = icebergReason(
+      intent.iceberg,
+      intent.visibleSize,
+      intent.icebergQty,
+      intent.displayQty,
+      intent.hiddenSize,
+      intent.displaySize,
+      intent.visibleQty,
+      intent.icebergSize,
+    );
+    if (icebergRefuse) {
+      return { ok: false, reason: icebergRefuse };
+    }
+
+    const postOnlyRefuse = postOnlyReason(
+      intent.postOnly,
+      intent.postOnlyFlag,
+      intent.makerOnly,
+    );
+    if (postOnlyRefuse) {
+      return { ok: false, reason: postOnlyRefuse };
+    }
+
+    const execInstRefuse = execInstReason(
+      intent.execInst,
+      intent.execInstruction,
+      intent.instruction,
+    );
+    if (execInstRefuse) {
+      return { ok: false, reason: execInstRefuse };
+    }
+
+    const mmpRefuse = mmpReason(
+      intent.mmp,
+      intent.mmpGroup,
+      intent.marketMakerProtection,
+    );
+    if (mmpRefuse) {
+      return { ok: false, reason: mmpRefuse };
+    }
+
+    const priceProtectRefuse = priceProtectReason(
+      intent.priceProtect,
+      intent.priceProtection,
+      intent.percentPrice,
+    );
+    if (priceProtectRefuse) {
+      return { ok: false, reason: priceProtectRefuse };
+    }
+
+    const bboRefuse = bboReason(
+      intent.bbo,
+      intent.bestBidOffer,
+      intent.bookPrice,
+    );
+    if (bboRefuse) {
+      return { ok: false, reason: bboRefuse };
+    }
+
+    const priceMatchRefuse = priceMatchReason(
+      intent.priceMatch,
+      intent.pegPriceType,
+      intent.pegOffsetValue,
+    );
+    if (priceMatchRefuse) {
+      return { ok: false, reason: priceMatchRefuse };
+    }
+
+    const cancelOnDisconnectRefuse = cancelOnDisconnectReason(
+      intent.cancelOnDisconnect,
+      intent.deadman,
+      intent.cod,
+    );
+    if (cancelOnDisconnectRefuse) {
+      return { ok: false, reason: cancelOnDisconnectRefuse };
+    }
+
+    const gridIdRefuse = gridIdReason(
+      intent.grid,
+      intent.gridId,
+      intent.algoId,
+    );
+    if (gridIdRefuse) {
+      return { ok: false, reason: gridIdRefuse };
+    }
+
+    const closePositionRefuse = closePositionReason(
+      intent.closePosition,
+      intent.closeOnTrigger,
+      intent.closeOrder,
+    );
+    if (closePositionRefuse) {
+      return { ok: false, reason: closePositionRefuse };
+    }
+
+    const reduceOnlyRefuse = reduceOnlyReason(intent.reduceOnly);
+    if (reduceOnlyRefuse) {
+      return { ok: false, reason: reduceOnlyRefuse };
+    }
+
+    const tifAliasRefuse = tifAliasReason(
+      intent.tif,
+      intent.timeInForceAlias,
+      intent.immediateOrCancel,
+      intent.fillOrKill,
+    );
+    if (tifAliasRefuse) {
+      return { ok: false, reason: tifAliasRefuse };
+    }
+
+    const tifNorm = normalizeTimeInForce(intent.timeInForce);
+    if ("reason" in tifNorm) {
+      return { ok: false, reason: tifNorm.reason };
+    }
+
+    const isMarginRefuse = isMarginReason(
+      intent.isMargin,
+      intent.margin,
+      intent.is_margin,
+    );
+    if (isMarginRefuse) {
+      return { ok: false, reason: isMarginRefuse };
+    }
+
+    const isLeverageRefuse = isLeverageReason(
+      intent.isLeverage,
+      intent.leverageFlag,
+      intent.marginLeverage,
+    );
+    if (isLeverageRefuse) {
+      return { ok: false, reason: isLeverageRefuse };
+    }
+
+    const marginAssetRefuse = marginAssetReason(
+      intent.marginAsset,
+      intent.marginCoin,
+      intent.mgnCcy,
+    );
+    if (marginAssetRefuse) {
+      return { ok: false, reason: marginAssetRefuse };
+    }
+
+    const tradeSideRefuse = tradeSideReason(
+      intent.tradeSide,
+      intent.holdSide,
+      intent.openType,
+    );
+    if (tradeSideRefuse) {
+      return { ok: false, reason: tradeSideRefuse };
+    }
+
+    const positionSideRefuse = positionSideReason(
+      intent.positionSide,
+      intent.hedgeMode,
+      intent.positionMode,
+    );
+    if (positionSideRefuse) {
+      return { ok: false, reason: positionSideRefuse };
+    }
+
+    const leverageRefuse = leverageReason(
+      intent.leverage,
+      intent.isolated,
+      intent.marginMode,
+    );
+    if (leverageRefuse) {
+      return { ok: false, reason: leverageRefuse };
+    }
+
+    const autoBorrowRefuse = autoBorrowReason(
+      intent.autoBorrow,
+      intent.autoRepay,
+    );
+    if (autoBorrowRefuse) {
+      return { ok: false, reason: autoBorrowRefuse };
+    }
+
+    const crossMarginRefuse = crossMarginReason(
+      intent.mgnMode,
+      intent.tradeMode,
+      intent.isCross,
+    );
+    if (crossMarginRefuse) {
+      return { ok: false, reason: crossMarginRefuse };
+    }
+
+    const tpslOrderPriceRefuse = tpslOrderPriceReason(
+      intent.tpOrdPx,
+      intent.slOrdPx,
+      intent.tpslPx,
+    );
+    if (tpslOrderPriceRefuse) {
+      return { ok: false, reason: tpslOrderPriceRefuse };
+    }
+
+    const attachAlgoRefuse = attachAlgoReason(
+      intent.attachAlgoOrds,
+      intent.tpTriggerPx,
+      intent.slTriggerPx,
+    );
+    if (attachAlgoRefuse) {
+      return { ok: false, reason: attachAlgoRefuse };
+    }
+
+    const tpslOrderTypeRefuse = tpslOrderTypeReason(
+      intent.tpOrderType,
+      intent.slOrderType,
+      intent.tpslMode,
+    );
+    if (tpslOrderTypeRefuse) {
+      return { ok: false, reason: tpslOrderTypeRefuse };
+    }
+
+    const brokerAttributionRefuse = brokerAttributionReason(
+      intent.brokerId,
+      intent.brokerClientId,
+      intent.rebate,
+    );
+    if (brokerAttributionRefuse) {
+      return { ok: false, reason: brokerAttributionRefuse };
+    }
+
+    const stopPriceRefuse = stopPriceReason(
+      intent.stopPrice,
+      intent.triggerPrice,
+      intent.stopPx,
+    );
+    if (stopPriceRefuse) {
+      return { ok: false, reason: stopPriceRefuse };
+    }
+
+    const trailingRefuse = trailingReason(
+      intent.trailingStop,
+      intent.trailingDelta,
+      intent.callbackRate,
+      intent.activationPrice,
+    );
+    if (trailingRefuse) {
+      return { ok: false, reason: trailingRefuse };
+    }
+
+    const quoteQtyRefuse = quoteQtyReason(
+      intent.quoteQty,
+      intent.quoteOrderQty,
+      intent.notional,
+    );
+    if (quoteQtyRefuse) {
+      return { ok: false, reason: quoteQtyRefuse };
+    }
+
+    const fundsRefuse = fundsReason(
+      intent.funds,
+      intent.quoteFunds,
+      intent.fundsAmount,
+    );
+    if (fundsRefuse) {
+      return { ok: false, reason: fundsRefuse };
+    }
+
+    const tpslTriggerByRefuse = tpslTriggerByReason(
+      intent.tpTriggerBy,
+      intent.slTriggerBy,
+      intent.triggerPxType,
+    );
+    if (tpslTriggerByRefuse) {
+      return { ok: false, reason: tpslTriggerByRefuse };
+    }
+
+    const recvWindowRefuse = recvWindowReason(intent.recvWindow);
+    if (recvWindowRefuse) {
+      return { ok: false, reason: recvWindowRefuse };
+    }
+
+    const sideEffectRefuse = sideEffectReason(
+      intent.sideEffectType,
+      intent.sideEffect,
+      intent.marginEffect,
+    );
+    if (sideEffectRefuse) {
+      return { ok: false, reason: sideEffectRefuse };
+    }
+
+    const validateOnlyRefuse = validateOnlyReason(
+      intent.test,
+      intent.dryRun,
+      intent.validateOnly,
+    );
+    if (validateOnlyRefuse) {
+      return { ok: false, reason: validateOnlyRefuse };
+    }
+
+    const orderTypeAliasRefuse = orderTypeAliasReason(
+      intent.ordType,
+      intent.orderType,
+      intent.order_type,
+    );
+    if (orderTypeAliasRefuse) {
+      return { ok: false, reason: orderTypeAliasRefuse };
+    }
+
+    const clientIdAliasRefuse = clientIdAliasReason(
+      intent.clientOid,
+      intent.newClientOrderId,
+      intent.origClientOrderId,
+    );
+    if (clientIdAliasRefuse) {
+      return { ok: false, reason: clientIdAliasRefuse };
+    }
+
+    const openOffsetRefuse = openOffsetReason(
+      intent.openClose,
+      intent.posOffset,
+      intent.closeFraction,
+    );
+    if (openOffsetRefuse) {
+      return { ok: false, reason: openOffsetRefuse };
+    }
+
+    const categoryRefuse = categoryReason(
+      intent.category,
+      intent.productType,
+      intent.instType,
+    );
+    if (categoryRefuse) {
+      return { ok: false, reason: categoryRefuse };
+    }
+
+    if (!TRADING_CONFIG.pairs.includes(intent.symbol as (typeof TRADING_CONFIG.pairs)[number])) {
+      return { ok: false, reason: `Symbol ${intent.symbol} is not in the allowed pairs` };
+    }
+
+    if (intent.amount <= 0) {
+      return { ok: false, reason: "Amount must be positive" };
+    }
+
+    const type = intent.type ?? "market";
+
+    try {
+      let order: UnifiedOrder;
+      if (type === "limit") {
+        if (intent.price == null || intent.price <= 0) {
+          return { ok: false, reason: "Limit order requires a positive price" };
+        }
+        order = await this.adapter.placeLimitOrder(
+          intent.symbol,
+          intent.side,
+          intent.amount,
+          intent.price,
+          intent.clientOrderId,
+        );
+      } else {
+        order = await this.adapter.placeMarketOrder(
+          intent.symbol,
+          intent.side,
+          intent.amount,
+          intent.clientOrderId,
+        );
+      }
+
+      const rejected = order.status === "rejected";
+      return {
+        ok: !rejected,
+        order,
+        reason: rejected ? order.rejectReason : undefined,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Adapter error";
+      return { ok: false, reason: message };
+    }
   }
 }
