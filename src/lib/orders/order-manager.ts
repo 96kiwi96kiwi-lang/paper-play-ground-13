@@ -133,6 +133,7 @@ import { clientIdAliasReason } from "./client-id-alias";
 import { cancelReplaceReason } from "./cancel-replace";
 import { sideAliasReason } from "./side-alias";
 import { orderListReason } from "./order-list";
+import { positionIdxReason } from "./position-idx";
 import { symbolAliasReason } from "./symbol-alias";
 import { accountRouteReason } from "./account-route";
 import { credentialBodyReason } from "./credential-body";
@@ -390,6 +391,12 @@ export type OrderIntent = {
   belowType?: string;
   /** Stop-limit price. Adapters do not forward it, so a present value is refused. */
   stopLimitPrice?: number | string;
+  /** Position index. Spot adapters do not forward it, so a present value is refused. */
+  positionIdx?: unknown;
+  /** Position-index alias. */
+  posIdx?: unknown;
+  /** Hedge-index alias. */
+  hedgeIdx?: unknown;
   /** Pair alias. Adapters read symbol only, so a present value is refused. */
   pair?: string;
   /** Market alias. Adapters read symbol only, so a present value is refused. */
@@ -1092,6 +1099,9 @@ export class OrderManager {
       intent.stopLimitPrice,
     );
     if (orderList) return this.fail(orderList);
+
+    const positionIdx = positionIdxReason(intent.positionIdx, intent.posIdx, intent.hedgeIdx);
+    if (positionIdx) return this.fail(positionIdx);
 
     const symbolAlias = symbolAliasReason(intent.pair, intent.market, intent.instrument);
     if (symbolAlias) return this.fail(symbolAlias);
