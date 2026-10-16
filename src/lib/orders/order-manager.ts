@@ -357,11 +357,13 @@ export type OrderIntent = {
   /** Size alias. Adapters size by amount, so a present value is refused. */
   baseSize?: number | string;
   /** Price alias. Adapters price by price, so a present value is refused. */
-  limitPrice?: number | string;
+  limitPrice?: number | string | boolean;
+  /** Limit-price alias. Adapters price by price, so a present value is refused. */
+  limitPx?: number | string | boolean;
   /** Price alias. Adapters price by price, so a present value is refused. */
-  orderPrice?: number | string;
+  orderPrice?: number | string | boolean;
   /** Price alias. Adapters price by price, so a present value is refused. */
-  px?: number | string;
+  px?: number | string | boolean;
   /** KuCoin client oid. Adapters identify by clientOrderId, so a present value is refused. */
   clientOid?: string;
   /** Binance client-id alias. Adapters identify by clientOrderId, so a present value is refused. */
@@ -1068,9 +1070,6 @@ export class OrderManager {
     const baseSize = baseSizeReason(intent.size, intent.quantity, intent.qty, intent.baseSize);
     if (baseSize) return this.fail(baseSize);
 
-    const priceAlias = priceAliasReason(intent.limitPrice, intent.orderPrice, intent.px);
-    if (priceAlias) return this.fail(priceAlias);
-
     const clientIdAlias = clientIdAliasReason(
       intent.clientOid,
       intent.newClientOrderId,
@@ -1106,6 +1105,14 @@ export class OrderManager {
 
     const sideAlias = sideAliasReason(intent.orderSide, intent.direction, intent.action);
     if (sideAlias) return this.fail(sideAlias);
+
+    const priceAlias = priceAliasReason(
+      intent.px,
+      intent.limitPx,
+      intent.orderPrice,
+      intent.limitPrice,
+    );
+    if (priceAlias) return this.fail(priceAlias);
 
     const symbolAlias = symbolAliasReason(intent.pair, intent.market, intent.instrument);
     if (symbolAlias) return this.fail(symbolAlias);
