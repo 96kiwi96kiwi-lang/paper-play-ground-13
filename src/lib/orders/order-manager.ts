@@ -375,11 +375,11 @@ export type OrderIntent = {
   /** Resting id to cancel. Adapters do not cancel it, so a present value is refused. */
   orderIdToCancel?: string | number;
   /** Side alias. Adapters read side only, so a present value is refused. */
-  orderSide?: string;
+  orderSide?: string | number | boolean;
   /** Side alias. Adapters read side only, so a present value is refused. */
-  direction?: string;
+  direction?: string | number | boolean;
   /** Side alias. Adapters read side only, so a present value is refused. */
-  action?: string;
+  action?: string | number | boolean;
   /** OCO flag. Adapters place one spot order, so a present value is refused. */
   oco?: boolean | string | number;
   /** Order-list id. Adapters place one spot order, so a present value is refused. */
@@ -1085,9 +1085,6 @@ export class OrderManager {
     );
     if (cancelReplace) return this.fail(cancelReplace);
 
-    const sideAlias = sideAliasReason(intent.orderSide, intent.direction, intent.action);
-    if (sideAlias) return this.fail(sideAlias);
-
     const orderList = orderListReason(
       intent.oco,
       intent.orderListId,
@@ -1106,6 +1103,9 @@ export class OrderManager {
 
     const expiry = orderExpiryReason(intent.cancelAfter, intent.expireTime, intent.goodTillDate);
     if (expiry) return this.fail(expiry);
+
+    const sideAlias = sideAliasReason(intent.orderSide, intent.direction, intent.action);
+    if (sideAlias) return this.fail(sideAlias);
 
     const symbolAlias = symbolAliasReason(intent.pair, intent.market, intent.instrument);
     if (symbolAlias) return this.fail(symbolAlias);
