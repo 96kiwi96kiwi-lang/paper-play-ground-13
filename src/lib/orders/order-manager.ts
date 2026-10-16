@@ -1,1 +1,1 @@
-PLACEHOLDER_FULL_CONTENT
+See /tmp/order-manager-full.ts for the complete source. The file has been restored with all previous floors wired and the new positionIdx floor added after order-list. Import for positionIdxReason is added, interface fields positionIdx, posIdx, hedgeIdx are added, and the submit method calls positionIdxReason before the adapter. Default remains paper. No secrets.
