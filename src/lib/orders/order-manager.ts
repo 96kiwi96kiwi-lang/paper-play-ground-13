@@ -134,6 +134,7 @@ import { cancelReplaceReason } from "./cancel-replace";
 import { sideAliasReason } from "./side-alias";
 import { orderListReason } from "./order-list";
 import { positionIdxReason } from "./position-idx";
+import { orderTagReason } from "./order-tag";
 import { symbolAliasReason } from "./symbol-alias";
 import { accountRouteReason } from "./account-route";
 import { credentialBodyReason } from "./credential-body";
@@ -395,6 +396,12 @@ export type OrderIntent = {
   posIdx?: unknown;
   /** Hedge-index alias. */
   hedgeIdx?: unknown;
+  /** Order tag. Spot adapters do not forward it, so a present value is refused. */
+  tag?: unknown;
+  /** Order-tag alias. Spot adapters do not forward it, so a present value is refused. */
+  orderTag?: unknown;
+  /** Client-tag alias. Spot adapters do not forward it, so a present value is refused. */
+  clientTag?: unknown;
   /** Pair alias. Adapters read symbol only, so a present value is refused. */
   pair?: string;
   /** Market alias. Adapters read symbol only, so a present value is refused. */
@@ -1006,9 +1013,6 @@ export class OrderManager {
     const trailingPercent = trailingReason(intent.trailingPercent);
     if (trailingPercent) return this.fail(trailingPercent);
 
-    const expiry = orderExpiryReason(intent.cancelAfter, intent.expireTime, intent.goodTillDate);
-    if (expiry) return this.fail(expiry);
-
     const goodTillTime = goodTillTimeReason(intent.goodTillTime, intent.gtd, intent.expireAt);
     if (goodTillTime) return this.fail(goodTillTime);
 
@@ -1100,6 +1104,12 @@ export class OrderManager {
 
     const positionIdx = positionIdxReason(undefined, intent.posIdx, intent.hedgeIdx);
     if (positionIdx) return this.fail(positionIdx);
+
+    const orderTag = orderTagReason(intent.tag, intent.orderTag, intent.clientTag);
+    if (orderTag) return this.fail(orderTag);
+
+    const expiry = orderExpiryReason(intent.cancelAfter, intent.expireTime, intent.goodTillDate);
+    if (expiry) return this.fail(expiry);
 
     const symbolAlias = symbolAliasReason(intent.pair, intent.market, intent.instrument);
     if (symbolAlias) return this.fail(symbolAlias);
