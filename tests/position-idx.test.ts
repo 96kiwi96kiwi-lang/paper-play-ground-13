@@ -51,13 +51,13 @@ test("position index is wired into OrderManager before the adapter", async () =>
       type: "market",
       markPrice: 80_000,
       quotedAt: Date.now(),
-      positionIdx: 0,
+      posIdx: 0,
     },
     riskState,
   );
 
   expect(result.ok).toBe(false);
-  expect(result.reason).toMatch(/Position index is not supported/);
+  expect(result.reason).toMatch(/Pos index is not supported/);
   expect(placeMarketOrder).not.toHaveBeenCalled();
   expect(riskState.haltReason).toBeNull();
 });

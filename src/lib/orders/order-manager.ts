@@ -391,8 +391,6 @@ export type OrderIntent = {
   belowType?: string;
   /** Stop-limit price. Adapters do not forward it, so a present value is refused. */
   stopLimitPrice?: number | string;
-  /** Position index. Spot adapters do not forward it, so a present value is refused. */
-  positionIdx?: unknown;
   /** Position-index alias. */
   posIdx?: unknown;
   /** Hedge-index alias. */
@@ -1100,7 +1098,7 @@ export class OrderManager {
     );
     if (orderList) return this.fail(orderList);
 
-    const positionIdx = positionIdxReason(intent.positionIdx, intent.posIdx, intent.hedgeIdx);
+    const positionIdx = positionIdxReason(undefined, intent.posIdx, intent.hedgeIdx);
     if (positionIdx) return this.fail(positionIdx);
 
     const symbolAlias = symbolAliasReason(intent.pair, intent.market, intent.instrument);
