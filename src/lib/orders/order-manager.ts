@@ -396,12 +396,6 @@ export type OrderIntent = {
   posIdx?: unknown;
   /** Hedge-index alias. */
   hedgeIdx?: unknown;
-  /** Order tag. Spot adapters do not forward it, so a present value is refused. */
-  tag?: unknown;
-  /** Order-tag alias. Spot adapters do not forward it, so a present value is refused. */
-  orderTag?: unknown;
-  /** Client-tag alias. Spot adapters do not forward it, so a present value is refused. */
-  clientTag?: unknown;
   /** Pair alias. Adapters read symbol only, so a present value is refused. */
   pair?: string;
   /** Market alias. Adapters read symbol only, so a present value is refused. */
@@ -544,6 +538,8 @@ export type OrderIntent = {
   tag?: string | number | boolean;
   /** Client tag alias. Adapters do not forward a note, so a present value is refused. */
   clientTag?: string | number | boolean;
+  /** Order-tag alias. Adapters do not set it, so a present value is refused. */
+  orderTag?: string | number | boolean;
   /** Order source. Adapters do not set it, so a present value is refused. */
   source?: string | number | boolean;
   /** Order source alias. Adapters do not set it, so a present value is refused. */
