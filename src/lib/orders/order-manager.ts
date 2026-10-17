@@ -2,6 +2,11 @@
  * OrderManager – single path from bot/strategy to Paper or KuCoin adapter.
  * Default is always paper. Live keys stay server-side only.
  *
+ * Hour 109 (odd): volume-alias floor wired after sum-alias.
+ * submit calls volumeAliasReason before the adapter.
+ * A present volume, orderVolume, or baseVolume is refused.
+ * Does not burn maxRejectsInWindow. Not a halt.
+ *
  * Hour 107 (odd): sum-alias floor wired after total-alias.
  * submit calls sumAliasReason before the adapter.
  * A present sum, orderSum, or baseSum is refused.

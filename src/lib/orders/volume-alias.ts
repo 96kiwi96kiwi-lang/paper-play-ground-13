@@ -1,11 +1,10 @@
 /** Refuse volume aliases the spot adapters do not read. Not a halt. */
 
 /**
- * Omitted, null, and blank pass. A present vol, volume, or baseVolume
- * is refused: adapters place by amount only. An alias would be
- * ignored and the order would use the canonical amount or fail.
- * Zero is present and is refused. This is a volume floor, not a halt,
- * and does not flatten positions.
+ * Omitted, null, and blank pass. A present volume, orderVolume, or baseVolume is
+ * refused: adapters place by amount only. An alias would be ignored and the
+ * order would use the canonical amount or fail. This is a volume floor, not a
+ * halt, and does not flatten positions.
  */
 function present(value: unknown): boolean {
   if (value == null) return false;
@@ -14,15 +13,15 @@ function present(value: unknown): boolean {
 }
 
 export function volumeAliasReason(
-  vol: unknown,
-  volume?: unknown,
+  volume: unknown,
+  orderVolume?: unknown,
   baseVolume?: unknown,
 ): string | null {
-  if (present(vol)) {
-    return "Vol alias is not supported; the adapter reads amount";
-  }
   if (present(volume)) {
     return "Volume alias is not supported; the adapter reads amount";
+  }
+  if (present(orderVolume)) {
+    return "Order volume alias is not supported; the adapter reads amount";
   }
   if (present(baseVolume)) {
     return "Base volume alias is not supported; the adapter reads amount";
