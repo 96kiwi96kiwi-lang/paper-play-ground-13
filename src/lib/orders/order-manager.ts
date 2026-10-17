@@ -2,6 +2,11 @@
  * OrderManager – single path from bot/strategy to Paper or KuCoin adapter.
  * Default is always paper. Live keys stay server-side only.
  *
+ * Hour 105 (odd): total-alias floor wired after notional-alias.
+ * submit calls totalAliasReason before the adapter.
+ * A present total, orderTotal, or baseTotal is refused.
+ * Does not burn maxRejectsInWindow. Not a halt.
+ *
  * Hour 103 (odd): notional-alias floor wired after cost-alias.
  * submit calls notionalAliasReason before the adapter.
  * A present notional, orderNotional, or baseNotional is refused.
