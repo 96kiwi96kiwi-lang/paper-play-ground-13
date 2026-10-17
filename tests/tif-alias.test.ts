@@ -21,3 +21,13 @@ test("present tif aliases are refused and do not halt", () => {
     "Tif alias is not supported; the adapter reads timeInForce",
   );
 });
+
+test("IOC/FOK aliases remain fail-closed while false flags pass", () => {
+  expect(tifAliasReason(undefined, undefined, undefined, false, false)).toBeNull();
+  expect(tifAliasReason(undefined, undefined, undefined, true)).toBe(
+    "Immediate or cancel is not supported; the adapter reads timeInForce",
+  );
+  expect(tifAliasReason(undefined, undefined, undefined, false, "FOK")).toBe(
+    "Fill or kill is not supported; the adapter reads timeInForce",
+  );
+});
