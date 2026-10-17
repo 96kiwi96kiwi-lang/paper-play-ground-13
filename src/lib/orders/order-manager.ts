@@ -181,6 +181,8 @@ export type OrderIntent = {
   timeInForce?: string;
   /** Time-in-force alias. Adapters read timeInForce only, so a present value is refused. */
   tif?: string;
+  /** Time-in-force alias used by some exchange APIs. */
+  orderTif?: unknown;
   /** Time-in-force alias. Adapters read timeInForce only, so a present value is refused. */
   time_in_force?: string;
   /** Time-in-force alias. Adapters read timeInForce only, so a present value is refused. */
@@ -960,6 +962,7 @@ export class OrderManager {
 
     const tifAlias = tifAliasReason(
       intent.tif,
+      intent.orderTif,
       intent.timeInForceAlias ?? intent.time_in_force,
       intent.immediateOrCancel,
       intent.fillOrKill,
