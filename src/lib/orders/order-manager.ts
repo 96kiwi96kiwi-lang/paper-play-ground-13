@@ -2,6 +2,11 @@
  * OrderManager – single path from bot/strategy to Paper or KuCoin adapter.
  * Default is always paper. Live keys stay server-side only.
  *
+ * Hour 119 (odd): shares-alias floor wired after quantity-alias.
+ * submit calls sharesAliasReason before the adapter.
+ * A present shares, orderShares, or baseShares is refused.
+ * Does not burn maxRejectsInWindow. Not a halt.
+ *
  * Hour 117 (odd): quantity-alias floor wired after count-alias.
  * submit calls quantityAliasReason before the adapter.
  * A present quantity, orderQuantity, or baseQuantity is refused.
