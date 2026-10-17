@@ -1122,9 +1122,9 @@ export class OrderManager {
     const amountAlias = amountAliasReason(intent.amt, intent.orderAmt, intent.baseAmt);
     if (amountAlias) return this.fail(amountAlias);
 
-    // qty/size/quantity are already protected by baseSizeReason above; keep
-    // the new helper wired for parity with standalone validation.
-    const sizeAlias = sizeAliasReason(undefined, undefined, undefined);
+    // baseSizeReason preserves the established rejection text; this helper
+    // covers the same aliases for the newer validation contract.
+    const sizeAlias = sizeAliasReason(intent.qty, intent.size, intent.quantity);
     if (sizeAlias) return this.fail(sizeAlias);
 
     const szAlias = szAliasReason(intent.sz, intent.orderSz, intent.szValue);
