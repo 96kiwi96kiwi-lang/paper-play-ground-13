@@ -16,6 +16,8 @@ export function tifAliasReason(
   tif: unknown,
   orderTif?: unknown,
   timeInForceAlias?: unknown,
+  immediateOrCancel?: unknown,
+  fillOrKill?: unknown,
 ): string | null {
   if (present(tif)) {
     return "Tif alias is not supported; the adapter reads timeInForce";
@@ -25,6 +27,12 @@ export function tifAliasReason(
   }
   if (present(timeInForceAlias)) {
     return "Time in force alias is not supported; the adapter reads timeInForce";
+  }
+  if (immediateOrCancel !== false && present(immediateOrCancel)) {
+    return "Immediate or cancel is not supported; the adapter reads timeInForce";
+  }
+  if (fillOrKill !== false && present(fillOrKill)) {
+    return "Fill or kill is not supported; the adapter reads timeInForce";
   }
   return null;
 }

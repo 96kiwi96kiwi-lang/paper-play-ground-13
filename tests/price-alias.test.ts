@@ -20,4 +20,7 @@ test("present price aliases are refused and do not halt", () => {
   expect(priceAliasReason(0)).toBe(
     "Price alias is not supported; the adapter reads price",
   );
+  expect(priceAliasReason(undefined, undefined, undefined, "49800")).toBe(
+    "Limit price alias is not supported; the adapter reads price",
+  );
 });
