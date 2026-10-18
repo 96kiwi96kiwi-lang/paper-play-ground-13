@@ -1,6 +1,6 @@
 /**
- * Hour 127 (odd): wired the contracts-alias floor into OrderManager after size-alias.
- * submit calls contractsAliasReason before the adapter. A present contracts, orderContracts, or baseContracts
+ * Hour 129 (odd): wired the pieces-alias floor into OrderManager after contracts-alias.
+ * submit calls piecesAliasReason before the adapter. A present pieces, orderPieces, or basePieces
  * is refused and does not burn maxRejectsInWindow. Not a halt. Default remains paper.
  * No secrets. Prior amount-style alias floors remain in place.
  */
@@ -72,6 +72,7 @@ import { sharesAliasReason } from "./shares-alias";
 import { lotsAliasReason } from "./lots-alias";
 import { sizeAliasReason } from "./size-alias";
 import { contractsAliasReason } from "./contracts-alias";
+import { piecesAliasReason } from "./pieces-alias";
 import { openOffsetReason } from "./open-offset";
 import { categoryReason } from "./category";
 import { accountRouteReason } from "./account-route";
@@ -131,6 +132,9 @@ export interface OrderIntent {
   contracts?: unknown;
   orderContracts?: unknown;
   baseContracts?: unknown;
+  pieces?: unknown;
+  orderPieces?: unknown;
+  basePieces?: unknown;
   quotedAt?: number;
   reason?: string;
   // ... other metadata fields from prior floors (priority, note, etc.) are optional unknowns
@@ -191,6 +195,8 @@ export class OrderManager {
     if (sizeAliasRefuse) return { ok: false, reason: sizeAliasRefuse };
     const contractsAliasRefuse = contractsAliasReason(intent.contracts, intent.orderContracts, intent.baseContracts);
     if (contractsAliasRefuse) return { ok: false, reason: contractsAliasRefuse };
+    const piecesAliasRefuse = piecesAliasReason(intent.pieces, intent.orderPieces, intent.basePieces);
+    if (piecesAliasRefuse) return { ok: false, reason: piecesAliasRefuse };
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as (typeof TRADING_CONFIG.pairs)[number])) {
       return { ok: false, reason: `Symbol ${intent.symbol} is not in the allowed pairs` };
