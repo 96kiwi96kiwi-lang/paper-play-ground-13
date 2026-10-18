@@ -133,6 +133,7 @@ import { sizeAliasReason } from "./size-alias";
 import { contractsAliasReason } from "./contracts-alias";
 import { piecesAliasReason } from "./pieces-alias";
 import { tokensAliasReason } from "./tokens-alias";
+import { coinsAliasReason } from "./coins-alias";
 import { szAliasReason } from "./sz-alias";
 import { valueAliasReason } from "./value-alias";
 import { costAliasReason } from "./cost-alias";
@@ -389,6 +390,9 @@ export type OrderIntent = {
   tokens?: unknown;
   orderTokens?: unknown;
   baseTokens?: unknown;
+  coins?: unknown;
+  orderCoins?: unknown;
+  baseCoins?: unknown;
   /** Additional size aliases. */
   sz?: unknown;
   orderSz?: unknown;
@@ -1170,6 +1174,13 @@ export class OrderManager {
       intent.baseTokens,
     );
     if (tokensAlias) return this.fail(tokensAlias);
+
+    const coinsAlias = coinsAliasReason(
+      intent.coins,
+      intent.orderCoins,
+      intent.baseCoins,
+    );
+    if (coinsAlias) return this.fail(coinsAlias);
 
     const szAlias = szAliasReason(intent.sz, intent.orderSz, intent.szValue);
     if (szAlias) return this.fail(szAlias);
