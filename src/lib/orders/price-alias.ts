@@ -17,6 +17,7 @@ export function priceAliasReason(
   px: unknown,
   limitPx?: unknown,
   orderPrice?: unknown,
+  limitPrice?: unknown,
 ): string | null {
   if (present(px)) {
     return "Price alias is not supported; the adapter reads price";
@@ -26,6 +27,9 @@ export function priceAliasReason(
   }
   if (present(orderPrice)) {
     return "Order price alias is not supported; the adapter reads price";
+  }
+  if (present(limitPrice)) {
+    return "Limit price alias is not supported; the adapter reads price";
   }
   return null;
 }
