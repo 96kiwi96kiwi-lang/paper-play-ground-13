@@ -1,10 +1,8 @@
 /**
- * Hour 123 (odd): restored full OrderManager implementation and wired the
- * amount-style alias floors (amount / amt, value, cost, notional, total, sum,
- * volume, base-qty, units, count, quantity, shares, lots).
- * submit calls each *AliasReason before the adapter. A present alias is refused
- * and does not burn maxRejectsInWindow. Not a halt. Default remains paper.
- * No secrets. Prior metadata floors remain in place.
+ * Hour 125 (odd): wired the size-alias floor into OrderManager after lots-alias.
+ * submit calls sizeAliasReason before the adapter. A present qty, size, or quantity
+ * is refused and does not burn maxRejectsInWindow. Not a halt. Default remains paper.
+ * No secrets. Prior amount-style alias floors remain in place.
  */
 
 import { TRADING_CONFIG } from "@/config/trading";
@@ -72,6 +70,7 @@ import { countAliasReason } from "./count-alias";
 import { quantityAliasReason } from "./quantity-alias";
 import { sharesAliasReason } from "./shares-alias";
 import { lotsAliasReason } from "./lots-alias";
+import { sizeAliasReason } from "./size-alias";
 import { openOffsetReason } from "./open-offset";
 import { categoryReason } from "./category";
 import { accountRouteReason } from "./account-route";
@@ -126,6 +125,8 @@ export interface OrderIntent {
   lots?: unknown;
   orderLots?: unknown;
   baseLots?: unknown;
+  qty?: unknown;
+  size?: unknown;
   quotedAt?: number;
   reason?: string;
   // ... other metadata fields from prior floors (priority, note, etc.) are optional unknowns
@@ -182,6 +183,8 @@ export class OrderManager {
     if (sharesAliasRefuse) return { ok: false, reason: sharesAliasRefuse };
     const lotsAliasRefuse = lotsAliasReason(intent.lots, intent.orderLots, intent.baseLots);
     if (lotsAliasRefuse) return { ok: false, reason: lotsAliasRefuse };
+    const sizeAliasRefuse = sizeAliasReason(intent.qty, intent.size, intent.quantity);
+    if (sizeAliasRefuse) return { ok: false, reason: sizeAliasRefuse };
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as (typeof TRADING_CONFIG.pairs)[number])) {
       return { ok: false, reason: `Symbol ${intent.symbol} is not in the allowed pairs` };
