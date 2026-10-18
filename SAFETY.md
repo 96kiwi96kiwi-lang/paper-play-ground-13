@@ -24,7 +24,7 @@ Complete every item before switching from paper to live. Default mode is paper. 
 
 ## Risk hard-stops
 
-- [ ] OrderManager has been restored to a full implementation that enforces the complete amount-style alias floor chain (amt through lots) before the adapter. Present aliases are refused and do not burn the reject window. Not a halt.
+- [ ] OrderManager has been restored to a full implementation that enforces the complete amount-style alias floor chain (amt through lots) plus the size-alias floor (`qty`/`size`/`quantity`) before the adapter. Present aliases are refused and do not burn the reject window. Not a halt.
 - [ ] Daily loss limit, max drawdown, and losing streak will halt the bot
 - [ ] Price gap hard-stop uses `risk.priceGapLimitPct` (default 3.5%) from config; a relative jump vs last tick at or above that limit halts the bot
 - [ ] On halt in LIVE mode the server cancels visible open orders (does not market-dump positions)
@@ -97,6 +97,4 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] You can stop the process quickly
 - [ ] You will monitor the first live session in real time
 - [ ] Tick host calls `markBotTick` / `markBotTickFn` so the watchdog can see a dead loop
-- [ ] You understand this software is provided as-is; there is no guarantee of profit
-
-If any box is unchecked, stay in paper mode.
+- [ ] You understand this software is not financial advice and does not guarantee profits
