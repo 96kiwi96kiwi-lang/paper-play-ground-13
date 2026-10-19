@@ -142,6 +142,7 @@ import { holdingsAliasReason } from "./holdings-alias";
 import { valueAliasReason } from "./value-alias";
 import { costAliasReason } from "./cost-alias";
 import { notionalAliasReason } from "./notional-alias";
+import { exposureAliasReason } from "./exposure-alias";
 import { totalAliasReason } from "./total-alias";
 import { sumAliasReason } from "./sum-alias";
 import { volumeAliasReason } from "./volume-alias";
@@ -287,6 +288,12 @@ export type OrderIntent = {
   quoteQty?: number;
   /** Quote-notional alias. Adapters size by base amount, so a present value is refused. */
   notional?: unknown;
+  /** Exposure alias. Adapters place by amount only, so a present value is refused. */
+  exposure?: unknown;
+  /** Order exposure alias. Adapters place by amount only, so a present value is refused. */
+  orderExposure?: unknown;
+  /** Base exposure alias. Adapters place by amount only, so a present value is refused. */
+  baseExposure?: unknown;
   /** Margin auto-borrow. Spot adapters do not forward it, so true is refused. */
   autoBorrow?: boolean;
   /** Margin auto-repay. Spot adapters do not forward it, so true is refused. */
@@ -1259,6 +1266,13 @@ export class OrderManager {
       intent.baseNotional,
     );
     if (notionalAlias) return this.fail(notionalAlias);
+
+    const exposureAlias = exposureAliasReason(
+      intent.exposure,
+      intent.orderExposure,
+      intent.baseExposure,
+    );
+    if (exposureAlias) return this.fail(exposureAlias);
 
     const totalAlias = totalAliasReason(intent.total, intent.orderTotal, intent.baseTotal);
     if (totalAlias) return this.fail(totalAlias);
