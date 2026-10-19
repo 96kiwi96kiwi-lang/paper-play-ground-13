@@ -4,6 +4,7 @@ import { holdingsAliasReason } from "@/lib/orders/holdings-alias";
 import { navAliasReason } from "@/lib/orders/nav-alias";
 import { portfolioAliasReason } from "@/lib/orders/portfolio-alias";
 import { positionsAliasReason } from "@/lib/orders/positions-alias";
+import { quantityAliasReason } from "@/lib/orders/quantity-alias";
 import { valueAliasReason } from "@/lib/orders/value-alias";
 
 export interface OrderRequest {
@@ -36,6 +37,9 @@ export interface OrderRequest {
   holdings?: unknown;
   orderHoldings?: unknown;
   baseHoldings?: unknown;
+  quantity?: unknown;
+  orderQuantity?: unknown;
+  baseQuantity?: unknown;
 }
 
 export interface SubmitResult {
@@ -58,7 +62,7 @@ export interface OrderManager {
 
 /**
  * Paper-first OrderManager.
- * Checks alias floors in sequence (recent chain ending with holdings) before any adapter.
+ * Checks alias floors in sequence (recent chain ending with quantity) before any adapter.
  * Alias refusals do not burn maxRejectsInWindow and do not flatten.
  * Default mode is paper. No secrets, no live keys.
  */
@@ -73,6 +77,7 @@ export class PaperOrderManager implements OrderManager {
       assetsAliasReason(req.assets, req.orderAssets, req.baseAssets),
       valueAliasReason(req.value, req.orderValue, req.baseValue),
       holdingsAliasReason(req.holdings, req.orderHoldings, req.baseHoldings),
+      quantityAliasReason(req.quantity, req.orderQuantity, req.baseQuantity),
     ];
 
     for (const reason of floors) {
