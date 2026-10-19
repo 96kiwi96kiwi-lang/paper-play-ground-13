@@ -147,6 +147,7 @@ import { quantityAliasReason } from "./quantity-alias";
 import { sharesAliasReason } from "./shares-alias";
 import { lotsAliasReason } from "./lots-alias";
 import { holdingsAliasReason } from "./holdings-alias";
+import { positionsAliasReason } from "./positions-alias";
 import { priceAliasReason } from "./price-alias";
 import { clientIdAliasReason } from "./client-id-alias";
 import { cancelReplaceReason } from "./cancel-replace";
@@ -431,6 +432,12 @@ export type OrderIntent = {
   holdings?: unknown;
   orderHoldings?: unknown;
   baseHoldings?: unknown;
+  /** Positions alias. Adapters place by amount only, so a present value is refused. */
+  positions?: unknown;
+  /** Order positions alias. Adapters place by amount only, so a present value is refused. */
+  orderPositions?: unknown;
+  /** Base positions alias. Adapters place by amount only, so a present value is refused. */
+  basePositions?: unknown;
   /** Price alias. Adapters price by price, so a present value is refused. */
   limitPrice?: number | string | boolean;
   /** Limit-price alias. Adapters price by price, so a present value is refused. */
@@ -1240,6 +1247,13 @@ export class OrderManager {
       intent.baseHoldings,
     );
     if (holdingsAlias) return this.fail(holdingsAlias);
+
+    const positionsAlias = positionsAliasReason(
+      intent.positions,
+      intent.orderPositions,
+      intent.basePositions,
+    );
+    if (positionsAlias) return this.fail(positionsAlias);
 
     const clientIdAlias = clientIdAliasReason(
       intent.clientOid,
