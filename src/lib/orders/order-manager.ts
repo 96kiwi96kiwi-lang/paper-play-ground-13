@@ -149,6 +149,7 @@ import { lotsAliasReason } from "./lots-alias";
 import { holdingsAliasReason } from "./holdings-alias";
 import { positionsAliasReason } from "./positions-alias";
 import { portfolioAliasReason } from "./portfolio-alias";
+import { equityAliasReason } from "./equity-alias";
 import { priceAliasReason } from "./price-alias";
 import { clientIdAliasReason } from "./client-id-alias";
 import { cancelReplaceReason } from "./cancel-replace";
@@ -445,6 +446,12 @@ export type OrderIntent = {
   orderPortfolio?: unknown;
   /** Base portfolio alias. Adapters place by amount only, so a present value is refused. */
   basePortfolio?: unknown;
+  /** Equity alias. Adapters place by amount only, so a present value is refused. */
+  equity?: unknown;
+  /** Order equity alias. Adapters place by amount only, so a present value is refused. */
+  orderEquity?: unknown;
+  /** Base equity alias. Adapters place by amount only, so a present value is refused. */
+  baseEquity?: unknown;
   /** Price alias. Adapters price by price, so a present value is refused. */
   limitPrice?: number | string | boolean;
   /** Limit-price alias. Adapters price by price, so a present value is refused. */
@@ -1268,6 +1275,13 @@ export class OrderManager {
       intent.basePortfolio,
     );
     if (portfolioAlias) return this.fail(portfolioAlias);
+
+    const equityAlias = equityAliasReason(
+      intent.equity,
+      intent.orderEquity,
+      intent.baseEquity,
+    );
+    if (equityAlias) return this.fail(equityAlias);
 
     const clientIdAlias = clientIdAliasReason(
       intent.clientOid,
