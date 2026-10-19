@@ -24,8 +24,9 @@ Complete every item before switching from paper to live. Default mode is paper. 
 
 ## Risk hard-stops
 
-- [ ] OrderManager has been restored to a full implementation that enforces the complete amount-style alias floor chain (amt through lots) plus the size-alias floor (`qty`/`size`/`quantity`), contracts-alias floor, pieces-alias floor, tokens-alias floor, coins-alias floor, items-alias floor, assets-alias floor, balances-alias floor, and holdings-alias floor, and positions-alias floor before the adapter. Present aliases are refused and do not burn the reject window. Not a halt.
+- [ ] OrderManager has been restored to a full implementation that enforces the complete amount-style alias floor chain (amt through lots) plus the size-alias floor (`qty`/`size`/`quantity`), contracts-alias floor, pieces-alias floor, tokens-alias floor, coins-alias floor, items-alias floor, assets-alias floor, balances-alias floor, and holdings-alias floor, and positions-alias floor, and portfolio-alias floor before the adapter. Present aliases are refused and do not burn the reject window. Not a halt.
 - [ ] A present `positions`, `orderPositions`, or `basePositions` is refused before the adapter (not a halt; omitted, null, and blank still pass; zero is refused; adapters place by `amount` only and do not read a positions alias, so an alias intent would otherwise be ignored and the order would use the canonical amount or fail)
+- [ ] A present `portfolio`, `orderPortfolio`, or `basePortfolio` is refused before the adapter (not a halt; omitted, null, and blank still pass; zero is refused; adapters place by `amount` only and do not read a portfolio alias, so an alias intent would otherwise be ignored and the order would use the canonical amount or fail)
 - [ ] Daily loss limit, max drawdown, and losing streak will halt the bot
 - [ ] Price gap hard-stop uses `risk.priceGapLimitPct` (default 3.5%) from config; a relative jump vs last tick at or above that limit halts the bot
 - [ ] On halt in LIVE mode the server cancels visible open orders (does not market-dump positions)
@@ -91,3 +92,4 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] A present `items`, `orderItems`, or `baseItems` is refused before the adapter (not a halt; omitted, null, and blank still pass; zero is refused; adapters place by `amount` only and do not read an items alias, so an alias intent would otherwise be ignored and the order would use the canonical amount or fail)
 - [ ] Only one process holds `data/worker-lease.json`; a second replica stays standby until the lease expires
 - [ ] `PAPER_SERVER_LOOP=1` is a paper-only loop and never touches live keys
+
