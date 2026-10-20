@@ -7,13 +7,14 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, and pair. submit calls pairAliasReason after the
- * quote-alias floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, and price. submit calls priceAliasReason after the
+ * pair-alias floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
 import { currencyAliasReason } from "./currency-alias";
 import { pairAliasReason } from "./pair-alias";
+import { priceAliasReason } from "./price-alias";
 import { quoteAliasReason } from "./quote-alias";
 
 export type OrderIntent = {
@@ -35,6 +36,10 @@ export type OrderIntent = {
   pair?: unknown;
   market?: unknown;
   instrument?: unknown;
+  px?: unknown;
+  limitPx?: unknown;
+  orderPrice?: unknown;
+  limitPrice?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -54,7 +59,11 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   if (pairReason) {
     return { ok: false, reason: pairReason };
   }
+  const priceReason = priceAliasReason(intent.px, intent.limitPx, intent.orderPrice, intent.limitPrice);
+  if (priceReason) {
+    return { ok: false, reason: priceReason };
+  }
   // Additional floors would be called here in the full implementation.
-  // Adapters read amount / symbol only.
+  // Adapters read amount / symbol / price only.
   return { ok: true };
 }
