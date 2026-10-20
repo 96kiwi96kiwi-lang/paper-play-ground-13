@@ -7,12 +7,13 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, and asset. submit calls assetAliasReason after the
- * currency-alias floor and before the adapter.
+ * positions, crypto, currency, asset, and quote. submit calls quoteAliasReason after the
+ * asset-alias floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
 import { currencyAliasReason } from "./currency-alias";
+import { quoteAliasReason } from "./quote-alias";
 
 export type OrderIntent = {
   symbol: string;
@@ -27,6 +28,9 @@ export type OrderIntent = {
   asset?: unknown;
   orderAsset?: unknown;
   baseAsset?: unknown;
+  quote?: unknown;
+  orderQuote?: unknown;
+  baseQuote?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -37,6 +41,10 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   const assetReason = assetAliasReason(intent.asset, intent.orderAsset, intent.baseAsset);
   if (assetReason) {
     return { ok: false, reason: assetReason };
+  }
+  const quoteReason = quoteAliasReason(intent.quote, intent.orderQuote, intent.baseQuote);
+  if (quoteReason) {
+    return { ok: false, reason: quoteReason };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount only.
