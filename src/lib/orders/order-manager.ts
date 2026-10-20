@@ -7,11 +7,11 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, and crypto. submit calls cryptoAliasReason after the tokens-alias
- * floor and before the adapter.
+ * positions, crypto, and currency. submit calls currencyAliasReason after the
+ * crypto-alias floor and before the adapter.
  */
 
-import { cryptoAliasReason } from "./crypto-alias";
+import { currencyAliasReason } from "./currency-alias";
 
 export type OrderIntent = {
   symbol: string;
@@ -20,15 +20,15 @@ export type OrderIntent = {
   type?: "market" | "limit";
   price?: number;
   // Alias fields that must not be present
-  crypto?: unknown;
-  orderCrypto?: unknown;
-  baseCrypto?: unknown;
+  currency?: unknown;
+  orderCurrency?: unknown;
+  baseCurrency?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
-  const cryptoReason = cryptoAliasReason(intent.crypto, intent.orderCrypto, intent.baseCrypto);
-  if (cryptoReason) {
-    return { ok: false, reason: cryptoReason };
+  const currencyReason = currencyAliasReason(intent.currency, intent.orderCurrency, intent.baseCurrency);
+  if (currencyReason) {
+    return { ok: false, reason: currencyReason };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount only.
