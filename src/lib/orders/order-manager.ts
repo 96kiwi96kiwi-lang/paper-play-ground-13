@@ -7,14 +7,15 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, and bbo.
- * submit calls bboReason after the price-match floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, and grid.
+ * submit calls gridReason after the bbo floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
 import { bboReason } from "./bbo";
 import { clientIdAliasReason } from "./client-id-alias";
 import { currencyAliasReason } from "./currency-alias";
+import { gridReason } from "./grid";
 import { icebergReason } from "./iceberg";
 import { orderTypeAliasReason } from "./order-type-alias";
 import { pairAliasReason } from "./pair-alias";
@@ -95,6 +96,9 @@ export type OrderIntent = {
   bbo?: unknown;
   bestBidOffer?: unknown;
   bookPrice?: unknown;
+  grid?: unknown;
+  gridId?: unknown;
+  algoId?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -180,6 +184,10 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   const bbo = bboReason(intent.bbo, intent.bestBidOffer, intent.bookPrice);
   if (bbo) {
     return { ok: false, reason: bbo };
+  }
+  const grid = gridReason(intent.grid, intent.gridId, intent.algoId);
+  if (grid) {
+    return { ok: false, reason: grid };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
