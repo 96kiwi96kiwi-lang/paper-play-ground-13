@@ -7,13 +7,14 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, and stop-price.
- * submit calls stopPriceAliasReason after the tif alias floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, and iceberg.
+ * submit calls icebergReason after the stop-price alias floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
 import { clientIdAliasReason } from "./client-id-alias";
 import { currencyAliasReason } from "./currency-alias";
+import { icebergReason } from "./iceberg";
 import { orderTypeAliasReason } from "./order-type-alias";
 import { pairAliasReason } from "./pair-alias";
 import { priceAliasReason } from "./price-alias";
@@ -70,6 +71,14 @@ export type OrderIntent = {
   stopPrice?: unknown;
   triggerPrice?: unknown;
   stopPx?: unknown;
+  iceberg?: unknown;
+  visibleSize?: unknown;
+  icebergQty?: unknown;
+  displayQty?: unknown;
+  hiddenSize?: unknown;
+  displaySize?: unknown;
+  visibleQty?: unknown;
+  icebergSize?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -126,6 +135,19 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   const stopPriceReason = stopPriceAliasReason(intent.stopPrice, intent.triggerPrice, intent.stopPx);
   if (stopPriceReason) {
     return { ok: false, reason: stopPriceReason };
+  }
+  const iceberg = icebergReason(
+    intent.iceberg,
+    intent.visibleSize,
+    intent.icebergQty,
+    intent.displayQty,
+    intent.hiddenSize,
+    intent.displaySize,
+    intent.visibleQty,
+    intent.icebergSize,
+  );
+  if (iceberg) {
+    return { ok: false, reason: iceberg };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
