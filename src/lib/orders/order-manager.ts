@@ -7,8 +7,8 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, and price-protect.
- * submit calls priceProtectReason after the post-only floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, and price-match.
+ * submit calls priceMatchReason after the price-protect floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
@@ -19,6 +19,7 @@ import { orderTypeAliasReason } from "./order-type-alias";
 import { pairAliasReason } from "./pair-alias";
 import { postOnlyReason } from "./post-only";
 import { priceAliasReason } from "./price-alias";
+import { priceMatchReason } from "./price-match";
 import { priceProtectReason } from "./price-protect";
 import { productAliasReason } from "./product-alias";
 import { quoteAliasReason } from "./quote-alias";
@@ -87,6 +88,9 @@ export type OrderIntent = {
   priceProtect?: unknown;
   priceProtection?: unknown;
   percentPrice?: unknown;
+  priceMatch?: unknown;
+  pegPriceType?: unknown;
+  pegOffsetValue?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -164,6 +168,10 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   const priceProtect = priceProtectReason(intent.priceProtect, intent.priceProtection, intent.percentPrice);
   if (priceProtect) {
     return { ok: false, reason: priceProtect };
+  }
+  const priceMatch = priceMatchReason(intent.priceMatch, intent.pegPriceType, intent.pegOffsetValue);
+  if (priceMatch) {
+    return { ok: false, reason: priceMatch };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
