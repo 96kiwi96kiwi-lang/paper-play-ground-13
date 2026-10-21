@@ -7,8 +7,8 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, and tif.
- * submit calls tifAliasReason after the client-id alias floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, and stop-price.
+ * submit calls stopPriceAliasReason after the tif alias floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
@@ -21,6 +21,7 @@ import { productAliasReason } from "./product-alias";
 import { quoteAliasReason } from "./quote-alias";
 import { sideAliasReason } from "./side-alias";
 import { sizeAliasReason } from "./size-alias";
+import { stopPriceAliasReason } from "./stop-price-alias";
 import { tifAliasReason } from "./tif-alias";
 
 export type OrderIntent = {
@@ -66,6 +67,9 @@ export type OrderIntent = {
   timeInForceAlias?: unknown;
   immediateOrCancel?: unknown;
   fillOrKill?: unknown;
+  stopPrice?: unknown;
+  triggerPrice?: unknown;
+  stopPx?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -118,6 +122,10 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   );
   if (tifReason) {
     return { ok: false, reason: tifReason };
+  }
+  const stopPriceReason = stopPriceAliasReason(intent.stopPrice, intent.triggerPrice, intent.stopPx);
+  if (stopPriceReason) {
+    return { ok: false, reason: stopPriceReason };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
