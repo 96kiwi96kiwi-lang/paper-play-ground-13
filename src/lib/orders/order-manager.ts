@@ -7,8 +7,8 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, and client-id.
- * submit calls clientIdAliasReason after the order-type alias floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, and tif.
+ * submit calls tifAliasReason after the client-id alias floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
@@ -21,6 +21,7 @@ import { productAliasReason } from "./product-alias";
 import { quoteAliasReason } from "./quote-alias";
 import { sideAliasReason } from "./side-alias";
 import { sizeAliasReason } from "./size-alias";
+import { tifAliasReason } from "./tif-alias";
 
 export type OrderIntent = {
   symbol: string;
@@ -60,6 +61,11 @@ export type OrderIntent = {
   clientOid?: unknown;
   newClientOrderId?: unknown;
   origClientOrderId?: unknown;
+  tif?: unknown;
+  orderTif?: unknown;
+  timeInForceAlias?: unknown;
+  immediateOrCancel?: unknown;
+  fillOrKill?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -103,7 +109,17 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   if (clientIdReason) {
     return { ok: false, reason: clientIdReason };
   }
+  const tifReason = tifAliasReason(
+    intent.tif,
+    intent.orderTif,
+    intent.timeInForceAlias,
+    intent.immediateOrCancel,
+    intent.fillOrKill,
+  );
+  if (tifReason) {
+    return { ok: false, reason: tifReason };
+  }
   // Additional floors would be called here in the full implementation.
-  // Adapters read amount / symbol / price / side / type / clientOrderId only.
+  // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
   return { ok: true };
 }
