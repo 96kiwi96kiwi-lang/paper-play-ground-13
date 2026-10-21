@@ -7,8 +7,8 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, and side.
- * submit calls sideAliasReason after the product-alias floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, and size.
+ * submit calls sizeAliasReason after the side-alias floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
@@ -18,6 +18,7 @@ import { priceAliasReason } from "./price-alias";
 import { productAliasReason } from "./product-alias";
 import { quoteAliasReason } from "./quote-alias";
 import { sideAliasReason } from "./side-alias";
+import { sizeAliasReason } from "./size-alias";
 
 export type OrderIntent = {
   symbol: string;
@@ -48,6 +49,9 @@ export type OrderIntent = {
   orderSide?: unknown;
   direction?: unknown;
   action?: unknown;
+  qty?: unknown;
+  size?: unknown;
+  quantity?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -78,6 +82,10 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   const sideReason = sideAliasReason(intent.orderSide, intent.direction, intent.action);
   if (sideReason) {
     return { ok: false, reason: sideReason };
+  }
+  const sizeReason = sizeAliasReason(intent.qty, intent.size, intent.quantity);
+  if (sizeReason) {
+    return { ok: false, reason: sizeReason };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount / symbol / price / side only.
