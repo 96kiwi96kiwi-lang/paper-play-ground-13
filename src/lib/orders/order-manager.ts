@@ -7,8 +7,8 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, and iceberg.
- * submit calls icebergReason after the stop-price alias floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, and post-only.
+ * submit calls postOnlyReason after the iceberg floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
@@ -17,6 +17,7 @@ import { currencyAliasReason } from "./currency-alias";
 import { icebergReason } from "./iceberg";
 import { orderTypeAliasReason } from "./order-type-alias";
 import { pairAliasReason } from "./pair-alias";
+import { postOnlyReason } from "./post-only";
 import { priceAliasReason } from "./price-alias";
 import { productAliasReason } from "./product-alias";
 import { quoteAliasReason } from "./quote-alias";
@@ -79,6 +80,9 @@ export type OrderIntent = {
   displaySize?: unknown;
   visibleQty?: unknown;
   icebergSize?: unknown;
+  postOnly?: unknown;
+  postOnlyFlag?: unknown;
+  makerOnly?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -148,6 +152,10 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   );
   if (iceberg) {
     return { ok: false, reason: iceberg };
+  }
+  const postOnly = postOnlyReason(intent.postOnly, intent.postOnlyFlag, intent.makerOnly);
+  if (postOnly) {
+    return { ok: false, reason: postOnly };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
