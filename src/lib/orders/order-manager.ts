@@ -7,8 +7,8 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, and grid.
- * submit calls gridReason after the bbo floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, and reduce-only.
+ * submit calls reduceOnlyReason after the grid floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
@@ -25,6 +25,7 @@ import { priceMatchReason } from "./price-match";
 import { priceProtectReason } from "./price-protect";
 import { productAliasReason } from "./product-alias";
 import { quoteAliasReason } from "./quote-alias";
+import { reduceOnlyReason } from "./reduce-only";
 import { sideAliasReason } from "./side-alias";
 import { sizeAliasReason } from "./size-alias";
 import { stopPriceAliasReason } from "./stop-price-alias";
@@ -99,6 +100,7 @@ export type OrderIntent = {
   grid?: unknown;
   gridId?: unknown;
   algoId?: unknown;
+  reduceOnly?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -188,6 +190,10 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   const grid = gridReason(intent.grid, intent.gridId, intent.algoId);
   if (grid) {
     return { ok: false, reason: grid };
+  }
+  const reduceOnly = reduceOnlyReason(intent.reduceOnly);
+  if (reduceOnly) {
+    return { ok: false, reason: reduceOnly };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
