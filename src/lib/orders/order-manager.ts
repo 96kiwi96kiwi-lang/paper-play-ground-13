@@ -7,8 +7,8 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, and cancel-on-disconnect.
- * submit calls cancelOnDisconnectReason after the self-trade floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, and exec-inst.
+ * submit calls trailingReason and execInstReason after the cancel-on-disconnect floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
@@ -18,6 +18,7 @@ import { cancelOnDisconnectReason } from "./cancel-on-disconnect";
 import { clientIdAliasReason } from "./client-id-alias";
 import { closePositionReason } from "./close-position";
 import { currencyAliasReason } from "./currency-alias";
+import { execInstReason } from "./exec-inst";
 import { gridReason } from "./grid";
 import { icebergReason } from "./iceberg";
 import { orderTypeAliasReason } from "./order-type-alias";
@@ -34,6 +35,7 @@ import { sideAliasReason } from "./side-alias";
 import { sizeAliasReason } from "./size-alias";
 import { stopPriceAliasReason } from "./stop-price-alias";
 import { tifAliasReason } from "./tif-alias";
+import { trailingReason } from "./trailing";
 
 export type OrderIntent = {
   symbol: string;
@@ -117,6 +119,13 @@ export type OrderIntent = {
   cancelOnDisconnect?: unknown;
   deadman?: unknown;
   cod?: unknown;
+  trailingStop?: unknown;
+  trailingDelta?: unknown;
+  callbackRate?: unknown;
+  activationPrice?: unknown;
+  execInst?: unknown;
+  execInstruction?: unknown;
+  instruction?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -230,6 +239,19 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   );
   if (cancelOnDisconnect) {
     return { ok: false, reason: cancelOnDisconnect };
+  }
+  const trailing = trailingReason(
+    intent.trailingStop,
+    intent.trailingDelta,
+    intent.callbackRate,
+    intent.activationPrice,
+  );
+  if (trailing) {
+    return { ok: false, reason: trailing };
+  }
+  const execInst = execInstReason(intent.execInst, intent.execInstruction, intent.instruction);
+  if (execInst) {
+    return { ok: false, reason: execInst };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
