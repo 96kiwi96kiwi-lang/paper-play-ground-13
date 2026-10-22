@@ -7,8 +7,8 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, and attach-algo.
- * submit calls attachAlgoReason after the close-position floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, and self-trade.
+ * submit calls selfTradeReason after the attach-algo floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
@@ -28,6 +28,7 @@ import { priceProtectReason } from "./price-protect";
 import { productAliasReason } from "./product-alias";
 import { quoteAliasReason } from "./quote-alias";
 import { reduceOnlyReason } from "./reduce-only";
+import { selfTradeReason } from "./self-trade";
 import { sideAliasReason } from "./side-alias";
 import { sizeAliasReason } from "./size-alias";
 import { stopPriceAliasReason } from "./stop-price-alias";
@@ -109,6 +110,9 @@ export type OrderIntent = {
   attachAlgoOrds?: unknown;
   tpTriggerPx?: unknown;
   slTriggerPx?: unknown;
+  stp?: unknown;
+  selfTradePrevention?: unknown;
+  selfTradePreventionMode?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -210,6 +214,10 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   const attachAlgo = attachAlgoReason(intent.attachAlgoOrds, intent.tpTriggerPx, intent.slTriggerPx);
   if (attachAlgo) {
     return { ok: false, reason: attachAlgo };
+  }
+  const selfTrade = selfTradeReason(intent.stp, intent.selfTradePrevention, intent.selfTradePreventionMode);
+  if (selfTrade) {
+    return { ok: false, reason: selfTrade };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
