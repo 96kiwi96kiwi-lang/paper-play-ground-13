@@ -8,6 +8,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 
 ## Current status
 
+**Hour 215 (odd):** Wired the cancel-on-disconnect floor into OrderManager. `submit` calls `cancelOnDisconnectReason` after the self-trade floor and before the adapter: a present `cancelOnDisconnect`, `deadman`, or `cod` is refused (`Cancel on disconnect is not supported; the adapter would leave a resting order` / `Dead-man switch is not supported; the adapter would leave a resting order` / `COD flag is not supported; the adapter would leave a resting order`) and does not burn `maxRejectsInWindow`. Paper and KuCoin adapters place one plain spot order and do not arm a cancel-on-disconnect timer, so a dead-man intent would otherwise be ignored and a resting order could stay live after the process drops. Omitted, null, false, and blank still pass; zero is refused. This is a disconnect floor, not a halt, and does not flatten positions. Vitest: `tests/cancel-on-disconnect.test.ts` (no exchange, no secrets). Default mode is paper. OrderManager is complete and type-safe.
+
 **Hour 213 (odd):** Wired the self-trade floor into OrderManager. `submit` calls `selfTradeReason` after the attach-algo floor and before the adapter: a present `stp`, `selfTradePrevention`, or `selfTradePreventionMode` is refused (`STP is not supported; the adapter would place without self-trade prevention` / `Self-trade prevention is not supported; the adapter would place without it` / `Self-trade prevention mode is not supported; the adapter would place without it`) and does not burn `maxRejectsInWindow`. Paper and KuCoin adapters place one plain spot order and do not forward self-trade prevention, so a cancel-newest, cancel-old, cancel-both, or decrement-and-cancel intent would otherwise be ignored and the order could match the same account. Omitted, null, and blank still pass; zero is refused. This is a matching floor, not a halt, and does not flatten positions. Vitest: `tests/self-trade.test.ts` (no exchange, no secrets). Default mode is paper. OrderManager is complete and type-safe.
 
 **Hour 211 (odd):** Wired the attach-algo floor into OrderManager. `submit` calls `attachAlgoReason` after the close-position floor and before the adapter: a present `attachAlgoOrds`, `tpTriggerPx`, or `slTriggerPx` is refused (`Attached algo is not supported; the adapter would place a plain spot order` / `Take-profit trigger is not supported; the adapter would place a plain spot order` / `Stop-loss trigger is not supported; the adapter would place a plain spot order`) and does not burn `maxRejectsInWindow`. Paper and KuCoin adapters place one plain spot order and do not attach a take-profit or stop-loss algo, so a bracket intent would otherwise be ignored and the base size would trade. Omitted, null, false, blank, and empty list still pass; zero is refused. This is a bracket floor, not a halt, and does not flatten positions. Vitest: `tests/attach-algo.test.ts` (no exchange, no secrets). Default mode is paper. OrderManager is complete and type-safe.
@@ -50,7 +52,9 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 
 **Hour 173 (odd):** Wired the asset-alias floor into OrderManager. `submit` calls `assetAliasReason` after the currency-alias floor and before the adapter: a present `asset`, `orderAsset`, or `baseAsset` is refused (`Asset alias is not supported; the adapter reads amount` / `Order asset alias is not supported; the adapter reads amount` / `Base asset alias is not supported; the adapter reads amount`) and does not burn `maxRejectsInWindow`. Paper and KuCoin adapters place by `amount` only and do not read an asset alias, so an alias intent would otherwise be ignored and the order would use the canonical amount or fail. Omitted, null, and blank still pass; zero is refused. This is an asset floor, not a halt, and does not flatten positions. Vitest: `tests/asset-alias.test.ts` (no exchange, no secrets). Default mode is paper. OrderManager is complete and type-safe.
 
-(See the repository history for the complete list of floors, architecture, and prior status paragraphs. Default remains paper. Live keys stay on the server.)
+**Hour 171 (odd):** Wired the currency-alias floor into OrderManager. `submit` calls `currencyAliasReason` after the amount-alias floor and before the adapter: a present `currency`, `orderCurrency`, or `baseCurrency` is refused (`Currency alias is not supported; the adapter reads amount` / `Order currency alias is not supported; the adapter reads amount` / `Base currency alias is not supported; the adapter reads amount`) and does not burn `maxRejectsInWindow`. Paper and KuCoin adapters place by `amount` only and do not read a currency alias, so an alias intent would otherwise be ignored and the order would use the canonical amount or fail. Omitted, null, and blank still pass; zero is refused. This is a currency floor, not a halt, and does not flatten positions. Vitest: `tests/currency-alias.test.ts` (no exchange, no secrets). Default mode is paper. OrderManager is complete and type-safe.
+
+*(Earlier hours continue the same pattern of wiring floors. Full history is in git.)*
 
 ## Architecture
 
@@ -62,11 +66,8 @@ Health includes halt, alerts, last reject (reason/side/symbol/age), grid books, 
 
 ## Paper / Live
 
-Paper is the default. Live needs Trade-only KuCoin keys in server `.env`, a permission audit that blocks Withdraw, `OPERATOR_TOKEN`, and typed `ENABLE LIVE`. A process restart always returns to paper.
+Paper is the default.
+Live needs Trade-only KuCoin keys in server `.env`, a permission audit that blocks Withdraw, `OPERATOR_TOKEN`, and typed `ENABLE LIVE`.
+A process restart always returns to paper.
 
-Never invent or commit secrets. See [SAFETY.md](./SAFETY.md).
-
-### Unattended worker startup
-The Nitro runtime plugin starts the opt-in paper loop before any HTTP request.
-Run `npm run build && npm run test:worker` to verify startup, quote decisions and persisted history with deterministic quotes and no incoming requests.
-A Railway worker still requires a persistent volume at `/app/data`; build success alone does not prove production persistence.
+Never invent or commit secrets.

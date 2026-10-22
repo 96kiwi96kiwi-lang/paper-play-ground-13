@@ -7,13 +7,14 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, and self-trade.
- * submit calls selfTradeReason after the attach-algo floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, and cancel-on-disconnect.
+ * submit calls cancelOnDisconnectReason after the self-trade floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
 import { attachAlgoReason } from "./attach-algo";
 import { bboReason } from "./bbo";
+import { cancelOnDisconnectReason } from "./cancel-on-disconnect";
 import { clientIdAliasReason } from "./client-id-alias";
 import { closePositionReason } from "./close-position";
 import { currencyAliasReason } from "./currency-alias";
@@ -113,6 +114,9 @@ export type OrderIntent = {
   stp?: unknown;
   selfTradePrevention?: unknown;
   selfTradePreventionMode?: unknown;
+  cancelOnDisconnect?: unknown;
+  deadman?: unknown;
+  cod?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -218,6 +222,14 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   const selfTrade = selfTradeReason(intent.stp, intent.selfTradePrevention, intent.selfTradePreventionMode);
   if (selfTrade) {
     return { ok: false, reason: selfTrade };
+  }
+  const cancelOnDisconnect = cancelOnDisconnectReason(
+    intent.cancelOnDisconnect,
+    intent.deadman,
+    intent.cod,
+  );
+  if (cancelOnDisconnect) {
+    return { ok: false, reason: cancelOnDisconnect };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
