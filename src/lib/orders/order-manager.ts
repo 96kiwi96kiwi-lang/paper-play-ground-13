@@ -7,11 +7,12 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, and close-position.
- * submit calls closePositionReason after the reduce-only floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, and attach-algo.
+ * submit calls attachAlgoReason after the close-position floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
+import { attachAlgoReason } from "./attach-algo";
 import { bboReason } from "./bbo";
 import { clientIdAliasReason } from "./client-id-alias";
 import { closePositionReason } from "./close-position";
@@ -105,6 +106,9 @@ export type OrderIntent = {
   closePosition?: unknown;
   closeOnTrigger?: unknown;
   closeOrder?: unknown;
+  attachAlgoOrds?: unknown;
+  tpTriggerPx?: unknown;
+  slTriggerPx?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -202,6 +206,10 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   const closePosition = closePositionReason(intent.closePosition, intent.closeOnTrigger, intent.closeOrder);
   if (closePosition) {
     return { ok: false, reason: closePosition };
+  }
+  const attachAlgo = attachAlgoReason(intent.attachAlgoOrds, intent.tpTriggerPx, intent.slTriggerPx);
+  if (attachAlgo) {
+    return { ok: false, reason: attachAlgo };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
