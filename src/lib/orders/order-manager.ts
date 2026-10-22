@@ -7,8 +7,8 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, and order-expiry.
- * submit calls orderExpiryReason after the cancel-replace floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, and order-tag.
+ * submit calls orderTagReason after the order-expiry floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
@@ -22,6 +22,7 @@ import { currencyAliasReason } from "./currency-alias";
 import { gridReason } from "./grid";
 import { icebergReason } from "./iceberg";
 import { orderExpiryReason } from "./order-expiry";
+import { orderTagReason } from "./order-tag";
 import { orderTypeAliasReason } from "./order-type-alias";
 import { pairAliasReason } from "./pair-alias";
 import { postOnlyReason } from "./post-only";
@@ -130,6 +131,9 @@ export type OrderIntent = {
   cancelAfter?: unknown;
   expireTime?: unknown;
   goodTillDate?: unknown;
+  tag?: unknown;
+  orderTag?: unknown;
+  clientTag?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -268,6 +272,14 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   );
   if (orderExpiry) {
     return { ok: false, reason: orderExpiry };
+  }
+  const orderTag = orderTagReason(
+    intent.tag,
+    intent.orderTag,
+    intent.clientTag,
+  );
+  if (orderTag) {
+    return { ok: false, reason: orderTag };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
