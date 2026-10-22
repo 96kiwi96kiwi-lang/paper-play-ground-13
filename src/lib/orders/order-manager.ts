@@ -7,13 +7,14 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, and reduce-only.
- * submit calls reduceOnlyReason after the grid floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, and close-position.
+ * submit calls closePositionReason after the reduce-only floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
 import { bboReason } from "./bbo";
 import { clientIdAliasReason } from "./client-id-alias";
+import { closePositionReason } from "./close-position";
 import { currencyAliasReason } from "./currency-alias";
 import { gridReason } from "./grid";
 import { icebergReason } from "./iceberg";
@@ -101,6 +102,9 @@ export type OrderIntent = {
   gridId?: unknown;
   algoId?: unknown;
   reduceOnly?: unknown;
+  closePosition?: unknown;
+  closeOnTrigger?: unknown;
+  closeOrder?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -194,6 +198,10 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   const reduceOnly = reduceOnlyReason(intent.reduceOnly);
   if (reduceOnly) {
     return { ok: false, reason: reduceOnly };
+  }
+  const closePosition = closePositionReason(intent.closePosition, intent.closeOnTrigger, intent.closeOrder);
+  if (closePosition) {
+    return { ok: false, reason: closePosition };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
