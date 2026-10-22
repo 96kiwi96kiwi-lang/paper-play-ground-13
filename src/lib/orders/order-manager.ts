@@ -7,8 +7,8 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, and cancel-replace.
- * submit calls cancelReplaceReason after the trailing floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, and order-expiry.
+ * submit calls orderExpiryReason after the cancel-replace floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
@@ -21,6 +21,7 @@ import { closePositionReason } from "./close-position";
 import { currencyAliasReason } from "./currency-alias";
 import { gridReason } from "./grid";
 import { icebergReason } from "./iceberg";
+import { orderExpiryReason } from "./order-expiry";
 import { orderTypeAliasReason } from "./order-type-alias";
 import { pairAliasReason } from "./pair-alias";
 import { postOnlyReason } from "./post-only";
@@ -126,6 +127,9 @@ export type OrderIntent = {
   cancelReplace?: unknown;
   cancelOrderId?: unknown;
   orderIdToCancel?: unknown;
+  cancelAfter?: unknown;
+  expireTime?: unknown;
+  goodTillDate?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -256,6 +260,14 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   );
   if (cancelReplace) {
     return { ok: false, reason: cancelReplace };
+  }
+  const orderExpiry = orderExpiryReason(
+    intent.cancelAfter,
+    intent.expireTime,
+    intent.goodTillDate,
+  );
+  if (orderExpiry) {
+    return { ok: false, reason: orderExpiry };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
