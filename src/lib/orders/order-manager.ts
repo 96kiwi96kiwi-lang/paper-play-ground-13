@@ -7,8 +7,8 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, order-comment, order-force, and order-note.
- * submit calls orderNoteReason after the order-force floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, order-comment, order-force, order-note, and order-memo.
+ * submit calls orderMemoReason after the order-note floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
@@ -24,6 +24,7 @@ import { icebergReason } from "./iceberg";
 import { orderCommentReason } from "./order-comment";
 import { orderExpiryReason } from "./order-expiry";
 import { orderForceReason } from "./order-force";
+import { orderMemoReason } from "./order-memo";
 import { orderNoteReason } from "./order-note";
 import { orderTagReason } from "./order-tag";
 import { orderTypeAliasReason } from "./order-type-alias";
@@ -146,6 +147,9 @@ export type OrderIntent = {
   note?: unknown;
   orderNote?: unknown;
   clientNote?: unknown;
+  memo?: unknown;
+  orderMemo?: unknown;
+  clientMemo?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -316,6 +320,14 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   );
   if (orderNote) {
     return { ok: false, reason: orderNote };
+  }
+  const orderMemo = orderMemoReason(
+    intent.memo,
+    intent.orderMemo,
+    intent.clientMemo,
+  );
+  if (orderMemo) {
+    return { ok: false, reason: orderMemo };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
