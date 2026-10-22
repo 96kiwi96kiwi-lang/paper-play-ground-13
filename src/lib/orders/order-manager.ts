@@ -7,8 +7,8 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, and order-comment.
- * submit calls orderCommentReason after the order-tag floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, order-comment, and order-force.
+ * submit calls orderForceReason after the order-comment floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
@@ -23,6 +23,7 @@ import { gridReason } from "./grid";
 import { icebergReason } from "./iceberg";
 import { orderCommentReason } from "./order-comment";
 import { orderExpiryReason } from "./order-expiry";
+import { orderForceReason } from "./order-force";
 import { orderTagReason } from "./order-tag";
 import { orderTypeAliasReason } from "./order-type-alias";
 import { pairAliasReason } from "./pair-alias";
@@ -138,6 +139,9 @@ export type OrderIntent = {
   comment?: unknown;
   orderComment?: unknown;
   clientComment?: unknown;
+  force?: unknown;
+  forceType?: unknown;
+  orderForce?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -292,6 +296,14 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   );
   if (orderComment) {
     return { ok: false, reason: orderComment };
+  }
+  const orderForce = orderForceReason(
+    intent.force,
+    intent.forceType,
+    intent.orderForce,
+  );
+  if (orderForce) {
+    return { ok: false, reason: orderForce };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
