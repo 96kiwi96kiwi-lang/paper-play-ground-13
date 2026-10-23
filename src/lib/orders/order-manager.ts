@@ -7,8 +7,8 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, order-comment, order-force, order-note, order-memo, order-reference, order-source, order-channel, order-priority, order-group, order-label, order-description, and order-remark.
- * submit calls orderRemarkReason after the order-description floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, order-comment, order-force, order-note, order-memo, order-reference, order-source, order-channel, order-priority, order-group, order-label, order-description, order-remark, and order-custom.
+ * submit calls orderCustomReason after the order-remark floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
@@ -23,6 +23,7 @@ import { gridReason } from "./grid";
 import { icebergReason } from "./iceberg";
 import { orderChannelReason } from "./order-channel";
 import { orderCommentReason } from "./order-comment";
+import { orderCustomReason } from "./order-custom";
 import { orderDescriptionReason } from "./order-description";
 import { orderExpiryReason } from "./order-expiry";
 import { orderForceReason } from "./order-force";
@@ -180,6 +181,9 @@ export type OrderIntent = {
   orderDescription?: unknown;
   clientDescription?: unknown;
   remark?: unknown;
+  custom?: unknown;
+  customField?: unknown;
+  clientCustom?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -422,6 +426,14 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   );
   if (orderRemark) {
     return { ok: false, reason: orderRemark };
+  }
+  const orderCustom = orderCustomReason(
+    intent.custom,
+    intent.customField,
+    intent.clientCustom,
+  );
+  if (orderCustom) {
+    return { ok: false, reason: orderCustom };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
