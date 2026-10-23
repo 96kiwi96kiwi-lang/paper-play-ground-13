@@ -7,8 +7,8 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, order-comment, order-force, order-note, order-memo, order-reference, order-source, order-channel, order-priority, order-group, order-label, and order-description.
- * submit calls orderDescriptionReason after the order-label floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, order-comment, order-force, order-note, order-memo, order-reference, order-source, order-channel, order-priority, order-group, order-label, order-description, and order-remark.
+ * submit calls orderRemarkReason after the order-description floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
@@ -32,6 +32,7 @@ import { orderMemoReason } from "./order-memo";
 import { orderNoteReason } from "./order-note";
 import { orderPriorityReason } from "./order-priority";
 import { orderReferenceReason } from "./order-reference";
+import { orderRemarkReason } from "./order-remark";
 import { orderSourceReason } from "./order-source";
 import { orderTagReason } from "./order-tag";
 import { orderTypeAliasReason } from "./order-type-alias";
@@ -178,6 +179,7 @@ export type OrderIntent = {
   description?: unknown;
   orderDescription?: unknown;
   clientDescription?: unknown;
+  remark?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -412,6 +414,14 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   );
   if (orderDescription) {
     return { ok: false, reason: orderDescription };
+  }
+  const orderRemark = orderRemarkReason(
+    intent.remark,
+    intent.tag,
+    intent.clientTag,
+  );
+  if (orderRemark) {
+    return { ok: false, reason: orderRemark };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
