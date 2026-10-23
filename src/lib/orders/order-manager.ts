@@ -7,8 +7,8 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, order-comment, order-force, order-note, and order-memo.
- * submit calls orderMemoReason after the order-note floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, order-comment, order-force, order-note, order-memo, and order-reference.
+ * submit calls orderReferenceReason after the order-memo floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
@@ -26,6 +26,7 @@ import { orderExpiryReason } from "./order-expiry";
 import { orderForceReason } from "./order-force";
 import { orderMemoReason } from "./order-memo";
 import { orderNoteReason } from "./order-note";
+import { orderReferenceReason } from "./order-reference";
 import { orderTagReason } from "./order-tag";
 import { orderTypeAliasReason } from "./order-type-alias";
 import { pairAliasReason } from "./pair-alias";
@@ -150,6 +151,9 @@ export type OrderIntent = {
   memo?: unknown;
   orderMemo?: unknown;
   clientMemo?: unknown;
+  reference?: unknown;
+  orderReference?: unknown;
+  clientReference?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -328,6 +332,14 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   );
   if (orderMemo) {
     return { ok: false, reason: orderMemo };
+  }
+  const orderReference = orderReferenceReason(
+    intent.reference,
+    intent.orderReference,
+    intent.clientReference,
+  );
+  if (orderReference) {
+    return { ok: false, reason: orderReference };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
