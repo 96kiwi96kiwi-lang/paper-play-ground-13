@@ -7,20 +7,24 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, and exec-inst.
- * submit calls trailingReason and execInstReason after the cancel-on-disconnect floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, order-comment, and exec-inst.
+ * submit calls execInstReason after the order-comment floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
 import { attachAlgoReason } from "./attach-algo";
 import { bboReason } from "./bbo";
 import { cancelOnDisconnectReason } from "./cancel-on-disconnect";
+import { cancelReplaceReason } from "./cancel-replace";
 import { clientIdAliasReason } from "./client-id-alias";
 import { closePositionReason } from "./close-position";
 import { currencyAliasReason } from "./currency-alias";
 import { execInstReason } from "./exec-inst";
 import { gridReason } from "./grid";
 import { icebergReason } from "./iceberg";
+import { orderCommentReason } from "./order-comment";
+import { orderExpiryReason } from "./order-expiry";
+import { orderTagReason } from "./order-tag";
 import { orderTypeAliasReason } from "./order-type-alias";
 import { pairAliasReason } from "./pair-alias";
 import { postOnlyReason } from "./post-only";
@@ -123,6 +127,18 @@ export type OrderIntent = {
   trailingDelta?: unknown;
   callbackRate?: unknown;
   activationPrice?: unknown;
+  cancelReplace?: unknown;
+  cancelOrderId?: unknown;
+  orderIdToCancel?: unknown;
+  cancelAfter?: unknown;
+  expireTime?: unknown;
+  goodTillDate?: unknown;
+  tag?: unknown;
+  orderTag?: unknown;
+  clientTag?: unknown;
+  comment?: unknown;
+  orderComment?: unknown;
+  clientComment?: unknown;
   execInst?: unknown;
   execInstruction?: unknown;
   instruction?: unknown;
@@ -248,6 +264,38 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   );
   if (trailing) {
     return { ok: false, reason: trailing };
+  }
+  const cancelReplace = cancelReplaceReason(
+    intent.cancelReplace,
+    intent.cancelOrderId,
+    intent.orderIdToCancel,
+  );
+  if (cancelReplace) {
+    return { ok: false, reason: cancelReplace };
+  }
+  const orderExpiry = orderExpiryReason(
+    intent.cancelAfter,
+    intent.expireTime,
+    intent.goodTillDate,
+  );
+  if (orderExpiry) {
+    return { ok: false, reason: orderExpiry };
+  }
+  const orderTag = orderTagReason(
+    intent.tag,
+    intent.orderTag,
+    intent.clientTag,
+  );
+  if (orderTag) {
+    return { ok: false, reason: orderTag };
+  }
+  const orderComment = orderCommentReason(
+    intent.comment,
+    intent.orderComment,
+    intent.clientComment,
+  );
+  if (orderComment) {
+    return { ok: false, reason: orderComment };
   }
   const execInst = execInstReason(intent.execInst, intent.execInstruction, intent.instruction);
   if (execInst) {
