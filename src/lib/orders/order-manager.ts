@@ -7,8 +7,8 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, order-comment, order-force, order-note, order-memo, order-reference, and order-source.
- * submit calls orderSourceReason after the order-reference floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, order-comment, order-force, order-note, order-memo, order-reference, order-source, and order-channel.
+ * submit calls orderChannelReason after the order-source floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
@@ -21,6 +21,7 @@ import { closePositionReason } from "./close-position";
 import { currencyAliasReason } from "./currency-alias";
 import { gridReason } from "./grid";
 import { icebergReason } from "./iceberg";
+import { orderChannelReason } from "./order-channel";
 import { orderCommentReason } from "./order-comment";
 import { orderExpiryReason } from "./order-expiry";
 import { orderForceReason } from "./order-force";
@@ -158,6 +159,9 @@ export type OrderIntent = {
   source?: unknown;
   orderSource?: unknown;
   src?: unknown;
+  channel?: unknown;
+  orderChannel?: unknown;
+  origin?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -352,6 +356,14 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   );
   if (orderSource) {
     return { ok: false, reason: orderSource };
+  }
+  const orderChannel = orderChannelReason(
+    intent.channel,
+    intent.orderChannel,
+    intent.origin,
+  );
+  if (orderChannel) {
+    return { ok: false, reason: orderChannel };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
