@@ -7,8 +7,8 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, order-comment, order-force, order-note, order-memo, order-reference, order-source, order-channel, order-priority, order-group, order-label, order-description, order-remark, order-custom, and order-link.
- * submit calls orderLinkReason after the order-custom floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, order-comment, order-force, order-note, order-memo, order-reference, order-source, order-channel, order-priority, order-group, order-label, order-description, order-remark, order-custom, order-link, and order-strategy.
+ * submit calls orderStrategyReason after the order-link floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
@@ -36,6 +36,7 @@ import { orderPriorityReason } from "./order-priority";
 import { orderReferenceReason } from "./order-reference";
 import { orderRemarkReason } from "./order-remark";
 import { orderSourceReason } from "./order-source";
+import { orderStrategyReason } from "./order-strategy";
 import { orderTagReason } from "./order-tag";
 import { orderTypeAliasReason } from "./order-type-alias";
 import { pairAliasReason } from "./pair-alias";
@@ -188,6 +189,9 @@ export type OrderIntent = {
   clOrdId?: unknown;
   orderLinkId?: unknown;
   linkId?: unknown;
+  strategy?: unknown;
+  strategyId?: unknown;
+  clientStrategy?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -446,6 +450,14 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   );
   if (orderLink) {
     return { ok: false, reason: orderLink };
+  }
+  const orderStrategy = orderStrategyReason(
+    intent.strategy,
+    intent.strategyId,
+    intent.clientStrategy,
+  );
+  if (orderStrategy) {
+    return { ok: false, reason: orderStrategy };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
