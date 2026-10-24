@@ -7,8 +7,8 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, order-comment, order-force, order-note, order-memo, order-reference, order-source, order-channel, order-priority, order-group, order-label, order-description, order-remark, order-custom, order-link, order-strategy, order-algo, order-text, order-title, and order-user.
- * submit calls orderUserReason after the order-title floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, order-comment, order-force, order-note, order-memo, order-reference, order-source, order-channel, order-priority, order-group, order-label, order-description, order-remark, order-custom, order-link, order-strategy, order-algo, order-text, order-title, order-user, and order-session.
+ * submit calls orderSessionReason after the order-user floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
@@ -37,6 +37,7 @@ import { orderPriorityReason } from "./order-priority";
 import { orderReferenceReason } from "./order-reference";
 import { orderRemarkReason } from "./order-remark";
 import { orderSourceReason } from "./order-source";
+import { orderSessionReason } from "./order-session";
 import { orderStrategyReason } from "./order-strategy";
 import { orderTagReason } from "./order-tag";
 import { orderTextReason } from "./order-text";
@@ -208,6 +209,9 @@ export type OrderIntent = {
   user?: unknown;
   orderUser?: unknown;
   clientUser?: unknown;
+  session?: unknown;
+  orderSession?: unknown;
+  clientSession?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -506,6 +510,14 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   );
   if (orderUser) {
     return { ok: false, reason: orderUser };
+  }
+  const orderSession = orderSessionReason(
+    intent.session,
+    intent.orderSession,
+    intent.clientSession,
+  );
+  if (orderSession) {
+    return { ok: false, reason: orderSession };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
