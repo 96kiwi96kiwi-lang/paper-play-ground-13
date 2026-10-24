@@ -7,8 +7,8 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, order-comment, order-force, order-note, order-memo, order-reference, order-source, order-channel, order-priority, order-group, order-label, order-description, order-remark, order-custom, order-link, order-strategy, order-algo, order-text, order-title, order-user, order-session, order-account, and order-position.
- * submit calls orderPositionReason after the order-account floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, order-comment, order-force, order-note, order-memo, order-reference, order-source, order-channel, order-priority, order-group, order-label, order-description, order-remark, order-custom, order-link, order-strategy, order-algo, order-text, order-title, order-user, order-session, order-account, order-position, and working-type.
+ * submit calls workingTypeReason after the order-position floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
@@ -60,6 +60,7 @@ import { sizeAliasReason } from "./size-alias";
 import { stopPriceAliasReason } from "./stop-price-alias";
 import { tifAliasReason } from "./tif-alias";
 import { trailingReason } from "./trailing";
+import { workingTypeReason } from "./working-type";
 
 export type OrderIntent = {
   symbol: string;
@@ -220,6 +221,9 @@ export type OrderIntent = {
   position?: unknown;
   orderPosition?: unknown;
   clientPosition?: unknown;
+  workingType?: unknown;
+  stopWorkingType?: unknown;
+  triggerBy?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -542,6 +546,14 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   );
   if (orderPosition) {
     return { ok: false, reason: orderPosition };
+  }
+  const workingType = workingTypeReason(
+    intent.workingType,
+    intent.stopWorkingType,
+    intent.triggerBy,
+  );
+  if (workingType) {
+    return { ok: false, reason: workingType };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
