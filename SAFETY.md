@@ -95,3 +95,5 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] A present `title`, `orderTitle`, or `clientTitle` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach a title or order title, so a title intent would otherwise be ignored and the order would rest or fill as a plain spot order)
 
 - [ ] A present `user`, `orderUser`, or `clientUser` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach a user or order user, so a user intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+- [ ] A present `session`, `orderSession`, or `clientSession` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach a session or order session, so a session intent would otherwise be ignored and the order would rest or fill as a plain spot order)
