@@ -7,8 +7,8 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, order-comment, order-force, order-note, order-memo, order-reference, order-source, order-channel, order-priority, order-group, order-label, order-description, order-remark, order-custom, order-link, order-strategy, order-algo, order-text, order-title, order-user, order-session, order-account, order-position, working-type, order-request, order-time, order-version, order-id, order-name, order-uuid, order-hash, order-signature, order-token, order-nonce, and order-correlation, and order-external.
- * submit calls orderExternalReason after the order-correlation floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, order-comment, order-force, order-note, order-memo, order-reference, order-source, order-channel, order-priority, order-group, order-label, order-description, order-remark, order-custom, order-link, order-strategy, order-algo, order-text, order-title, order-user, order-session, order-account, order-position, working-type, order-request, order-time, order-version, order-id, order-name, order-uuid, order-hash, order-signature, order-token, order-nonce, and order-correlation, order-external, and order-trace.
+ * submit calls orderTraceReason after the order-external floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
@@ -50,6 +50,7 @@ import { orderTokenReason } from "./order-token";
 import { orderNonceReason } from "./order-nonce";
 import { orderCorrelationReason } from "./order-correlation";
 import { orderExternalReason } from "./order-external";
+import { orderTraceReason } from "./order-trace";
 import { orderSourceReason } from "./order-source";
 import { orderSessionReason } from "./order-session";
 import { orderStrategyReason } from "./order-strategy";
@@ -272,6 +273,9 @@ export type OrderIntent = {
   externalId?: unknown;
   orderExternal?: unknown;
   clientExternal?: unknown;
+  trace?: unknown;
+  orderTrace?: unknown;
+  clientTrace?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -698,6 +702,14 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   );
   if (orderExternal) {
     return { ok: false, reason: orderExternal };
+  }
+  const orderTrace = orderTraceReason(
+    intent.trace,
+    intent.orderTrace,
+    intent.clientTrace,
+  );
+  if (orderTrace) {
+    return { ok: false, reason: orderTrace };
   }
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
   return { ok: true };
