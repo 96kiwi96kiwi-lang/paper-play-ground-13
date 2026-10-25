@@ -7,8 +7,8 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, order-comment, order-force, order-note, order-memo, order-reference, order-source, order-channel, order-priority, order-group, order-label, order-description, order-remark, order-custom, order-link, order-strategy, order-algo, order-text, order-title, order-user, order-session, order-account, order-position, working-type, order-request, order-time, order-version, and order-id.
- * submit calls orderIdReason after the order-version floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, order-comment, order-force, order-note, order-memo, order-reference, order-source, order-channel, order-priority, order-group, order-label, order-description, order-remark, order-custom, order-link, order-strategy, order-algo, order-text, order-title, order-user, order-session, order-account, order-position, working-type, order-request, order-time, order-version, order-id, and order-name.
+ * submit calls orderNameReason after the order-id floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
@@ -42,6 +42,7 @@ import { orderRequestReason } from "./order-request";
 import { orderTimeReason } from "./order-time";
 import { orderVersionReason } from "./order-version";
 import { orderIdReason } from "./order-id";
+import { orderNameReason } from "./order-name";
 import { orderSourceReason } from "./order-source";
 import { orderSessionReason } from "./order-session";
 import { orderStrategyReason } from "./order-strategy";
@@ -240,6 +241,9 @@ export type OrderIntent = {
   id?: unknown;
   orderId?: unknown;
   clientId?: unknown;
+  name?: unknown;
+  orderName?: unknown;
+  clientName?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -602,6 +606,14 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   );
   if (orderId) {
     return { ok: false, reason: orderId };
+  }
+  const orderName = orderNameReason(
+    intent.name,
+    intent.orderName,
+    intent.clientName,
+  );
+  if (orderName) {
+    return { ok: false, reason: orderName };
   }
   // Additional floors would be called here in the full implementation.
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
