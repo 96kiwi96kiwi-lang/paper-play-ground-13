@@ -7,8 +7,8 @@
  *
  * Current alias floors (non-exhaustive; see history): tokens, risk, exposure,
  * notional, quantity, holdings, value, assets, nav, equity, portfolio,
- * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, order-comment, order-force, order-note, order-memo, order-reference, order-source, order-channel, order-priority, order-group, order-label, order-description, order-remark, order-custom, order-link, order-strategy, order-algo, order-text, order-title, order-user, order-session, order-account, order-position, working-type, order-request, order-time, order-version, order-id, order-name, order-uuid, order-hash, order-signature, and order-token.
- * submit calls orderTokenReason after the order-signature floor and before the adapter.
+ * positions, crypto, currency, asset, quote, pair, price, product, side, size, order-type, client-id, tif, stop-price, iceberg, post-only, price-protect, price-match, bbo, grid, reduce-only, close-position, attach-algo, self-trade, cancel-on-disconnect, trailing, cancel-replace, order-expiry, order-tag, order-comment, order-force, order-note, order-memo, order-reference, order-source, order-channel, order-priority, order-group, order-label, order-description, order-remark, order-custom, order-link, order-strategy, order-algo, order-text, order-title, order-user, order-session, order-account, order-position, working-type, order-request, order-time, order-version, order-id, order-name, order-uuid, order-hash, order-signature, order-token, and order-nonce.
+ * submit calls orderNonceReason after the order-token floor and before the adapter.
  */
 
 import { assetAliasReason } from "./asset-alias";
@@ -47,6 +47,7 @@ import { orderUuidReason } from "./order-uuid";
 import { orderHashReason } from "./order-hash";
 import { orderSignatureReason } from "./order-signature";
 import { orderTokenReason } from "./order-token";
+import { orderNonceReason } from "./order-nonce";
 import { orderSourceReason } from "./order-source";
 import { orderSessionReason } from "./order-session";
 import { orderStrategyReason } from "./order-strategy";
@@ -260,6 +261,9 @@ export type OrderIntent = {
   token?: unknown;
   orderToken?: unknown;
   clientToken?: unknown;
+  nonce?: unknown;
+  orderNonce?: unknown;
+  clientNonce?: unknown;
 };
 
 export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason: string } {
@@ -663,7 +667,14 @@ export function submit(intent: OrderIntent): { ok: true } | { ok: false; reason:
   if (orderToken) {
     return { ok: false, reason: orderToken };
   }
-  // Additional floors would be called here in the full implementation.
+  const orderNonce = orderNonceReason(
+    intent.nonce,
+    intent.orderNonce,
+    intent.clientNonce,
+  );
+  if (orderNonce) {
+    return { ok: false, reason: orderNonce };
+  }
   // Adapters read amount / symbol / price / side / type / clientOrderId / timeInForce only.
   return { ok: true };
 }
