@@ -1,5 +1,15 @@
-# Order-tag submit floor
+# Order-tag floor
 
-Paper and KuCoin `placeLimitOrder` / `placeMarketOrder` send symbol, side, base amount, optional limit price, and optional client order id. They place one plain spot order and do not set an order tag, order tag alias, or client tag.
+Refuse present `tag`, `orderTag`, or `clientTag` before the adapter so a tag-tracking intent cannot be ignored on a plain spot order.
 
-A present `tag`, `orderTag`, or `clientTag` is refused in `OrderManager.submit` before the adapter. Omitted, null, false, and blank pass. Zero is present and is refused. This is a metadata floor, not a halt, and does not flatten positions. Paper remains the default. No secrets.
+Adapters place one plain spot order and do not attach a tag, so a tag intent would otherwise be dropped and the order would rest or fill as a plain spot order.
+
+Omitted, null, false, and blank still pass; zero is refused.
+
+This is a metadata floor, not a halt, and does not flatten positions.
+
+Wired into `OrderManager.submit` (Hour 309): calls `orderTagReason` after the order-correlation floor and before the adapter. A refuse does not burn `maxRejectsInWindow`.
+
+Default remains paper. No secrets.
+
+Vitest: `tests/order-tag.test.ts` (no exchange, no secrets).
