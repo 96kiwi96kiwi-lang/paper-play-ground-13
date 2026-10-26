@@ -11,6 +11,7 @@ import { orderSpanReason } from "./order-span";
 import { orderTraceReason } from "./order-trace";
 import { orderRequestReason } from "./order-request";
 import { orderSessionReason } from "./order-session";
+import { orderContextReason } from "./order-context";
 
 export interface OrderIntent {
   symbol: string;
@@ -52,6 +53,9 @@ export interface OrderIntent {
   session?: unknown;
   orderSession?: unknown;
   clientSession?: unknown;
+  context?: unknown;
+  orderContext?: unknown;
+  clientContext?: unknown;
 }
 
 interface Position {
@@ -121,7 +125,7 @@ export class OrderManager {
     const holdings = holdingsAliasReason(intent.holdings, intent.orderHoldings, intent.baseHoldings);
     if (holdings) return { ok: false, reason: holdings };
 
-    // Recent metadata floors (Hour 293–303 pattern)
+    // Recent metadata floors (Hour 293–305 pattern)
     const batch = orderBatchReason(intent.batch, intent.orderBatch, intent.clientBatch);
     if (batch) return { ok: false, reason: batch };
     const span = orderSpanReason(intent.span, intent.orderSpan, intent.clientSpan);
@@ -132,6 +136,8 @@ export class OrderManager {
     if (req) return { ok: false, reason: req };
     const sess = orderSessionReason(intent.session, intent.orderSession, intent.clientSession);
     if (sess) return { ok: false, reason: sess };
+    const ctx = orderContextReason(intent.context, intent.orderContext, intent.clientContext);
+    if (ctx) return { ok: false, reason: ctx };
 
     // Paper path: record and succeed (no live keys, no adapter call for this contract)
     this.state.seenOrders.push({ ...intent, at: Date.now() });
