@@ -18,6 +18,7 @@ import { orderLabelReason } from "./order-label";
 import { orderMemoReason } from "./order-memo";
 import { orderNoteReason } from "./order-note";
 import { orderCommentReason } from "./order-comment";
+import { orderTextReason } from "./order-text";
 
 export interface OrderIntent {
   symbol: string;
@@ -80,6 +81,9 @@ export interface OrderIntent {
   comment?: unknown;
   orderComment?: unknown;
   clientComment?: unknown;
+  text?: unknown;
+  orderText?: unknown;
+  clientText?: unknown;
 }
 
 interface Position {
@@ -149,7 +153,7 @@ export class OrderManager {
     const holdings = holdingsAliasReason(intent.holdings, intent.orderHoldings, intent.baseHoldings);
     if (holdings) return { ok: false, reason: holdings };
 
-    // Recent metadata floors (Hour 293–317 pattern)
+    // Recent metadata floors (Hour 293–319 pattern)
     const batch = orderBatchReason(intent.batch, intent.orderBatch, intent.clientBatch);
     if (batch) return { ok: false, reason: batch };
     const span = orderSpanReason(intent.span, intent.orderSpan, intent.clientSpan);
@@ -174,6 +178,8 @@ export class OrderManager {
     if (note) return { ok: false, reason: note };
     const comment = orderCommentReason(intent.comment, intent.orderComment, intent.clientComment);
     if (comment) return { ok: false, reason: comment };
+    const text = orderTextReason(intent.text, intent.orderText, intent.clientText);
+    if (text) return { ok: false, reason: text };
 
     // Paper path: record and succeed (no live keys, no adapter call for this contract)
     this.state.seenOrders.push({ ...intent, at: Date.now() });
