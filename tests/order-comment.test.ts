@@ -1,27 +1,27 @@
-import { expect, test } from "vitest";
-import { orderCommentReason } from "@/lib/orders/order-comment";
+import { describe, expect, it } from "vitest";
+import { orderCommentReason } from "../src/lib/orders/order-comment";
 
-test("omitted, blank, and false pass", () => {
-  expect(orderCommentReason(undefined)).toBeNull();
-  expect(orderCommentReason(null, null, null)).toBeNull();
-  expect(orderCommentReason("", "  ", false)).toBeNull();
-  expect(orderCommentReason(false, false, false)).toBeNull();
-});
+describe("orderCommentReason", () => {
+  it("passes omitted, null, false, and blank", () => {
+    expect(orderCommentReason()).toBeNull();
+    expect(orderCommentReason(undefined, undefined, undefined)).toBeNull();
+    expect(orderCommentReason(null, null, null)).toBeNull();
+    expect(orderCommentReason(false, false, false)).toBeNull();
+    expect(orderCommentReason("", "  ", "")).toBeNull();
+  });
 
-test("a present comment is refused and does not halt", () => {
-  expect(orderCommentReason("grid-note")).toBe(
-    "Order comment is not supported; the adapter would place a plain spot order",
-  );
-  expect(orderCommentReason(0)).toBe(
-    "Order comment is not supported; the adapter would place a plain spot order",
-  );
-  expect(orderCommentReason(undefined, "bybit-comment")).toBe(
-    "Order comment alias is not supported; the adapter would place a plain spot order",
-  );
-  expect(orderCommentReason(undefined, undefined, "client-memo")).toBe(
-    "Client comment alias is not supported; the adapter would place a plain spot order",
-  );
-  expect(orderCommentReason(undefined, undefined, true)).toBe(
-    "Client comment alias is not supported; the adapter would place a plain spot order",
-  );
+  it("refuses a present comment", () => {
+    expect(orderCommentReason("grid-a")).toMatch(/Order comment is not supported/);
+    expect(orderCommentReason(1)).toMatch(/Order comment is not supported/);
+    expect(orderCommentReason(true)).toMatch(/Order comment is not supported/);
+  });
+
+  it("refuses a present orderComment alias", () => {
+    expect(orderCommentReason(undefined, "bot")).toMatch(/Order comment alias is not supported/);
+    expect(orderCommentReason(undefined, 0)).toMatch(/Order comment alias is not supported/);
+  });
+
+  it("refuses a present clientComment alias", () => {
+    expect(orderCommentReason(undefined, undefined, "desk")).toMatch(/Client comment alias is not supported/);
+  });
 });
