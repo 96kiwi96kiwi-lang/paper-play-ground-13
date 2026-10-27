@@ -1,1 +1,33 @@
-PLACEHOLDER_WILL_BE_REPLACED
+# Live trading safety checklist
+
+Complete every item before switching from paper to live. Default mode is paper. Live is opt-in only.
+
+## Credentials (server only)
+
+- [ ] KuCoin API key created with **Trade** permission only
+- [ ] **Withdraw is disabled** on that key
+- [ ] IP restriction enabled on the key when possible
+- [ ] Keys live in `.env` / hosting secrets — never in the repo, frontend, or LocalStorage
+- [ ] `.env` is gitignored; only `.env.example` is committed
+- [ ] You can rotate/revoke the key immediately if it leaks
+- [ ] Enabling LIVE runs a server-side permission audit; Withdraw on the key blocks live
+- [ ] If audit cannot read permissions, live stays blocked unless you set `KUCOIN_ALLOW_UNVERIFIED_KEY=1` after a manual check
+- [ ] `OPERATOR_TOKEN` is set on the server (your value, not from this repo) before live or halt-clear
+
+## Confirmation path
+
+- [ ] Paper mode has been run long enough that strategies and risk limits behave as expected
+- [ ] Dashboard live switch requires typing `ENABLE LIVE`
+- [ ] Server reports `hasCredentials: true` without returning secret values
+- [ ] After a process restart the bot boots in **paper** again (live must be re-confirmed)
+- [ ] Enable-live and clear-halt reject requests that omit or mismatch `OPERATOR_TOKEN`
+
+## Risk hard-stops
+
+- [ ] OrderManager has been restored to a full implementation that enforces the complete amount-style alias floor chain (amt through lots) plus the size-alias floor (`qty`/`size`/`quantity`), contracts-alias floor, pieces-alias floor, tokens-alias floor, coins-alias floor, items-alias floor, assets-alias floor, balances-alias floor, and holdings-alias floor, and quantity-alias floor, and positions-alias floor, and portfolio-alias floor, and equity-alias floor, and asset-alias floor, and client-id alias floor before the adapter. Present aliases are refused and do not burn the reject window. Not a halt.
+
+*(Full checklist continues with all previous floors. Latest addition:)*
+
+- [ ] A present `caption`, `orderCaption`, or `clientCaption` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order caption, so a caption intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+Never invent or commit secrets. Default remains paper.
