@@ -28,6 +28,10 @@ Complete every item before switching from paper to live. Default mode is paper. 
 
 *(Full checklist continues with all previous floors. Latest addition:)*
 
+- [ ] A present `preview`, `orderPreview`, or `clientPreview` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order preview, so a preview intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+- [ ] A present `outline`, `orderOutline`, or `clientOutline` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order outline, so an outline intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
 - [ ] A present `synopsis`, `orderSynopsis`, or `clientSynopsis` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order synopsis, so a synopsis intent would otherwise be ignored and the order would rest or fill as a plain spot order)
 
 - [ ] A present `abstract`, `orderAbstract`, or `clientAbstract` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order abstract, so an abstract intent would otherwise be ignored and the order would rest or fill as a plain spot order)
