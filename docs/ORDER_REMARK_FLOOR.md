@@ -1,8 +1,8 @@
 # Order remark floor
 
-A submit is refused when `remark`, `tag`, or `clientTag` is present (`Remark is not supported` / `Tag is not supported` / `Client tag is not supported`).
+A submit is refused when `remark`, `orderRemark`, or `clientRemark` is present (`Order remark is not supported` / `Order remark alias is not supported` / `Client remark alias is not supported`).
 
-Paper and KuCoin adapters place one plain spot order and do not forward a client remark, so a remark intent would be dropped and the order would rest or fill as a plain spot order.
+Paper and KuCoin adapters place one plain spot order and do not set an order remark, so a remark intent would be ignored and the base size would rest or fill as a plain spot order.
 
 Omitted, null, false, and blank still pass. Zero is present and is refused.
 

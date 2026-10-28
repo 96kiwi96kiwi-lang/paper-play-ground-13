@@ -28,6 +28,8 @@ Complete every item before switching from paper to live. Default mode is paper. 
 
 *(Full checklist continues with all previous floors. Latest addition:)*
 
+- [ ] A present `remark`, `orderRemark`, or `clientRemark` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order remark, so a remark intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
 - [ ] A present `reference`, `orderReference`, or `clientReference` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order reference, so a reference intent would otherwise be ignored and the order would rest or fill as a plain spot order)
 
 - [ ] A present `provenance`, `orderProvenance`, or `clientProvenance` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order provenance, so a provenance intent would otherwise be ignored and the order would rest or fill as a plain spot order)
