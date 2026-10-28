@@ -35,6 +35,7 @@ import { orderSignatureReason } from "./order-signature";
 import { orderSourceReason } from "./order-source";
 import { orderOriginReason } from "./order-origin";
 import { orderProvenanceReason } from "./order-provenance";
+import { orderReferenceReason } from "./order-reference";
 
 export interface OrderIntent {
   symbol: string;
@@ -148,6 +149,9 @@ export interface OrderIntent {
   provenance?: unknown;
   orderProvenance?: unknown;
   clientProvenance?: unknown;
+  reference?: unknown;
+  orderReference?: unknown;
+  clientReference?: unknown;
 }
 
 interface Position {
@@ -217,7 +221,7 @@ export class OrderManager {
     const holdings = holdingsAliasReason(intent.holdings, intent.orderHoldings, intent.baseHoldings);
     if (holdings) return { ok: false, reason: holdings };
 
-    // Recent metadata floors (Hour 293–351 pattern)
+    // Recent metadata floors (Hour 293–353 pattern)
     const batch = orderBatchReason(intent.batch, intent.orderBatch, intent.clientBatch);
     if (batch) return { ok: false, reason: batch };
     const span = orderSpanReason(intent.span, intent.orderSpan, intent.clientSpan);
@@ -276,6 +280,8 @@ export class OrderManager {
     if (org) return { ok: false, reason: org };
     const prov = orderProvenanceReason(intent.provenance, intent.orderProvenance, intent.clientProvenance);
     if (prov) return { ok: false, reason: prov };
+    const ref = orderReferenceReason(intent.reference, intent.orderReference, intent.clientReference);
+    if (ref) return { ok: false, reason: ref };
 
     // Paper path: record and succeed (no live keys, no adapter call for this contract)
     this.state.seenOrders.push({ ...intent, at: Date.now() });
