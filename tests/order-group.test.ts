@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { orderGroupReason } from "../src/lib/orders/order-group";
+import { submit } from "../src/lib/orders/order-manager";
 
 describe("orderGroupReason", () => {
   it("passes omitted, null, false, and blank", () => {
@@ -23,5 +24,19 @@ describe("orderGroupReason", () => {
 
   it("refuses a present clientGroup alias", () => {
     expect(orderGroupReason(undefined, undefined, "desk")).toMatch(/Client group alias is not supported/);
+  });
+
+  it("is wired into submit before the adapter", () => {
+    const result = submit({
+      symbol: "BTC/USDT",
+      side: "buy",
+      amount: 0.001,
+      type: "market",
+      group: "grid-a",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toMatch(/Order group is not supported/);
+    }
   });
 });

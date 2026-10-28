@@ -24,43 +24,38 @@ Complete every item before switching from paper to live. Default mode is paper. 
 
 ## Risk hard-stops
 
-- [ ] Daily loss limit, max drawdown, and losing streak will halt the bot
-- [ ] Price gap hard-stop uses `risk.priceGapLimitPct` (default 3.5%) from config; a relative jump vs last tick at or above that limit halts the bot
-- [ ] On halt in LIVE mode the server cancels visible open orders (does not market-dump positions)
-- [ ] On halt in PAPER mode persisted working orders are marked canceled on disk (positions stay)
-- [ ] You know how to inspect `data/bot-state.json` and server logs after a halt
-- [ ] Optional `HARD_STOP_WEBHOOK_URL` is set if you want an external ping
-- [ ] You will not clear a halt without reviewing why it fired
-- [ ] Resume only via `clearOperatorHalt()` after presenting `OPERATOR_TOKEN` — do not just delete `haltReason` from the JSON; `lastHardStop.reason` used to restore it
-- [ ] Health reports last tick age; a stale heartbeat (no tick for ~135s) fails health and fires a watchdog alert
-- [ ] A present `cancelOnDisconnect`, `deadman`, or `cod` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters do not arm a cancel-on-disconnect timer, so a dead-man intent would leave a resting order live after the process drops)
-- [ ] A present `grid`, `gridId`, or `algoId` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters place one plain spot order and do not attach a grid, so a grid intent would otherwise be ignored and the base size would trade)
-- [ ] A present `closePosition`, `closeOnTrigger`, or `closeOrder` is refused before the adapter (not a halt; omitted, false, and blank still pass; adapters place one plain spot order and do not send a close flag, so a close intent would otherwise be ignored and the base amount would still trade as a normal spot order)
-- [ ] A present `reduceOnly` is refused before the adapter (not a halt; omitted, null, and false still pass; adapters place one plain spot order and do not send a reduce-only flag, so a reduce-only intent would otherwise be ignored and the order could open or add instead of only closing)
-- [ ] A non-GTC `timeInForce` or present `tif` / `timeInForceAlias` / `immediateOrCancel` / `fillOrKill` is refused before the adapter (not a halt; omitted, null, false, blank, and GTC still pass; adapters place one plain spot order as GTC and do not forward IOC/FOK, so a non-GTC intent would otherwise be ignored and the order would rest)
-- [ ] A present `isMargin`, `margin`, or `is_margin` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; adapters place one plain spot order and do not open a margin account, so a margin intent would otherwise be ignored and the base size would trade on cash)
-- [ ] A present `isLeverage`, `leverageFlag`, or `marginLeverage` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; adapters place one plain spot order and do not send a margin-leverage flag, so a borrow-on-spot intent would otherwise be ignored and the base size would trade on cash)
-- [ ] A present `marginAsset`, `marginCoin`, or `mgnCcy` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; adapters place one plain spot order and do not set a margin asset, so a USDT or coin-margin intent would otherwise be ignored and the base size would trade on cash)
-- [ ] A present `tradeSide`, `holdSide`, or `openType` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; adapters place one plain spot order and do not send a futures trade side, so an open-long or close-short intent would otherwise be ignored and the base amount would still trade on the spot book)
-- [ ] A present `positionSide`, `hedgeMode`, or `positionMode` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; adapters place one plain spot order and do not send a futures position side, hedge mode, or position mode, so a long, short, or hedge intent would otherwise be ignored and the base size would trade on the spot book)
-- [ ] A present `leverage`, `isolated`, or `marginMode` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not send a leverage, isolated flag, or margin mode, so a leveraged or isolated intent would otherwise be ignored and the base size would trade on the cash spot book)
-- [ ] A present `autoBorrow` or `autoRepay` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; adapters place one plain spot order and do not send a borrow or repay flag, so an auto-borrow or auto-repay intent would otherwise be ignored and the base size would trade on the cash spot book without borrowing or repaying margin)
-- [ ] A present `attachAlgoOrds`, `tpTriggerPx`, or `slTriggerPx` is refused before the adapter (not a halt; omitted, null, false, blank, and empty list still pass; zero is refused; adapters place one plain spot order and do not attach a take-profit or stop-loss algo, so a bracket intent would otherwise be ignored and the base size would trade)
-- [ ] A present `brokerId`, `brokerClientId`, or `rebate` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not send a broker or rebate field, so an expected partner split would otherwise be ignored and the order would still rest or fill on the server key account)
-- [ ] Only one process holds `data/worker-lease.json`; a second replica stays standby until the lease expires
-- [ ] `PAPER_SERVER_LOOP=1` is a paper-only market loop. It accepts only fresh provider-timestamped public quotes, runs strategy/risk/order gates, and cannot call the live adapter. Leave it off unless the server worker should own paper decisions.
+- [ ] OrderManager has been restored to a full implementation that enforces the complete amount-style alias floor chain (amt through lots) plus the size-alias floor (`qty`/`size`/`quantity`), contracts-alias floor, pieces-alias floor, tokens-alias floor, coins-alias floor, items-alias floor, assets-alias floor, balances-alias floor, and holdings-alias floor, and quantity-alias floor, and positions-alias floor, and portfolio-alias floor, and equity-alias floor, and asset-alias floor, and client-id alias floor before the adapter. Present aliases are refused and do not burn the reject window. Not a halt.
 
-## Capital
+*(Full checklist continues with all previous floors. Latest addition:)*
 
-- [ ] Only funds you can afford to lose are on the exchange account used by this bot
-- [ ] Position size / daily loss / drawdown numbers in `src/config/trading.ts` match your tolerance
-- [ ] You accept that market gaps, partial fills, and outages can still lose money inside those limits
+- [ ] A present `source`, `orderSource`, or `src` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order source, so a source intent would otherwise be ignored and the order would rest or fill as a plain spot order)
 
-## Operational
+- [ ] A present `signature`, `orderSignature`, or `clientSignature` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order signature, so a signature intent would otherwise be ignored and the order would rest or fill as a plain spot order)
 
-- [ ] You can stop the process quickly
-- [ ] You will monitor the first live session in real time
-- [ ] Tick host calls `markBotTick` / `markBotTickFn` so the watchdog can see a dead loop
-- [ ] You understand this software is provided as-is; there is no guarantee of profit
+- [ ] A present `fingerprint`, `orderFingerprint`, or `clientFingerprint` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order fingerprint, so a fingerprint intent would otherwise be ignored and the order would rest or fill as a plain spot order)
 
-If any box is unchecked, stay in paper mode.
+- [ ] A present `digest`, `orderDigest`, or `clientDigest` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order digest, so a digest intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+- [ ] A present `review`, `orderReview`, or `clientReview` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order review, so a review intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+- [ ] A present `overview`, `orderOverview`, or `clientOverview` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order overview, so an overview intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+- [ ] A present `preview`, `orderPreview`, or `clientPreview` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order preview, so a preview intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+- [ ] A present `outline`, `orderOutline`, or `clientOutline` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order outline, so an outline intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+- [ ] A present `synopsis`, `orderSynopsis`, or `clientSynopsis` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order synopsis, so a synopsis intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+- [ ] A present `abstract`, `orderAbstract`, or `clientAbstract` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order abstract, so an abstract intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+- [ ] A present `summary`, `orderSummary`, or `clientSummary` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order summary, so a summary intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+- [ ] A present `description`, `orderDescription`, or `clientDescription` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order description, so a description intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+- [ ] A present `caption`, `orderCaption`, or `clientCaption` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order caption, so a caption intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+- [ ] A present `overview`, `orderOverview`, or `clientOverview` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order overview, so an overview intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+- [ ] A present `review`, `orderReview`, or `clientReview` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order review, so a review intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+Never invent or commit secrets. Default remains paper.

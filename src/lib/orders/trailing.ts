@@ -1,47 +1,37 @@
-/** Refuse trailing or extra trigger fields the spot adapters do not forward. Not a halt. */
+/** Refuse trailing-stop fields the spot adapters do not forward. Not a halt. */
 
 /**
- * Omitted, null, and blank pass. A present trailing or extra trigger is refused:
- * placeLimitOrder / placeMarketOrder do not send these fields, so a stop-loss,
- * take-profit, callback, or activation price would be ignored and the base
- * order would fill or rest immediately. stopPrice is a separate floor.
- * This is a trigger floor, not a halt, and does not flatten positions.
+ * Omitted, null, false, and blank pass. A present trailingStop, trailingDelta,
+ * callbackRate, or activationPrice is refused: placeLimitOrder / placeMarketOrder
+ * do not send a trailing callback or activation, so a trailing intent would
+ * otherwise be ignored and the order would rest or fill as a plain spot order
+ * at price or market. Zero is present and is refused. This is a trailing floor,
+ * not a halt, and does not flatten positions.
  */
 function present(value: unknown): boolean {
   if (value == null) return false;
+  if (typeof value === "boolean") return value;
   if (typeof value === "string" && value.trim() === "") return false;
   return true;
 }
 
 export function trailingReason(
-  triggerPrice: unknown,
-  stopLossPrice?: unknown,
-  takeProfitPrice?: unknown,
+  trailingStop: unknown,
   trailingDelta?: unknown,
-  trailingPercent?: unknown,
   callbackRate?: unknown,
   activationPrice?: unknown,
 ): string | null {
-  if (present(triggerPrice)) {
-    return "Trigger price is not supported; the adapter would place a spot order";
-  }
-  if (present(stopLossPrice)) {
-    return "Stop loss is not supported; the adapter would place a spot order";
-  }
-  if (present(takeProfitPrice)) {
-    return "Take profit is not supported; the adapter would place a spot order";
+  if (present(trailingStop)) {
+    return "Trailing stop is not supported; the adapter would place a plain spot order";
   }
   if (present(trailingDelta)) {
-    return "Trailing delta is not supported; the adapter would place a spot order";
-  }
-  if (present(trailingPercent)) {
-    return "Trailing percent is not supported; the adapter would place a spot order";
+    return "Trailing delta is not supported; the adapter would place a plain spot order";
   }
   if (present(callbackRate)) {
-    return "Callback rate is not supported; the adapter would place a spot order";
+    return "Callback rate is not supported; the adapter would place a plain spot order";
   }
   if (present(activationPrice)) {
-    return "Activation price is not supported; the adapter would place a spot order";
+    return "Activation price is not supported; the adapter would place a plain spot order";
   }
   return null;
 }

@@ -1,11 +1,11 @@
-/** Refuse price aliases the spot adapters do not forward. Not a halt. */
+/** Refuse price aliases the spot adapters do not read. Not a halt. */
 
 /**
- * Omitted, null, and blank pass. A present limitPrice, orderPrice, or px is
- * refused: placeLimitOrder prices by price only, so a price alias would be
- * ignored and the limit would rest or fill at price (or fail as unpriced).
- * Zero is present and is refused. This is a pricing floor, not a halt, and
- * does not flatten positions.
+ * Omitted, null, and blank pass. A present px, limitPx, or orderPrice
+ * is refused: adapters place a limit by price only. An alias would be
+ * ignored and the limit would use the canonical price or fail.
+ * Zero is present and is refused. This is a price floor, not a halt,
+ * and does not flatten positions.
  */
 function present(value: unknown): boolean {
   if (value == null) return false;
@@ -14,18 +14,22 @@ function present(value: unknown): boolean {
 }
 
 export function priceAliasReason(
-  limitPrice: unknown,
+  px: unknown,
+  limitPx?: unknown,
   orderPrice?: unknown,
-  px?: unknown,
+  limitPrice?: unknown,
 ): string | null {
-  if (present(limitPrice)) {
-    return "Limit price alias is not supported; the adapter prices by price";
+  if (present(px)) {
+    return "Price alias is not supported; the adapter reads price";
+  }
+  if (present(limitPx)) {
+    return "Limit price alias is not supported; the adapter reads price";
   }
   if (present(orderPrice)) {
-    return "Order price is not supported; the adapter prices by price";
+    return "Order price alias is not supported; the adapter reads price";
   }
-  if (present(px)) {
-    return "Px is not supported; the adapter prices by price";
+  if (present(limitPrice)) {
+    return "Limit price alias is not supported; the adapter reads price";
   }
   return null;
 }
