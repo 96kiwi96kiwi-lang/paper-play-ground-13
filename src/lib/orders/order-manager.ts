@@ -37,6 +37,8 @@ import { orderOriginReason } from "./order-origin";
 import { orderProvenanceReason } from "./order-provenance";
 import { orderReferenceReason } from "./order-reference";
 import { orderRemarkReason } from "./order-remark";
+import { orderAnnotationReason } from "./order-annotation";
+import { orderMetadataReason } from "./order-metadata";
 
 export interface OrderIntent {
   symbol: string;
@@ -156,6 +158,12 @@ export interface OrderIntent {
   remark?: unknown;
   orderRemark?: unknown;
   clientRemark?: unknown;
+  annotation?: unknown;
+  orderAnnotation?: unknown;
+  clientAnnotation?: unknown;
+  metadata?: unknown;
+  orderMetadata?: unknown;
+  clientMetadata?: unknown;
 }
 
 interface Position {
@@ -225,7 +233,7 @@ export class OrderManager {
     const holdings = holdingsAliasReason(intent.holdings, intent.orderHoldings, intent.baseHoldings);
     if (holdings) return { ok: false, reason: holdings };
 
-    // Recent metadata floors (Hour 293–355 pattern)
+    // Recent metadata floors (Hour 293–357 pattern)
     const batch = orderBatchReason(intent.batch, intent.orderBatch, intent.clientBatch);
     if (batch) return { ok: false, reason: batch };
     const span = orderSpanReason(intent.span, intent.orderSpan, intent.clientSpan);
@@ -288,6 +296,10 @@ export class OrderManager {
     if (ref) return { ok: false, reason: ref };
     const rmk = orderRemarkReason(intent.remark, intent.orderRemark, intent.clientRemark);
     if (rmk) return { ok: false, reason: rmk };
+    const ann = orderAnnotationReason(intent.annotation, intent.orderAnnotation, intent.clientAnnotation);
+    if (ann) return { ok: false, reason: ann };
+    const meta = orderMetadataReason(intent.metadata, intent.orderMetadata, intent.clientMetadata);
+    if (meta) return { ok: false, reason: meta };
 
     // Paper path: record and succeed (no live keys, no adapter call for this contract)
     this.state.seenOrders.push({ ...intent, at: Date.now() });
