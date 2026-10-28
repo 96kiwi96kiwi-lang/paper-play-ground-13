@@ -69,6 +69,31 @@ test("Bybit source fails closed on stale provider time", async () => {
   await expect(fetchBybitMarketSnapshot(now)).rejects.toThrow(/stale provider timestamp/);
 });
 
+test("Bybit source accepts response time shortly after request start", async () => {
+  const now = 1_700_000_000_000;
+  const providerResponseTime = now + 250;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => new Response(JSON.stringify(bybitPayload(providerResponseTime)))),
+  );
+
+  const snapshot = await fetchBybitMarketSnapshot(now);
+
+  expect(snapshot.provider).toBe("bybit");
+  expect(snapshot.tickers["BTC/USDT"]?.timestamp).toBe(providerResponseTime);
+});
+
+test("Bybit source fails closed on excessive future provider time", async () => {
+  const now = 1_700_000_000_000;
+  const excessiveFutureTime = now + 15_001;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => new Response(JSON.stringify(bybitPayload(excessiveFutureTime)))),
+  );
+
+  await expect(fetchBybitMarketSnapshot(now)).rejects.toThrow(/stale provider timestamp/);
+});
+
 test("public source falls back to a complete Bybit snapshot after stale CoinGecko data", async () => {
   const now = 1_700_000_000_000;
   const stale = now - TRADING_CONFIG.orders.maxPriceAgeMs - 1;
