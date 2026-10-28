@@ -14,7 +14,8 @@ const COINGECKO_URL =
   "https://api.coingecko.com/api/v3/simple/price?ids=" +
   `${COINS.map((coin) => coin.id).join(",")}&vs_currencies=usd&include_last_updated_at=true`;
 
-const BYBIT_URL = "https://api.bybit.com/v5/market/tickers?category=spot";\nconst MAX_PROVIDER_FUTURE_SKEW_MS = 15_000;
+const BYBIT_URL = "https://api.bybit.com/v5/market/tickers?category=spot";
+const MAX_PROVIDER_FUTURE_SKEW_MS = 15_000;
 
 const SYMBOL_BY_ID: Record<CoinId, string> = {
   bitcoin: "BTC/USDT",
@@ -31,7 +32,8 @@ const BYBIT_SYMBOLS: Record<string, string> = {
 };
 
 function assertFreshProviderTimestamp(provider: string, timestamp: number, now: number): void {
-  if (!(timestamp > 0) || timestamp > now + MAX_PROVIDER_FUTURE_SKEW_MS ||\n    now - timestamp > TRADING_CONFIG.orders.maxPriceAgeMs) {
+  if (!(timestamp > 0) || timestamp > now + MAX_PROVIDER_FUTURE_SKEW_MS ||
+    now - timestamp > TRADING_CONFIG.orders.maxPriceAgeMs) {
     throw new Error(`${provider} stale provider timestamp`);
   }
 }
