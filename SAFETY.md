@@ -28,6 +28,8 @@ Complete every item before switching from paper to live. Default mode is paper. 
 
 *(Full checklist continues with all previous floors. Latest addition:)*
 
+- [ ] A present `source`, `orderSource`, or `src` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order source, so a source intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
 - [ ] A present `signature`, `orderSignature`, or `clientSignature` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order signature, so a signature intent would otherwise be ignored and the order would rest or fill as a plain spot order)
 
 - [ ] A present `fingerprint`, `orderFingerprint`, or `clientFingerprint` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order fingerprint, so a fingerprint intent would otherwise be ignored and the order would rest or fill as a plain spot order)
