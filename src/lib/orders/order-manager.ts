@@ -40,6 +40,7 @@ import { orderRemarkReason } from "./order-remark";
 import { orderAnnotationReason } from "./order-annotation";
 import { orderMetadataReason } from "./order-metadata";
 import { orderPayloadReason } from "./order-payload";
+import { orderPriorityReason } from "./order-priority";
 
 export interface OrderIntent {
   symbol: string;
@@ -168,6 +169,9 @@ export interface OrderIntent {
   payload?: unknown;
   orderPayload?: unknown;
   clientPayload?: unknown;
+  priority?: unknown;
+  orderPriority?: unknown;
+  clientPriority?: unknown;
 }
 
 interface Position {
@@ -306,6 +310,8 @@ export class OrderManager {
     if (meta) return { ok: false, reason: meta };
     const pay = orderPayloadReason(intent.payload, intent.orderPayload, intent.clientPayload);
     if (pay) return { ok: false, reason: pay };
+    const prio = orderPriorityReason(intent.priority, intent.orderPriority, intent.clientPriority);
+    if (prio) return { ok: false, reason: prio };
 
     // Paper path: record and succeed (no live keys, no adapter call for this contract)
     this.state.seenOrders.push({ ...intent, at: Date.now() });
