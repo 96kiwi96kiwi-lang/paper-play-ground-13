@@ -38,6 +38,7 @@ import { orderProvenanceReason } from "./order-provenance";
 import { orderReferenceReason } from "./order-reference";
 import { orderRemarkReason } from "./order-remark";
 import { orderAnnotationReason } from "./order-annotation";
+import { orderMetadataReason } from "./order-metadata";
 
 export interface OrderIntent {
   symbol: string;
@@ -160,6 +161,9 @@ export interface OrderIntent {
   annotation?: unknown;
   orderAnnotation?: unknown;
   clientAnnotation?: unknown;
+  metadata?: unknown;
+  orderMetadata?: unknown;
+  clientMetadata?: unknown;
 }
 
 interface Position {
@@ -294,6 +298,8 @@ export class OrderManager {
     if (rmk) return { ok: false, reason: rmk };
     const ann = orderAnnotationReason(intent.annotation, intent.orderAnnotation, intent.clientAnnotation);
     if (ann) return { ok: false, reason: ann };
+    const meta = orderMetadataReason(intent.metadata, intent.orderMetadata, intent.clientMetadata);
+    if (meta) return { ok: false, reason: meta };
 
     // Paper path: record and succeed (no live keys, no adapter call for this contract)
     this.state.seenOrders.push({ ...intent, at: Date.now() });
