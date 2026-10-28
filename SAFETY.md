@@ -28,6 +28,10 @@ Complete every item before switching from paper to live. Default mode is paper. 
 
 *(Full checklist continues with all previous floors. Latest addition:)*
 
+- [ ] A present `provenance`, `orderProvenance`, or `clientProvenance` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order provenance, so a provenance intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+- [ ] A present `origin`, `orderOrigin`, or `clientOrigin` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order origin, so an origin intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
 - [ ] A present `source`, `orderSource`, or `src` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order source, so a source intent would otherwise be ignored and the order would rest or fill as a plain spot order)
 
 - [ ] A present `signature`, `orderSignature`, or `clientSignature` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order signature, so a signature intent would otherwise be ignored and the order would rest or fill as a plain spot order)
