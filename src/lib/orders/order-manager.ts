@@ -207,6 +207,7 @@ import { orderUrgencyReason } from "./order-urgency";
 import { orderVisibilityReason } from "./order-visibility";
 import { orderAudienceReason } from "./order-audience";
 import { orderScopeReason } from "./order-scope";
+import { orderCustomReason } from "./order-custom";
 
 export type OrderIntent = {
   symbol: string;
@@ -863,6 +864,9 @@ export type OrderIntent = {
   scope?: unknown;
   orderScope?: unknown;
   clientScope?: unknown;
+  custom?: unknown;
+  customField?: unknown;
+  clientCustom?: unknown;
 };
 
 /**
@@ -1142,6 +1146,13 @@ export class OrderManager {
       intent.clientScope,
     );
     if (scope) return this.fail(scope);
+
+    const custom = orderCustomReason(
+      intent.custom,
+      intent.customField,
+      intent.clientCustom,
+    );
+    if (custom) return this.fail(custom);
 
     const subAccount = subAccountReason(intent.subAccount, intent.subUid, intent.uid);
     if (subAccount) return this.fail(subAccount);
