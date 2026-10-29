@@ -203,6 +203,9 @@ import { orderReferenceReason } from "./order-reference";
 import { orderAnnotationReason } from "./order-annotation";
 import { orderMetadataReason } from "./order-metadata";
 import { orderPayloadReason } from "./order-payload";
+import { orderUrgencyReason } from "./order-urgency";
+import { orderVisibilityReason } from "./order-visibility";
+import { orderAudienceReason } from "./order-audience";
 
 export type OrderIntent = {
   symbol: string;
@@ -847,6 +850,15 @@ export type OrderIntent = {
   orderPayload?: unknown;
   clientPayload?: unknown;
   clientPriority?: unknown;
+  urgency?: unknown;
+  orderUrgency?: unknown;
+  clientUrgency?: unknown;
+  visibility?: unknown;
+  orderVisibility?: unknown;
+  clientVisibility?: unknown;
+  audience?: unknown;
+  orderAudience?: unknown;
+  clientAudience?: unknown;
 };
 
 /**
@@ -1098,6 +1110,27 @@ export class OrderManager {
       intent.clientPriority ?? intent.timePriority,
     );
     if (priority) return this.fail(priority);
+
+    const urgency = orderUrgencyReason(
+      intent.urgency,
+      intent.orderUrgency,
+      intent.clientUrgency,
+    );
+    if (urgency) return this.fail(urgency);
+
+    const visibility = orderVisibilityReason(
+      intent.visibility,
+      intent.orderVisibility,
+      intent.clientVisibility,
+    );
+    if (visibility) return this.fail(visibility);
+
+    const audience = orderAudienceReason(
+      intent.audience,
+      intent.orderAudience,
+      intent.clientAudience,
+    );
+    if (audience) return this.fail(audience);
 
     const subAccount = subAccountReason(intent.subAccount, intent.subUid, intent.uid);
     if (subAccount) return this.fail(subAccount);
