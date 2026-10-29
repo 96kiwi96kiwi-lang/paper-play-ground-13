@@ -46,6 +46,7 @@ import { orderVisibilityReason } from "./order-visibility";
 import { orderAudienceReason } from "./order-audience";
 import { orderScopeReason } from "./order-scope";
 import { orderCustomReason } from "./order-custom";
+import { orderStrategyReason } from "./order-strategy";
 
 export interface OrderIntent {
   symbol: string;
@@ -192,6 +193,9 @@ export interface OrderIntent {
   custom?: unknown;
   customField?: unknown;
   clientCustom?: unknown;
+  strategy?: unknown;
+  strategyId?: unknown;
+  clientStrategy?: unknown;
 }
 
 interface Position {
@@ -342,6 +346,8 @@ export class OrderManager {
     if (scp) return { ok: false, reason: scp };
     const cus = orderCustomReason(intent.custom, intent.customField, intent.clientCustom);
     if (cus) return { ok: false, reason: cus };
+    const strat = orderStrategyReason(intent.strategy, intent.strategyId, intent.clientStrategy);
+    if (strat) return { ok: false, reason: strat };
 
     // Paper path: record and succeed (no live keys, no adapter call for this contract)
     this.state.seenOrders.push({ ...intent, at: Date.now() });
