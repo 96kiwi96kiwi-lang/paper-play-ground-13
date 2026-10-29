@@ -49,6 +49,8 @@ import { orderCustomReason } from "./order-custom";
 import { orderStrategyReason } from "./order-strategy";
 import { orderAlgoReason } from "./order-algo";
 import { orderTemplateReason } from "./order-template";
+import { orderVenueReason } from "./order-venue";
+import { orderDestinationReason } from "./order-destination";
 
 export interface OrderIntent {
   symbol: string;
@@ -204,6 +206,12 @@ export interface OrderIntent {
   template?: unknown;
   orderTemplate?: unknown;
   clientTemplate?: unknown;
+  venue?: unknown;
+  orderVenue?: unknown;
+  clientVenue?: unknown;
+  destination?: unknown;
+  orderDestination?: unknown;
+  clientDestination?: unknown;
 }
 
 interface Position {
@@ -273,7 +281,7 @@ export class OrderManager {
     const holdings = holdingsAliasReason(intent.holdings, intent.orderHoldings, intent.baseHoldings);
     if (holdings) return { ok: false, reason: holdings };
 
-    // Recent metadata floors (Hour 293–361 pattern)
+    // Recent metadata floors (Hour 293–383 pattern)
     const batch = orderBatchReason(intent.batch, intent.orderBatch, intent.clientBatch);
     if (batch) return { ok: false, reason: batch };
     const span = orderSpanReason(intent.span, intent.orderSpan, intent.clientSpan);
@@ -360,6 +368,10 @@ export class OrderManager {
     if (alg) return { ok: false, reason: alg };
     const tmpl = orderTemplateReason(intent.template, intent.orderTemplate, intent.clientTemplate);
     if (tmpl) return { ok: false, reason: tmpl };
+    const ven = orderVenueReason(intent.venue, intent.orderVenue, intent.clientVenue);
+    if (ven) return { ok: false, reason: ven };
+    const dst = orderDestinationReason(intent.destination, intent.orderDestination, intent.clientDestination);
+    if (dst) return { ok: false, reason: dst };
 
     // Paper path: record and succeed (no live keys, no adapter call for this contract)
     this.state.seenOrders.push({ ...intent, at: Date.now() });

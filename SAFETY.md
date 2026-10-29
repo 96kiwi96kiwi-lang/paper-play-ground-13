@@ -81,4 +81,8 @@ Complete every item before switching from paper to live. Default mode is paper. 
 
 - [ ] A present `template`, `orderTemplate`, or `clientTemplate` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach a template, so a template intent would otherwise be dropped and the order would rest or fill as a plain spot order)
 
+- [ ] A present `venue`, `orderVenue`, or `clientVenue` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order venue, so a venue intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+- [ ] A present `destination`, `orderDestination`, or `clientDestination` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order destination, so a destination intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
 Never invent or commit secrets. Default remains paper.
