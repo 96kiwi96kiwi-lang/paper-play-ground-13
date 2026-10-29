@@ -8,6 +8,8 @@ Paper trading simulator with a clear path to **real KuCoin Spot trading**.
 
 ## Current status
 
+**Hour 373 (odd):** Wired the order-custom floor into OrderManager. `submit` calls `orderCustomReason` after the order-scope floor and before the adapter: a present `custom`, `customField`, or `clientCustom` is refused (`Custom is not supported; the adapter would drop the client metadata` / `Custom field is not supported; the adapter would drop the client metadata` / `Client custom is not supported; the adapter would drop the client metadata`) and does not burn `maxRejectsInWindow`. Paper and KuCoin adapters place one plain spot order and do not forward client metadata, so a custom intent would otherwise be dropped and the order would rest or fill as a plain spot order. Omitted, null, false, and blank still pass; zero is refused. This is a metadata floor, not a halt, and does not flatten positions. Vitest: `tests/order-custom.test.ts` (no exchange, no secrets). Default mode is paper. OrderManager is complete and type-safe.
+
 **Hour 371 (odd):** Wired the order-scope floor into OrderManager. `submit` calls `orderScopeReason` after the order-audience floor and before the adapter: a present `scope`, `orderScope`, or `clientScope` is refused (`Order scope is not supported; the adapter would place a plain spot order` / `Order scope alias is not supported; the adapter would place a plain spot order` / `Client scope alias is not supported; the adapter would place a plain spot order`) and does not burn `maxRejectsInWindow`. Paper and KuCoin adapters place one plain spot order and do not set an order scope, so a scope intent would otherwise be ignored and the order would rest or fill as a plain spot order. Omitted, null, false, and blank still pass; zero is refused. This is a metadata floor, not a halt, and does not flatten positions. Vitest: `tests/order-scope.test.ts` (no exchange, no secrets). Default mode is paper. OrderManager is complete and type-safe.
 
 **Hour 369 (odd):** Wired the order-audience floor into OrderManager. `submit` calls `orderAudienceReason` after the order-visibility floor and before the adapter: a present `audience`, `orderAudience`, or `clientAudience` is refused (`Order audience is not supported; the adapter would place a plain spot order` / `Order audience alias is not supported; the adapter would place a plain spot order` / `Client audience alias is not supported; the adapter would place a plain spot order`) and does not burn `maxRejectsInWindow`. Paper and KuCoin adapters place one plain spot order and do not set an order audience, so an audience intent would otherwise be ignored and the order would rest or fill as a plain spot order. Omitted, null, false, and blank still pass; zero is refused. This is a metadata floor, not a halt, and does not flatten positions. Vitest: `tests/order-audience.test.ts` (no exchange, no secrets). Default mode is paper. OrderManager is complete and type-safe.
@@ -37,3 +39,8 @@ Live needs Trade-only KuCoin keys in server `.env`, a permission audit that bloc
 A process restart always returns to paper.
 
 Never invent or commit secrets.
+See [SAFETY.md](./SAFETY.md).
+
+### Unattended worker startup
+The Nitro runtime plugin starts the opt-in paper loop before any HTTP request.
+Run `npm run build && npm run test:worker` to verify startup, quote decisions and persisted history with deterministic quotes and no incoming requests.
