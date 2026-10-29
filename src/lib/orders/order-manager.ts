@@ -42,6 +42,7 @@ import { orderMetadataReason } from "./order-metadata";
 import { orderPayloadReason } from "./order-payload";
 import { orderPriorityReason } from "./order-priority";
 import { orderUrgencyReason } from "./order-urgency";
+import { orderVisibilityReason } from "./order-visibility";
 
 export interface OrderIntent {
   symbol: string;
@@ -176,6 +177,9 @@ export interface OrderIntent {
   urgency?: unknown;
   orderUrgency?: unknown;
   clientUrgency?: unknown;
+  visibility?: unknown;
+  orderVisibility?: unknown;
+  clientVisibility?: unknown;
 }
 
 interface Position {
@@ -318,6 +322,8 @@ export class OrderManager {
     if (prio) return { ok: false, reason: prio };
     const urg = orderUrgencyReason(intent.urgency, intent.orderUrgency, intent.clientUrgency);
     if (urg) return { ok: false, reason: urg };
+    const vis = orderVisibilityReason(intent.visibility, intent.orderVisibility, intent.clientVisibility);
+    if (vis) return { ok: false, reason: vis };
 
     // Paper path: record and succeed (no live keys, no adapter call for this contract)
     this.state.seenOrders.push({ ...intent, at: Date.now() });
