@@ -1,11 +1,11 @@
 # Order expiry floor
 
-A submit is refused when `expiry`, `orderExpiry`, or `clientExpiry` is present (`Order expiry is not supported` / `Order expiry alias is not supported` / `Client expiry alias is not supported`).
+A submit is refused when `cancelAfter`, `expireTime`, or `goodTillDate` is present (`Cancel after is not supported` / `Expire time is not supported` / `Good till date is not supported`).
 
-Paper and KuCoin adapters place one plain spot order and do not set an order expiry, so an expiry intent would be ignored and the order would rest or fill as a plain spot order.
+Paper and KuCoin adapters place one plain spot order and do not forward these expiry fields, so the order would rest until a later cancel instead of expiring.
 
-Omitted, null, false, and blank still pass. Zero is present and is refused.
+Omitted, null, and blank still pass. Zero is present and is refused. GTT time-in-force remains its own floor.
 
-`OrderManager.submit` calls `orderExpiryReason` before the adapter, so a refuse does not burn `maxRejectsInWindow`. This is a metadata floor, not a halt, and does not flatten positions.
+This is an expiry floor, not a halt, and does not flatten positions.
 
 Vitest: `tests/order-expiry.test.ts` (no exchange, no secrets).
