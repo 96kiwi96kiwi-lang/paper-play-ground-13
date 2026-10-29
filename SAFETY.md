@@ -73,4 +73,10 @@ Complete every item before switching from paper to live. Default mode is paper. 
 
 - [ ] A present `urgency`, `orderUrgency`, or `clientUrgency` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order urgency, so an urgency intent would otherwise be ignored and the order would rest or fill as a plain spot order)
 
+- [ ] A present `visibility`, `orderVisibility`, or `clientVisibility` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order visibility, so a visibility intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+- [ ] A present `audience`, `orderAudience`, or `clientAudience` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order audience, so an audience intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+- [ ] A present `scope`, `orderScope`, or `clientScope` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order scope, so a scope intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
 Never invent or commit secrets. Default remains paper.
