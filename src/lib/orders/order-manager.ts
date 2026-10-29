@@ -47,6 +47,7 @@ import { orderAudienceReason } from "./order-audience";
 import { orderScopeReason } from "./order-scope";
 import { orderCustomReason } from "./order-custom";
 import { orderStrategyReason } from "./order-strategy";
+import { orderAlgoReason } from "./order-algo";
 
 export interface OrderIntent {
   symbol: string;
@@ -196,6 +197,9 @@ export interface OrderIntent {
   strategy?: unknown;
   strategyId?: unknown;
   clientStrategy?: unknown;
+  algo?: unknown;
+  algoType?: unknown;
+  clientAlgo?: unknown;
 }
 
 interface Position {
@@ -348,6 +352,8 @@ export class OrderManager {
     if (cus) return { ok: false, reason: cus };
     const strat = orderStrategyReason(intent.strategy, intent.strategyId, intent.clientStrategy);
     if (strat) return { ok: false, reason: strat };
+    const alg = orderAlgoReason(intent.algo, intent.algoType, intent.clientAlgo);
+    if (alg) return { ok: false, reason: alg };
 
     // Paper path: record and succeed (no live keys, no adapter call for this contract)
     this.state.seenOrders.push({ ...intent, at: Date.now() });
