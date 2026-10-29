@@ -51,6 +51,7 @@ import { orderAlgoReason } from "./order-algo";
 import { orderTemplateReason } from "./order-template";
 import { orderKindReason } from "./order-kind";
 import { orderNameReason } from "./order-name";
+import { orderNonceReason } from "./order-nonce";
 
 export interface OrderIntent {
   symbol: string;
@@ -212,6 +213,9 @@ export interface OrderIntent {
   name?: unknown;
   orderName?: unknown;
   clientName?: unknown;
+  nonce?: unknown;
+  orderNonce?: unknown;
+  clientNonce?: unknown;
 }
 
 interface Position {
@@ -372,6 +376,8 @@ export class OrderManager {
     if (knd) return { ok: false, reason: knd };
     const nam = orderNameReason(intent.name, intent.orderName, intent.clientName);
     if (nam) return { ok: false, reason: nam };
+    const non = orderNonceReason(intent.nonce, intent.orderNonce, intent.clientNonce);
+    if (non) return { ok: false, reason: non };
 
     // Paper path: record and succeed (no live keys, no adapter call for this contract)
     this.state.seenOrders.push({ ...intent, at: Date.now() });
