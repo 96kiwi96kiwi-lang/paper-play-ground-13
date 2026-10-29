@@ -49,6 +49,7 @@ import { orderCustomReason } from "./order-custom";
 import { orderStrategyReason } from "./order-strategy";
 import { orderAlgoReason } from "./order-algo";
 import { orderTemplateReason } from "./order-template";
+import { orderKindReason } from "./order-kind";
 
 export interface OrderIntent {
   symbol: string;
@@ -204,6 +205,9 @@ export interface OrderIntent {
   template?: unknown;
   orderTemplate?: unknown;
   clientTemplate?: unknown;
+  kind?: unknown;
+  orderKind?: unknown;
+  clientKind?: unknown;
 }
 
 interface Position {
@@ -360,6 +364,8 @@ export class OrderManager {
     if (alg) return { ok: false, reason: alg };
     const tmpl = orderTemplateReason(intent.template, intent.orderTemplate, intent.clientTemplate);
     if (tmpl) return { ok: false, reason: tmpl };
+    const knd = orderKindReason(intent.kind, intent.orderKind, intent.clientKind);
+    if (knd) return { ok: false, reason: knd };
 
     // Paper path: record and succeed (no live keys, no adapter call for this contract)
     this.state.seenOrders.push({ ...intent, at: Date.now() });
