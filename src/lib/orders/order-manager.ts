@@ -48,6 +48,7 @@ import { orderScopeReason } from "./order-scope";
 import { orderCustomReason } from "./order-custom";
 import { orderStrategyReason } from "./order-strategy";
 import { orderAlgoReason } from "./order-algo";
+import { orderTemplateReason } from "./order-template";
 
 export interface OrderIntent {
   symbol: string;
@@ -200,6 +201,9 @@ export interface OrderIntent {
   algo?: unknown;
   algoType?: unknown;
   clientAlgo?: unknown;
+  template?: unknown;
+  orderTemplate?: unknown;
+  clientTemplate?: unknown;
 }
 
 interface Position {
@@ -354,6 +358,8 @@ export class OrderManager {
     if (strat) return { ok: false, reason: strat };
     const alg = orderAlgoReason(intent.algo, intent.algoType, intent.clientAlgo);
     if (alg) return { ok: false, reason: alg };
+    const tmpl = orderTemplateReason(intent.template, intent.orderTemplate, intent.clientTemplate);
+    if (tmpl) return { ok: false, reason: tmpl };
 
     // Paper path: record and succeed (no live keys, no adapter call for this contract)
     this.state.seenOrders.push({ ...intent, at: Date.now() });
