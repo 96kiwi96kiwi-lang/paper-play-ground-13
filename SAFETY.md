@@ -28,6 +28,10 @@ Complete every item before switching from paper to live. Default mode is paper. 
 
 *(Full checklist continues with all previous floors. Latest addition:)*
 
+- [ ] A present `group`, `orderGroup`, or `clientGroup` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order group, so a group intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+- [ ] A present `channel`, `orderChannel`, or `origin` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order channel or origin tag, so a channel intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
 - [ ] A present `user`, `orderUser`, or `clientUser` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach a user, so a user intent would otherwise be dropped and the order would rest or fill as a plain spot order)
 
 - [ ] A present `status`, `orderStatus`, or `clientStatus` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach a status, so a status-tracking intent would otherwise be dropped and the order would rest or fill as a plain spot order)
