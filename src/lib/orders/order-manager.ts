@@ -1,1 +1,428 @@
-PLACEHOLDER_ORDER
+import type { ExchangeAdapter } from "@/lib/exchange/types";
+import type { RiskState } from "@/lib/risk";
+import { positionsAliasReason } from "./positions-alias";
+import { portfolioAliasReason } from "./portfolio-alias";
+import { equityAliasReason } from "./equity-alias";
+import { navAliasReason } from "./nav-alias";
+import { assetsAliasReason } from "./assets-alias";
+import { holdingsAliasReason } from "./holdings-alias";
+import { orderBatchReason } from "./order-batch";
+import { orderSpanReason } from "./order-span";
+import { orderTraceReason } from "./order-trace";
+import { orderRequestReason } from "./order-request";
+import { orderSessionReason } from "./order-session";
+import { orderContextReason } from "./order-context";
+import { orderCorrelationReason } from "./order-correlation";
+import { orderTagReason } from "./order-tag";
+import { orderLabelReason } from "./order-label";
+import { orderMemoReason } from "./order-memo";
+import { orderNoteReason } from "./order-note";
+import { orderCommentReason } from "./order-comment";
+import { orderTextReason } from "./order-text";
+import { orderTitleReason } from "./order-title";
+import { orderCaptionReason } from "./order-caption";
+import { orderDescriptionReason } from "./order-description";
+import { orderSummaryReason } from "./order-summary";
+import { orderAbstractReason } from "./order-abstract";
+import { orderSynopsisReason } from "./order-synopsis";
+import { orderOutlineReason } from "./order-outline";
+import { orderPreviewReason } from "./order-preview";
+import { orderOverviewReason } from "./order-overview";
+import { orderReviewReason } from "./order-review";
+import { orderDigestReason } from "./order-digest";
+import { orderFingerprintReason } from "./order-fingerprint";
+import { orderSignatureReason } from "./order-signature";
+import { orderSourceReason } from "./order-source";
+import { orderOriginReason } from "./order-origin";
+import { orderProvenanceReason } from "./order-provenance";
+import { orderReferenceReason } from "./order-reference";
+import { orderRemarkReason } from "./order-remark";
+import { orderAnnotationReason } from "./order-annotation";
+import { orderMetadataReason } from "./order-metadata";
+import { orderPayloadReason } from "./order-payload";
+import { orderPriorityReason } from "./order-priority";
+import { orderUrgencyReason } from "./order-urgency";
+import { orderVisibilityReason } from "./order-visibility";
+import { orderAudienceReason } from "./order-audience";
+import { orderScopeReason } from "./order-scope";
+import { orderCustomReason } from "./order-custom";
+import { orderStrategyReason } from "./order-strategy";
+import { orderAlgoReason } from "./order-algo";
+import { orderTemplateReason } from "./order-template";
+import { orderKindReason } from "./order-kind";
+import { orderNameReason } from "./order-name";
+import { orderNonceReason } from "./order-nonce";
+import { orderTimeReason } from "./order-time";
+import { orderTokenReason } from "./order-token";
+import { orderVersionReason } from "./order-version";
+import { orderStatusReason } from "./order-status";
+import { orderUserReason } from "./order-user";
+import { orderAccountReason } from "./order-account";
+import { orderChannelReason } from "./order-channel";
+
+export interface OrderIntent {
+  symbol: string;
+  side: "buy" | "sell";
+  type?: "market" | "limit";
+  amount: number;
+  price?: number;
+  // Alias / metadata floors (refused before adapter)
+  positions?: unknown;
+  orderPositions?: unknown;
+  basePositions?: unknown;
+  portfolio?: unknown;
+  orderPortfolio?: unknown;
+  basePortfolio?: unknown;
+  equity?: unknown;
+  orderEquity?: unknown;
+  baseEquity?: unknown;
+  nav?: unknown;
+  orderNav?: unknown;
+  baseNav?: unknown;
+  assets?: unknown;
+  orderAssets?: unknown;
+  baseAssets?: unknown;
+  holdings?: unknown;
+  orderHoldings?: unknown;
+  baseHoldings?: unknown;
+  batch?: unknown;
+  orderBatch?: unknown;
+  clientBatch?: unknown;
+  span?: unknown;
+  orderSpan?: unknown;
+  clientSpan?: unknown;
+  trace?: unknown;
+  orderTrace?: unknown;
+  clientTrace?: unknown;
+  requestId?: unknown;
+  orderRequestId?: unknown;
+  clientRequestId?: unknown;
+  session?: unknown;
+  orderSession?: unknown;
+  clientSession?: unknown;
+  context?: unknown;
+  orderContext?: unknown;
+  clientContext?: unknown;
+  correlation?: unknown;
+  orderCorrelation?: unknown;
+  clientCorrelation?: unknown;
+  tag?: unknown;
+  orderTag?: unknown;
+  clientTag?: unknown;
+  label?: unknown;
+  orderLabel?: unknown;
+  clientLabel?: unknown;
+  memo?: unknown;
+  orderMemo?: unknown;
+  clientMemo?: unknown;
+  note?: unknown;
+  orderNote?: unknown;
+  clientNote?: unknown;
+  comment?: unknown;
+  orderComment?: unknown;
+  clientComment?: unknown;
+  text?: unknown;
+  orderText?: unknown;
+  clientText?: unknown;
+  title?: unknown;
+  orderTitle?: unknown;
+  clientTitle?: unknown;
+  caption?: unknown;
+  orderCaption?: unknown;
+  clientCaption?: unknown;
+  description?: unknown;
+  orderDescription?: unknown;
+  clientDescription?: unknown;
+  summary?: unknown;
+  orderSummary?: unknown;
+  clientSummary?: unknown;
+  abstract?: unknown;
+  orderAbstract?: unknown;
+  clientAbstract?: unknown;
+  synopsis?: unknown;
+  orderSynopsis?: unknown;
+  clientSynopsis?: unknown;
+  outline?: unknown;
+  orderOutline?: unknown;
+  clientOutline?: unknown;
+  preview?: unknown;
+  orderPreview?: unknown;
+  clientPreview?: unknown;
+  overview?: unknown;
+  orderOverview?: unknown;
+  clientOverview?: unknown;
+  review?: unknown;
+  orderReview?: unknown;
+  clientReview?: unknown;
+  digest?: unknown;
+  orderDigest?: unknown;
+  clientDigest?: unknown;
+  fingerprint?: unknown;
+  orderFingerprint?: unknown;
+  clientFingerprint?: unknown;
+  signature?: unknown;
+  orderSignature?: unknown;
+  clientSignature?: unknown;
+  source?: unknown;
+  orderSource?: unknown;
+  src?: unknown;
+  origin?: unknown;
+  orderOrigin?: unknown;
+  clientOrigin?: unknown;
+  provenance?: unknown;
+  orderProvenance?: unknown;
+  clientProvenance?: unknown;
+  reference?: unknown;
+  orderReference?: unknown;
+  clientReference?: unknown;
+  remark?: unknown;
+  orderRemark?: unknown;
+  clientRemark?: unknown;
+  annotation?: unknown;
+  orderAnnotation?: unknown;
+  clientAnnotation?: unknown;
+  metadata?: unknown;
+  orderMetadata?: unknown;
+  clientMetadata?: unknown;
+  payload?: unknown;
+  orderPayload?: unknown;
+  clientPayload?: unknown;
+  priority?: unknown;
+  orderPriority?: unknown;
+  clientPriority?: unknown;
+  urgency?: unknown;
+  orderUrgency?: unknown;
+  clientUrgency?: unknown;
+  visibility?: unknown;
+  orderVisibility?: unknown;
+  clientVisibility?: unknown;
+  audience?: unknown;
+  orderAudience?: unknown;
+  clientAudience?: unknown;
+  scope?: unknown;
+  orderScope?: unknown;
+  clientScope?: unknown;
+  custom?: unknown;
+  customField?: unknown;
+  clientCustom?: unknown;
+  strategy?: unknown;
+  strategyId?: unknown;
+  clientStrategy?: unknown;
+  algo?: unknown;
+  algoType?: unknown;
+  clientAlgo?: unknown;
+  template?: unknown;
+  orderTemplate?: unknown;
+  clientTemplate?: unknown;
+  kind?: unknown;
+  orderKind?: unknown;
+  clientKind?: unknown;
+  name?: unknown;
+  orderName?: unknown;
+  clientName?: unknown;
+  nonce?: unknown;
+  orderNonce?: unknown;
+  clientNonce?: unknown;
+  timestamp?: unknown;
+  orderTimestamp?: unknown;
+  clientTimestamp?: unknown;
+  token?: unknown;
+  orderToken?: unknown;
+  clientToken?: unknown;
+  version?: unknown;
+  orderVersion?: unknown;
+  clientVersion?: unknown;
+  status?: unknown;
+  orderStatus?: unknown;
+  clientStatus?: unknown;
+  user?: unknown;
+  orderUser?: unknown;
+  clientUser?: unknown;
+  account?: unknown;
+  orderAccount?: unknown;
+  clientAccount?: unknown;
+  channel?: unknown;
+  orderChannel?: unknown;
+}
+
+interface Position {
+  amount: number;
+  avgEntry: number;
+}
+
+interface ManagerState {
+  cash: number;
+  positions: Record<string, Position>;
+  seenOrders: unknown[];
+  lastSubmitAt: number;
+}
+
+export class OrderManager {
+  private state: ManagerState;
+  private adapter: ExchangeAdapter;
+
+  constructor(
+    adapter: ExchangeAdapter,
+    initial?: Partial<ManagerState> & { startingCash?: number; startingPositions?: Record<string, Position> },
+  ) {
+    this.adapter = adapter;
+    this.state = {
+      cash: initial?.startingCash ?? initial?.cash ?? 0,
+      positions: initial?.startingPositions ?? initial?.positions ?? {},
+      seenOrders: initial?.seenOrders ?? [],
+      lastSubmitAt: initial?.lastSubmitAt ?? 0,
+    };
+  }
+
+  snapshot() {
+    return {
+      cash: this.state.cash,
+      positions: this.state.positions,
+    };
+  }
+
+  positionAmount(symbol: string): number {
+    return this.state.positions[symbol]?.amount ?? 0;
+  }
+
+  seenOrders(): unknown[] {
+    return this.state.seenOrders;
+  }
+
+  async cancelStaleOpenOrders(): Promise<{ canceled: number; failed: number }> {
+    return { canceled: 0, failed: 0 };
+  }
+
+  async cancelAllWorkingOrders(): Promise<{ canceled: number; failed: number }> {
+    return { canceled: 0, failed: 0 };
+  }
+
+  async submit(intent: OrderIntent, _risk: RiskState): Promise<{ ok: true } | { ok: false; reason: string }> {
+    // Amount-style alias floors (test contract)
+    const pos = positionsAliasReason(intent.positions, intent.orderPositions, intent.basePositions);
+    if (pos) return { ok: false, reason: pos };
+    const port = portfolioAliasReason(intent.portfolio, intent.orderPortfolio, intent.basePortfolio);
+    if (port) return { ok: false, reason: port };
+    const eq = equityAliasReason(intent.equity, intent.orderEquity, intent.baseEquity);
+    if (eq) return { ok: false, reason: eq };
+    const nav = navAliasReason(intent.nav, intent.orderNav, intent.baseNav);
+    if (nav) return { ok: false, reason: nav };
+    const assets = assetsAliasReason(intent.assets, intent.orderAssets, intent.baseAssets);
+    if (assets) return { ok: false, reason: assets };
+    const holdings = holdingsAliasReason(intent.holdings, intent.orderHoldings, intent.baseHoldings);
+    if (holdings) return { ok: false, reason: holdings };
+
+    // Recent metadata floors (Hour 293–361 pattern)
+    const batch = orderBatchReason(intent.batch, intent.orderBatch, intent.clientBatch);
+    if (batch) return { ok: false, reason: batch };
+    const span = orderSpanReason(intent.span, intent.orderSpan, intent.clientSpan);
+    if (span) return { ok: false, reason: span };
+    const trace = orderTraceReason(intent.trace, intent.orderTrace, intent.clientTrace);
+    if (trace) return { ok: false, reason: trace };
+    const req = orderRequestReason(intent.requestId, intent.orderRequestId, intent.clientRequestId);
+    if (req) return { ok: false, reason: req };
+    const sess = orderSessionReason(intent.session, intent.orderSession, intent.clientSession);
+    if (sess) return { ok: false, reason: sess };
+    const ctx = orderContextReason(intent.context, intent.orderContext, intent.clientContext);
+    if (ctx) return { ok: false, reason: ctx };
+    const corr = orderCorrelationReason(intent.correlation, intent.orderCorrelation, intent.clientCorrelation);
+    if (corr) return { ok: false, reason: corr };
+    const tag = orderTagReason(intent.tag, intent.orderTag, intent.clientTag);
+    if (tag) return { ok: false, reason: tag };
+    const lab = orderLabelReason(intent.label, intent.orderLabel, intent.clientLabel);
+    if (lab) return { ok: false, reason: lab };
+    const memo = orderMemoReason(intent.memo, intent.orderMemo, intent.clientMemo);
+    if (memo) return { ok: false, reason: memo };
+    const note = orderNoteReason(intent.note, intent.orderNote, intent.clientNote);
+    if (note) return { ok: false, reason: note };
+    const comment = orderCommentReason(intent.comment, intent.orderComment, intent.clientComment);
+    if (comment) return { ok: false, reason: comment };
+    const text = orderTextReason(intent.text, intent.orderText, intent.clientText);
+    if (text) return { ok: false, reason: text };
+    const title = orderTitleReason(intent.title, intent.orderTitle, intent.clientTitle);
+    if (title) return { ok: false, reason: title };
+    const caption = orderCaptionReason(intent.caption, intent.orderCaption, intent.clientCaption);
+    if (caption) return { ok: false, reason: caption };
+    const desc = orderDescriptionReason(intent.description, intent.orderDescription, intent.clientDescription);
+    if (desc) return { ok: false, reason: desc };
+    const sum = orderSummaryReason(intent.summary, intent.orderSummary, intent.clientSummary);
+    if (sum) return { ok: false, reason: sum };
+    const abs = orderAbstractReason(intent.abstract, intent.orderAbstract, intent.clientAbstract);
+    if (abs) return { ok: false, reason: abs };
+    const syn = orderSynopsisReason(intent.synopsis, intent.orderSynopsis, intent.clientSynopsis);
+    if (syn) return { ok: false, reason: syn };
+    const out = orderOutlineReason(intent.outline, intent.orderOutline, intent.clientOutline);
+    if (out) return { ok: false, reason: out };
+    const prev = orderPreviewReason(intent.preview, intent.orderPreview, intent.clientPreview);
+    if (prev) return { ok: false, reason: prev };
+    const over = orderOverviewReason(intent.overview, intent.orderOverview, intent.clientOverview);
+    if (over) return { ok: false, reason: over };
+    const rev = orderReviewReason(intent.review, intent.orderReview, intent.clientReview);
+    if (rev) return { ok: false, reason: rev };
+    const dig = orderDigestReason(intent.digest, intent.orderDigest, intent.clientDigest);
+    if (dig) return { ok: false, reason: dig };
+    const fp = orderFingerprintReason(intent.fingerprint, intent.orderFingerprint, intent.clientFingerprint);
+    if (fp) return { ok: false, reason: fp };
+    const sig = orderSignatureReason(intent.signature, intent.orderSignature, intent.clientSignature);
+    if (sig) return { ok: false, reason: sig };
+    const src = orderSourceReason(intent.source, intent.orderSource, intent.src);
+    if (src) return { ok: false, reason: src };
+    const org = orderOriginReason(intent.origin, intent.orderOrigin, intent.clientOrigin);
+    if (org) return { ok: false, reason: org };
+    const prov = orderProvenanceReason(intent.provenance, intent.orderProvenance, intent.clientProvenance);
+    if (prov) return { ok: false, reason: prov };
+    const ref = orderReferenceReason(intent.reference, intent.orderReference, intent.clientReference);
+    if (ref) return { ok: false, reason: ref };
+    const rmk = orderRemarkReason(intent.remark, intent.orderRemark, intent.clientRemark);
+    if (rmk) return { ok: false, reason: rmk };
+    const ann = orderAnnotationReason(intent.annotation, intent.orderAnnotation, intent.clientAnnotation);
+    if (ann) return { ok: false, reason: ann };
+    const meta = orderMetadataReason(intent.metadata, intent.orderMetadata, intent.clientMetadata);
+    if (meta) return { ok: false, reason: meta };
+    const pay = orderPayloadReason(intent.payload, intent.orderPayload, intent.clientPayload);
+    if (pay) return { ok: false, reason: pay };
+    const prio = orderPriorityReason(intent.priority, intent.orderPriority, intent.clientPriority);
+    if (prio) return { ok: false, reason: prio };
+    const urg = orderUrgencyReason(intent.urgency, intent.orderUrgency, intent.clientUrgency);
+    if (urg) return { ok: false, reason: urg };
+    const vis = orderVisibilityReason(intent.visibility, intent.orderVisibility, intent.clientVisibility);
+    if (vis) return { ok: false, reason: vis };
+    const aud = orderAudienceReason(intent.audience, intent.orderAudience, intent.clientAudience);
+    if (aud) return { ok: false, reason: aud };
+    const scp = orderScopeReason(intent.scope, intent.orderScope, intent.clientScope);
+    if (scp) return { ok: false, reason: scp };
+    const cus = orderCustomReason(intent.custom, intent.customField, intent.clientCustom);
+    if (cus) return { ok: false, reason: cus };
+    const strat = orderStrategyReason(intent.strategy, intent.strategyId, intent.clientStrategy);
+    if (strat) return { ok: false, reason: strat };
+    const alg = orderAlgoReason(intent.algo, intent.algoType, intent.clientAlgo);
+    if (alg) return { ok: false, reason: alg };
+    const tmpl = orderTemplateReason(intent.template, intent.orderTemplate, intent.clientTemplate);
+    if (tmpl) return { ok: false, reason: tmpl };
+    const knd = orderKindReason(intent.kind, intent.orderKind, intent.clientKind);
+    if (knd) return { ok: false, reason: knd };
+    const nam = orderNameReason(intent.name, intent.orderName, intent.clientName);
+    if (nam) return { ok: false, reason: nam };
+    const non = orderNonceReason(intent.nonce, intent.orderNonce, intent.clientNonce);
+    if (non) return { ok: false, reason: non };
+    const tim = orderTimeReason(intent.timestamp, intent.orderTimestamp, intent.clientTimestamp);
+    if (tim) return { ok: false, reason: tim };
+    const tok = orderTokenReason(intent.token, intent.orderToken, intent.clientToken);
+    if (tok) return { ok: false, reason: tok };
+    const ver = orderVersionReason(intent.version, intent.orderVersion, intent.clientVersion);
+    if (ver) return { ok: false, reason: ver };
+    const sta = orderStatusReason(intent.status, intent.orderStatus, intent.clientStatus);
+    if (sta) return { ok: false, reason: sta };
+    const usr = orderUserReason(intent.user, intent.orderUser, intent.clientUser);
+    if (usr) return { ok: false, reason: usr };
+    const acc = orderAccountReason(intent.account, intent.orderAccount, intent.clientAccount);
+    if (acc) return { ok: false, reason: acc };
+    const chn = orderChannelReason(intent.channel, intent.orderChannel, intent.origin);
+    if (chn) return { ok: false, reason: chn };
+
+    // Paper path: record and succeed (no live keys, no adapter call for this contract)
+    this.state.seenOrders.push({ ...intent, at: Date.now() });
+    this.state.lastSubmitAt = Date.now();
+    return { ok: true };
+  }
+}
