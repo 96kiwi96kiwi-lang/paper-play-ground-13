@@ -1,11 +1,11 @@
-# Order-time floor
+# Order time floor
 
-Refuse present `timestamp`, `orderTimestamp`, or `clientTimestamp` before the adapter so a time-tracking intent cannot be ignored on a plain spot order.
+A submit is refused when `timestamp`, `orderTimestamp`, or `clientTimestamp` is present (`Timestamp is not supported` / `Order timestamp is not supported` / `Client timestamp is not supported`).
 
-Adapters place one plain spot order and do not attach a timestamp, so a timestamp intent would otherwise be dropped and the order would rest or fill as a plain spot order.
+Paper and KuCoin adapters place one plain spot order and do not attach a timestamp. A time-tracking intent would otherwise be dropped and the order would rest or fill as a plain spot order.
 
-Omitted, null, false, and blank still pass; zero is refused.
+Omitted, null, false, and blank still pass. Zero is present and is refused.
 
-This is a metadata floor, not a halt, and does not flatten positions.
+`OrderManager.submit` calls `orderTimeReason` before the adapter, so a refuse does not burn `maxRejectsInWindow`. This is a metadata floor, not a halt, and does not flatten positions.
 
-Default remains paper. No secrets.
+Vitest: `tests/order-time.test.ts` (no exchange, no secrets).
