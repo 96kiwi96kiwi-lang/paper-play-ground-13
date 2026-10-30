@@ -56,6 +56,7 @@ import { orderTimeReason } from "./order-time";
 import { orderTokenReason } from "./order-token";
 import { orderVersionReason } from "./order-version";
 import { orderStatusReason } from "./order-status";
+import { orderUserReason } from "./order-user";
 
 export interface OrderIntent {
   symbol: string;
@@ -232,6 +233,9 @@ export interface OrderIntent {
   status?: unknown;
   orderStatus?: unknown;
   clientStatus?: unknown;
+  user?: unknown;
+  orderUser?: unknown;
+  clientUser?: unknown;
 }
 
 interface Position {
@@ -402,6 +406,8 @@ export class OrderManager {
     if (ver) return { ok: false, reason: ver };
     const sta = orderStatusReason(intent.status, intent.orderStatus, intent.clientStatus);
     if (sta) return { ok: false, reason: sta };
+    const usr = orderUserReason(intent.user, intent.orderUser, intent.clientUser);
+    if (usr) return { ok: false, reason: usr };
 
     // Paper path: record and succeed (no live keys, no adapter call for this contract)
     this.state.seenOrders.push({ ...intent, at: Date.now() });

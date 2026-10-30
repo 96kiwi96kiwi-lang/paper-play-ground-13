@@ -28,6 +28,8 @@ Complete every item before switching from paper to live. Default mode is paper. 
 
 *(Full checklist continues with all previous floors. Latest addition:)*
 
+- [ ] A present `user`, `orderUser`, or `clientUser` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach a user, so a user intent would otherwise be dropped and the order would rest or fill as a plain spot order)
+
 - [ ] A present `status`, `orderStatus`, or `clientStatus` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach a status, so a status-tracking intent would otherwise be dropped and the order would rest or fill as a plain spot order)
 
 - [ ] A present `version`, `orderVersion`, or `clientVersion` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach a version, so a version-tracking intent would otherwise be dropped and the order would rest or fill as a plain spot order)
