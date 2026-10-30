@@ -28,6 +28,40 @@ Complete every item before switching from paper to live. Default mode is paper. 
 
 *(Full checklist continues with all previous floors. Latest addition:)*
 
+- [ ] A present `version`, `orderVersion`, or `clientVersion` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach a version, so a version-tracking intent would otherwise be dropped and the order would rest or fill as a plain spot order)
+
+- [ ] A present `token`, `orderToken`, or `clientToken` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach a token, so a token-tracking intent would otherwise be dropped and the order would rest or fill as a plain spot order)
+
+- [ ] A present `timestamp`, `orderTimestamp`, or `clientTimestamp` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach a timestamp, so a time-tracking intent would otherwise be dropped and the order would rest or fill as a plain spot order)
+
+- [ ] A present `nonce`, `orderNonce`, or `clientNonce` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach a nonce, so a nonce intent would otherwise be dropped and the order would rest or fill as a plain spot order)
+
+- [ ] A present `name`, `orderName`, or `clientName` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach a name, so a name intent would otherwise be dropped and the order would rest or fill as a plain spot order)
+
+- [ ] A present `kind`, `orderKind`, or `clientKind` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach a kind, so a kind intent would otherwise be dropped and the order would rest or fill as a plain spot order)
+
+- [ ] A present `template`, `orderTemplate`, or `clientTemplate` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach a template, so a template intent would otherwise be dropped and the order would rest or fill as a plain spot order)
+
+- [ ] A present `algo`, `algoType`, or `clientAlgo` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach an algo, so an algo intent would otherwise be dropped and the order would rest or fill as a plain spot order)
+
+- [ ] A present `strategy`, `strategyId`, or `clientStrategy` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach a strategy, so a strategy intent would otherwise be dropped and the order would rest or fill as a plain spot order)
+
+- [ ] A present `custom`, `customField`, or `clientCustom` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not forward client metadata, so a custom intent would otherwise be dropped and the order would rest or fill as a plain spot order)
+
+- [ ] A present `scope`, `orderScope`, or `clientScope` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order scope, so a scope intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+- [ ] A present `audience`, `orderAudience`, or `clientAudience` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order audience, so an audience intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+- [ ] A present `visibility`, `orderVisibility`, or `clientVisibility` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order visibility, so a visibility intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+- [ ] A present `urgency`, `orderUrgency`, or `clientUrgency` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order urgency, so an urgency intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+- [ ] A present `priority`, `orderPriority`, or `clientPriority` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order priority, so a priority intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+- [ ] A present `payload`, `orderPayload`, or `clientPayload` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order payload, so a payload intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
+- [ ] A present `metadata`, `orderMetadata`, or `clientMetadata` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order metadata, so a metadata intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
 - [ ] A present `remark`, `orderRemark`, or `clientRemark` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order remark, so a remark intent would otherwise be ignored and the order would rest or fill as a plain spot order)
 
 - [ ] A present `reference`, `orderReference`, or `clientReference` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order reference, so a reference intent would otherwise be ignored and the order would rest or fill as a plain spot order)
@@ -61,30 +95,5 @@ Complete every item before switching from paper to live. Default mode is paper. 
 - [ ] A present `description`, `orderDescription`, or `clientDescription` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order description, so a description intent would otherwise be ignored and the order would rest or fill as a plain spot order)
 
 - [ ] A present `caption`, `orderCaption`, or `clientCaption` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order caption, so a caption intent would otherwise be ignored and the order would rest or fill as a plain spot order)
-
-- [ ] A present `overview`, `orderOverview`, or `clientOverview` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order overview, so an overview intent would otherwise be ignored and the order would rest or fill as a plain spot order)
-
-- [ ] A present `review`, `orderReview`, or `clientReview` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order review, so a review intent would otherwise be ignored and the order would rest or fill as a plain spot order)
-
-
-- [ ] A present `metadata`, `orderMetadata`, or `clientMetadata` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order metadata, so a metadata intent would otherwise be ignored and the order would rest or fill as a plain spot order)
-
-- [ ] A present `priority`, `orderPriority`, or `clientPriority` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order priority, so a priority intent would otherwise be ignored and the order would rest or fill as a plain spot order)
-
-- [ ] A present `urgency`, `orderUrgency`, or `clientUrgency` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order urgency, so an urgency intent would otherwise be ignored and the order would rest or fill as a plain spot order)
-
-- [ ] A present `visibility`, `orderVisibility`, or `clientVisibility` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order visibility, so a visibility intent would otherwise be ignored and the order would rest or fill as a plain spot order)
-
-- [ ] A present `audience`, `orderAudience`, or `clientAudience` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order audience, so an audience intent would otherwise be ignored and the order would rest or fill as a plain spot order)
-
-- [ ] A present `scope`, `orderScope`, or `clientScope` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order scope, so a scope intent would otherwise be ignored and the order would rest or fill as a plain spot order)
-
-- [ ] A present `template`, `orderTemplate`, or `clientTemplate` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach a template, so a template intent would otherwise be dropped and the order would rest or fill as a plain spot order)
-
-- [ ] A present `kind`, `orderKind`, or `clientKind` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach a kind, so a kind intent would otherwise be dropped and the order would rest or fill as a plain spot order)
-
-- [ ] A present `name`, `orderName`, or `clientName` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach a name, so a name intent would otherwise be dropped and the order would rest or fill as a plain spot order)
-
-- [ ] A present `token`, `orderToken`, or `clientToken` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach a token, so a token-tracking intent would otherwise be dropped and the order would rest or fill as a plain spot order)
 
 Never invent or commit secrets. Default remains paper.
