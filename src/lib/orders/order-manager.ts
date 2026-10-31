@@ -64,6 +64,7 @@ import { orderUuidReason } from "./order-uuid";
 import { orderHashReason } from "./order-hash";
 import { orderIdReason } from "./order-id";
 import { orderKeyReason } from "./order-key";
+import { orderLinkReason } from "./order-link";
 
 export interface OrderIntent {
   symbol: string;
@@ -263,6 +264,9 @@ export interface OrderIntent {
   key?: unknown;
   orderKey?: unknown;
   clientKey?: unknown;
+  clOrdId?: unknown;
+  orderLinkId?: unknown;
+  linkId?: unknown;
 }
 
 interface Position {
@@ -449,6 +453,8 @@ export class OrderManager {
     if (id) return { ok: false, reason: id };
     const key = orderKeyReason(intent.key, intent.orderKey, intent.clientKey);
     if (key) return { ok: false, reason: key };
+    const link = orderLinkReason(intent.clOrdId, intent.orderLinkId, intent.linkId);
+    if (link) return { ok: false, reason: link };
 
     // Paper path: record and succeed (no live keys, no adapter call for this contract)
     this.state.seenOrders.push({ ...intent, at: Date.now() });
