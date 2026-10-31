@@ -28,6 +28,8 @@ Complete every item before switching from paper to live. Default mode is paper. 
 
 *(Full checklist continues with all previous floors. Latest addition:)*
 
+- [ ] A present `legId`, `orderLeg`, or `clientLeg` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach a leg, so a multi-leg intent would otherwise be dropped and the order would rest or fill as a plain spot order)
+
 - [ ] A present `uuid`, `orderUuid`, or `clientUuid` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach a uuid, so a uuid-tracking intent would otherwise be dropped and the order would rest or fill as a plain spot order)
 
 - [ ] A present `group`, `orderGroup`, or `clientGroup` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order group, so a group intent would otherwise be ignored and the order would rest or fill as a plain spot order)
