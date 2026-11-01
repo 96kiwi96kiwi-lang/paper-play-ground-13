@@ -1,11 +1,11 @@
-# Order urgency floor
+# Order-urgency floor
 
-A submit is refused when `urgency`, `orderUrgency`, or `clientUrgency` is present (`Order urgency is not supported` / `Order urgency alias is not supported` / `Client urgency alias is not supported`).
+Refuse present `urgency`, `orderUrgency`, or `clientUrgency` before the adapter so an urgency-tracking intent cannot be ignored on a plain spot order.
 
-Paper and KuCoin adapters place one plain spot order and do not set an order urgency, so an urgency intent would be ignored and the base size would rest or fill as a plain spot order.
+Adapters place one plain spot order and do not attach an urgency, so an urgency intent would otherwise be dropped and the order would rest or fill as a plain spot order.
 
-Omitted, null, false, and blank still pass. Zero is present and is refused.
+Omitted, null, false, and blank still pass; zero is refused.
 
-`OrderManager.submit` calls `orderUrgencyReason` before the adapter, so a refuse does not burn `maxRejectsInWindow`. This is a metadata floor, not a halt, and does not flatten positions.
+This is a metadata floor, not a halt, and does not flatten positions.
 
-Vitest: `tests/order-urgency.test.ts` (no exchange, no secrets).
+Wired into OrderManager.submit (Hour 430). Default remains paper. No secrets.

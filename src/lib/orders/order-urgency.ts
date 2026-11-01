@@ -1,11 +1,11 @@
-/** Refuse order-urgency text the spot adapters do not forward. Not a halt. */
+/** Refuse urgency fields the spot adapters do not honor. Not a halt. */
 
 /**
- * Omitted, null, false, and blank pass. A present urgency, orderUrgency, or
- * clientUrgency is refused: placeLimitOrder / placeMarketOrder do not set an
- * order urgency or client urgency, so an urgency intent would be ignored
- * and the order would rest or fill as a plain spot order. Zero is present and
- * is refused. This is a metadata floor, not a halt, and does not flatten positions.
+ * Omitted, null, false, and blank pass. A present urgency, orderUrgency,
+ * or clientUrgency is refused: adapters place one plain spot order and do
+ * not attach an urgency, so an urgency-tracking intent would otherwise be
+ * dropped and the order would rest or fill as a plain spot order. This is a
+ * metadata floor, not a halt, and does not flatten positions.
  */
 function present(value: unknown): boolean {
   if (value == null) return false;
@@ -15,18 +15,18 @@ function present(value: unknown): boolean {
 }
 
 export function orderUrgencyReason(
-  urgency?: unknown,
+  urgency: unknown,
   orderUrgency?: unknown,
   clientUrgency?: unknown,
 ): string | null {
   if (present(urgency)) {
-    return "Order urgency is not supported; the adapter would place a plain spot order";
+    return "Urgency is not supported; the adapter would place a plain spot order";
   }
   if (present(orderUrgency)) {
-    return "Order urgency alias is not supported; the adapter would place a plain spot order";
+    return "Order urgency is not supported; the adapter would place a plain spot order";
   }
   if (present(clientUrgency)) {
-    return "Client urgency alias is not supported; the adapter would place a plain spot order";
+    return "Client urgency is not supported; the adapter would place a plain spot order";
   }
   return null;
 }
