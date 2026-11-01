@@ -38,6 +38,7 @@ import { orderSiblingReason } from "./order-sibling";
 import { orderExternalReason } from "./order-external";
 import { orderSourceReason } from "./order-source";
 import { orderSignatureReason } from "./order-signature";
+import { orderPriorityReason } from "./order-priority";
 
 export interface OrderIntent {
   symbol: string;
@@ -160,6 +161,9 @@ export interface OrderIntent {
   signature?: unknown;
   orderSignature?: unknown;
   clientSignature?: unknown;
+  priority?: unknown;
+  orderPriority?: unknown;
+  clientPriority?: unknown;
 }
 
 interface Position {
@@ -285,6 +289,8 @@ export class OrderManager {
     if (source) return { ok: false, reason: source };
     const signature = orderSignatureReason(intent.signature, intent.orderSignature, intent.clientSignature);
     if (signature) return { ok: false, reason: signature };
+    const priority = orderPriorityReason(intent.priority, intent.orderPriority, intent.clientPriority);
+    if (priority) return { ok: false, reason: priority };
     // Paper path: record and succeed (no live keys, no adapter call for this contract)
     this.state.seenOrders.push({ ...intent, at: Date.now() });
     this.state.lastSubmitAt = Date.now();
