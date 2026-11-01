@@ -112,4 +112,6 @@ Complete every item before switching from paper to live. Default mode is paper. 
 
 - [ ] A present `caption`, `orderCaption`, or `clientCaption` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order caption, so a caption intent would otherwise be ignored and the order would rest or fill as a plain spot order)
 
+- [ ] A present `externalId`, `orderExternal`, or `clientExternal` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not attach an external id, so an external-tracking intent would otherwise be dropped and the order would rest or fill as a plain spot order)
+
 Never invent or commit secrets. Default remains paper.
