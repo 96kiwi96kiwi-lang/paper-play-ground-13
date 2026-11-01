@@ -36,6 +36,7 @@ import { orderParentReason } from "./order-parent";
 import { orderChildReason } from "./order-child";
 import { orderSiblingReason } from "./order-sibling";
 import { orderExternalReason } from "./order-external";
+import { orderSourceReason } from "./order-source";
 
 export interface OrderIntent {
   symbol: string;
@@ -152,6 +153,9 @@ export interface OrderIntent {
   externalId?: unknown;
   orderExternal?: unknown;
   clientExternal?: unknown;
+  source?: unknown;
+  orderSource?: unknown;
+  src?: unknown;
 }
 
 interface Position {
@@ -273,6 +277,8 @@ export class OrderManager {
     if (sibling) return { ok: false, reason: sibling };
     const external = orderExternalReason(intent.externalId, intent.orderExternal, intent.clientExternal);
     if (external) return { ok: false, reason: external };
+    const source = orderSourceReason(intent.source, intent.orderSource, intent.src);
+    if (source) return { ok: false, reason: source };
     // Paper path: record and succeed (no live keys, no adapter call for this contract)
     this.state.seenOrders.push({ ...intent, at: Date.now() });
     this.state.lastSubmitAt = Date.now();
