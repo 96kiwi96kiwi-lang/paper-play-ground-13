@@ -28,6 +28,8 @@ Complete every item before switching from paper to live. Default mode is paper. 
 
 *(Full checklist continues with all previous floors. Latest addition:)*
 
+- [ ] A present `provenance`, `orderProvenance`, or `clientProvenance` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order provenance, so a provenance intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
 - [ ] A present `privacy`, `orderPrivacy`, or `clientPrivacy` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order privacy, so a privacy intent would otherwise be ignored and the order would rest or fill as a plain spot order)
 
 - [ ] A present `visibility`, `orderVisibility`, or `clientVisibility` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order visibility, so a visibility intent would otherwise be ignored and the order would rest or fill as a plain spot order)
