@@ -43,6 +43,7 @@ import { orderUrgencyReason } from "./order-urgency";
 import { orderVisibilityReason } from "./order-visibility";
 import { orderPrivacyReason } from "./order-privacy";
 import { orderProvenanceReason } from "./order-provenance";
+import { orderAttributionReason } from "./order-attribution";
 
 export interface OrderIntent {
   symbol: string;
@@ -180,6 +181,9 @@ export interface OrderIntent {
   provenance?: unknown;
   orderProvenance?: unknown;
   clientProvenance?: unknown;
+  attribution?: unknown;
+  orderAttribution?: unknown;
+  clientAttribution?: unknown;
 }
 
 interface Position {
@@ -315,6 +319,8 @@ export class OrderManager {
     if (privacy) return { ok: false, reason: privacy };
     const provenance = orderProvenanceReason(intent.provenance, intent.orderProvenance, intent.clientProvenance);
     if (provenance) return { ok: false, reason: provenance };
+    const attribution = orderAttributionReason(intent.attribution, intent.orderAttribution, intent.clientAttribution);
+    if (attribution) return { ok: false, reason: attribution };
     // Paper path: record and succeed (no live keys, no adapter call for this contract)
     this.state.seenOrders.push({ ...intent, at: Date.now() });
     this.state.lastSubmitAt = Date.now();
