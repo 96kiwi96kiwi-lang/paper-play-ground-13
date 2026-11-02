@@ -45,6 +45,7 @@ import { orderPrivacyReason } from "./order-privacy";
 import { orderProvenanceReason } from "./order-provenance";
 import { orderAttributionReason } from "./order-attribution";
 import { orderReferenceReason } from "./order-reference";
+import { orderMemoReason } from "./order-memo";
 
 export interface OrderIntent {
   symbol: string;
@@ -188,6 +189,9 @@ export interface OrderIntent {
   reference?: unknown;
   orderReference?: unknown;
   clientReference?: unknown;
+  memo?: unknown;
+  orderMemo?: unknown;
+  clientMemo?: unknown;
 }
 
 interface Position {
@@ -327,6 +331,8 @@ export class OrderManager {
     if (attribution) return { ok: false, reason: attribution };
     const reference = orderReferenceReason(intent.reference, intent.orderReference, intent.clientReference);
     if (reference) return { ok: false, reason: reference };
+    const memo = orderMemoReason(intent.memo, intent.orderMemo, intent.clientMemo);
+    if (memo) return { ok: false, reason: memo };
     // Paper path: record and succeed (no live keys, no adapter call for this contract)
     this.state.seenOrders.push({ ...intent, at: Date.now() });
     this.state.lastSubmitAt = Date.now();
