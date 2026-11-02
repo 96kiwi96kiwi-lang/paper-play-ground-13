@@ -46,6 +46,7 @@ import { orderProvenanceReason } from "./order-provenance";
 import { orderAttributionReason } from "./order-attribution";
 import { orderReferenceReason } from "./order-reference";
 import { orderMemoReason } from "./order-memo";
+import { orderNoteReason } from "./order-note";
 
 export interface OrderIntent {
   symbol: string;
@@ -192,6 +193,9 @@ export interface OrderIntent {
   memo?: unknown;
   orderMemo?: unknown;
   clientMemo?: unknown;
+  note?: unknown;
+  orderNote?: unknown;
+  clientNote?: unknown;
 }
 
 interface Position {
@@ -333,6 +337,8 @@ export class OrderManager {
     if (reference) return { ok: false, reason: reference };
     const memo = orderMemoReason(intent.memo, intent.orderMemo, intent.clientMemo);
     if (memo) return { ok: false, reason: memo };
+    const note = orderNoteReason(intent.note, intent.orderNote, intent.clientNote);
+    if (note) return { ok: false, reason: note };
     // Paper path: record and succeed (no live keys, no adapter call for this contract)
     this.state.seenOrders.push({ ...intent, at: Date.now() });
     this.state.lastSubmitAt = Date.now();
