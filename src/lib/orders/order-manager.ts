@@ -52,6 +52,7 @@ import { orderMessageReason } from "./order-message";
 import { orderTextReason } from "./order-text";
 import { orderTitleReason } from "./order-title";
 import { orderSubjectReason } from "./order-subject";
+import { orderBodyReason } from "./order-body";
 
 export interface OrderIntent {
   symbol: string;
@@ -216,6 +217,9 @@ export interface OrderIntent {
   subject?: unknown;
   orderSubject?: unknown;
   clientSubject?: unknown;
+  body?: unknown;
+  orderBody?: unknown;
+  clientBody?: unknown;
 }
 
 interface Position {
@@ -369,6 +373,8 @@ export class OrderManager {
     if (title) return { ok: false, reason: title };
     const subject = orderSubjectReason(intent.subject, intent.orderSubject, intent.clientSubject);
     if (subject) return { ok: false, reason: subject };
+    const body = orderBodyReason(intent.body, intent.orderBody, intent.clientBody);
+    if (body) return { ok: false, reason: body };
     // Paper path: record and succeed (no live keys, no adapter call for this contract)
     this.state.seenOrders.push({ ...intent, at: Date.now() });
     this.state.lastSubmitAt = Date.now();
