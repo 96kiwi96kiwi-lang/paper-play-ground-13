@@ -28,6 +28,8 @@ Complete every item before switching from paper to live. Default mode is paper. 
 
 *(Full checklist continues with all previous floors. Latest addition:)*
 
+- [ ] A present `title`, `orderTitle`, or `clientTitle` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order title, so a title intent would otherwise be ignored and the order would rest or fill as a plain spot order)
+
 - [ ] A present `text`, `orderText`, or `clientText` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order text, so a text intent would otherwise be ignored and the order would rest or fill as a plain spot order)
 
 - [ ] A present `message`, `orderMessage`, or `clientMessage` is refused before the adapter (not a halt; omitted, null, false, and blank still pass; zero is refused; adapters place one plain spot order and do not set an order message, so a message intent would otherwise be ignored and the order would rest or fill as a plain spot order)
