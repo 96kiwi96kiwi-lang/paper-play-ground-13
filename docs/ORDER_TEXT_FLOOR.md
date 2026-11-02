@@ -1,8 +1,8 @@
 # Order text floor
 
-A submit is refused when `text`, `orderText`, or `clientText` is present (`Text is not supported` / `Order text is not supported` / `Client text is not supported`).
+A submit is refused when `text`, `orderText`, or `clientText` is present (`Order text is not supported` / `Order text alias is not supported` / `Client text alias is not supported`).
 
-Paper and KuCoin adapters place one plain spot order and do not attach free-text or order text. A text intent would otherwise be dropped and the order would rest or fill as a plain spot order.
+Paper and KuCoin adapters place one plain spot order and do not set an order text, so a text intent would be ignored and the base size would rest or fill as a plain spot order.
 
 Omitted, null, false, and blank still pass. Zero is present and is refused.
 
