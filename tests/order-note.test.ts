@@ -1,27 +1,27 @@
-import { describe, expect, it } from "vitest";
-import { orderNoteReason } from "../src/lib/orders/order-note";
+import { expect, test } from "vitest";
+import { orderNoteReason } from "@/lib/orders/order-note";
 
-describe("orderNoteReason", () => {
-  it("passes omitted, null, false, and blank", () => {
-    expect(orderNoteReason()).toBeNull();
-    expect(orderNoteReason(undefined, undefined, undefined)).toBeNull();
-    expect(orderNoteReason(null, null, null)).toBeNull();
-    expect(orderNoteReason(false, false, false)).toBeNull();
-    expect(orderNoteReason("", "  ", "")).toBeNull();
-  });
+test("omitted, blank, and false pass", () => {
+  expect(orderNoteReason(undefined)).toBeNull();
+  expect(orderNoteReason(null, null, null)).toBeNull();
+  expect(orderNoteReason("", "  ", false)).toBeNull();
+  expect(orderNoteReason(false, false, false)).toBeNull();
+});
 
-  it("refuses a present note", () => {
-    expect(orderNoteReason("grid-a")).toMatch(/Order note is not supported/);
-    expect(orderNoteReason(1)).toMatch(/Order note is not supported/);
-    expect(orderNoteReason(true)).toMatch(/Order note is not supported/);
-  });
-
-  it("refuses a present orderNote alias", () => {
-    expect(orderNoteReason(undefined, "bot")).toMatch(/Order note alias is not supported/);
-    expect(orderNoteReason(undefined, 0)).toMatch(/Order note alias is not supported/);
-  });
-
-  it("refuses a present clientNote alias", () => {
-    expect(orderNoteReason(undefined, undefined, "desk")).toMatch(/Client note alias is not supported/);
-  });
+test("a present note is refused and does not halt", () => {
+  expect(orderNoteReason("grid-note")).toBe(
+    "Order note is not supported; the adapter would place a plain spot order",
+  );
+  expect(orderNoteReason(0)).toBe(
+    "Order note is not supported; the adapter would place a plain spot order",
+  );
+  expect(orderNoteReason(undefined, "bybit-note")).toBe(
+    "Order note alias is not supported; the adapter would place a plain spot order",
+  );
+  expect(orderNoteReason(undefined, undefined, "client-note")).toBe(
+    "Client note alias is not supported; the adapter would place a plain spot order",
+  );
+  expect(orderNoteReason(undefined, undefined, true)).toBe(
+    "Client note alias is not supported; the adapter would place a plain spot order",
+  );
 });
