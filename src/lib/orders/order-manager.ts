@@ -4,7 +4,7 @@
  * - Never holds API keys; the adapter is injected.
  * - Applies hard-stop / cash-reserve / daily-cap style checks before the adapter.
  * - Rejects unsupported amount aliases (positions, portfolio, equity, nav, assets, holdings, …)
- *   and order-header metadata so a mistaken field cannot be silently ignored.
+ *   and order-header / order-footer metadata so a mistaken field cannot be silently ignored.
  * - Maintains a local paper book used by the bot and persistence layer.
  * - Live path still goes through the same method; keys stay on the server.
  */
@@ -23,6 +23,7 @@ import { navAliasReason } from "./nav-alias";
 import { assetsAliasReason } from "./assets-alias";
 import { holdingsAliasReason } from "./holdings-alias";
 import { orderHeaderReason } from "./order-header";
+import { orderFooterReason } from "./order-footer";
 
 export interface OrderIntent {
   symbol: string;
@@ -55,6 +56,9 @@ export interface OrderIntent {
   header?: unknown;
   orderHeader?: unknown;
   clientHeader?: unknown;
+  footer?: unknown;
+  orderFooter?: unknown;
+  clientFooter?: unknown;
   [key: string]: unknown;
 }
 
@@ -155,7 +159,8 @@ export class OrderManager {
       navAliasReason(intent.nav, intent.orderNav, intent.baseNav) ||
       assetsAliasReason(intent.assets, intent.orderAssets, intent.baseAssets) ||
       holdingsAliasReason(intent.holdings, intent.orderHoldings, intent.baseHoldings) ||
-      orderHeaderReason(intent.header, intent.orderHeader, intent.clientHeader);
+      orderHeaderReason(intent.header, intent.orderHeader, intent.clientHeader) ||
+      orderFooterReason(intent.footer, intent.orderFooter, intent.clientFooter);
     if (alias) return { ok: false, reason: alias };
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {
