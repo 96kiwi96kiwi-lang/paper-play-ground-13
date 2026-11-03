@@ -4,7 +4,7 @@
  * - Never holds API keys; the adapter is injected.
  * - Applies hard-stop / cash-reserve / daily-cap style checks before the adapter.
  * - Rejects unsupported amount aliases (positions, portfolio, equity, nav, assets, holdings, …)
- *   so a mistaken field cannot be silently ignored.
+ *   and order-header metadata so a mistaken field cannot be silently ignored.
  * - Maintains a local paper book used by the bot and persistence layer.
  * - Live path still goes through the same method; keys stay on the server.
  */
@@ -22,6 +22,7 @@ import { equityAliasReason } from "./equity-alias";
 import { navAliasReason } from "./nav-alias";
 import { assetsAliasReason } from "./assets-alias";
 import { holdingsAliasReason } from "./holdings-alias";
+import { orderHeaderReason } from "./order-header";
 
 export interface OrderIntent {
   symbol: string;
@@ -51,6 +52,9 @@ export interface OrderIntent {
   holdings?: unknown;
   orderHoldings?: unknown;
   baseHoldings?: unknown;
+  header?: unknown;
+  orderHeader?: unknown;
+  clientHeader?: unknown;
   [key: string]: unknown;
 }
 
@@ -143,14 +147,15 @@ export class OrderManager {
   }
 
   async submit(intent: OrderIntent, riskState: RiskState): Promise<SubmitResult> {
-    // Alias floors first — never reach the adapter if a caller used a non-canonical field.
+    // Alias and metadata floors first — never reach the adapter if a caller used a non-canonical field.
     const alias =
       positionsAliasReason(intent.positions, intent.orderPositions, intent.basePositions) ||
       portfolioAliasReason(intent.portfolio, intent.orderPortfolio, intent.basePortfolio) ||
       equityAliasReason(intent.equity, intent.orderEquity, intent.baseEquity) ||
       navAliasReason(intent.nav, intent.orderNav, intent.baseNav) ||
       assetsAliasReason(intent.assets, intent.orderAssets, intent.baseAssets) ||
-      holdingsAliasReason(intent.holdings, intent.orderHoldings, intent.baseHoldings);
+      holdingsAliasReason(intent.holdings, intent.orderHoldings, intent.baseHoldings) ||
+      orderHeaderReason(intent.header, intent.orderHeader, intent.clientHeader);
     if (alias) return { ok: false, reason: alias };
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {
