@@ -4,7 +4,7 @@
  * - Never holds API keys; the adapter is injected.
  * - Applies hard-stop / cash-reserve / daily-cap style checks before the adapter.
  * - Rejects unsupported amount aliases (positions, portfolio, equity, nav, assets, holdings, …)
- *   and order-header / order-footer / order-annotation metadata so a mistaken field cannot be silently ignored.
+ *   and order-header / order-footer / order-annotation / order-attribution metadata so a mistaken field cannot be silently ignored.
  * - Maintains a local paper book used by the bot and persistence layer.
  * - Live path still goes through the same method; keys stay on the server.
  */
@@ -25,6 +25,7 @@ import { holdingsAliasReason } from "./holdings-alias";
 import { orderHeaderReason } from "./order-header";
 import { orderFooterReason } from "./order-footer";
 import { orderAnnotationReason } from "./order-annotation";
+import { orderAttributionReason } from "./order-attribution";
 
 export interface OrderIntent {
   symbol: string;
@@ -63,6 +64,9 @@ export interface OrderIntent {
   annotation?: unknown;
   orderAnnotation?: unknown;
   clientAnnotation?: unknown;
+  attribution?: unknown;
+  orderAttribution?: unknown;
+  clientAttribution?: unknown;
   [key: string]: unknown;
 }
 
@@ -165,7 +169,8 @@ export class OrderManager {
       holdingsAliasReason(intent.holdings, intent.orderHoldings, intent.baseHoldings) ||
       orderHeaderReason(intent.header, intent.orderHeader, intent.clientHeader) ||
       orderFooterReason(intent.footer, intent.orderFooter, intent.clientFooter) ||
-      orderAnnotationReason(intent.annotation, intent.orderAnnotation, intent.clientAnnotation);
+      orderAnnotationReason(intent.annotation, intent.orderAnnotation, intent.clientAnnotation) ||
+      orderAttributionReason(intent.attribution, intent.orderAttribution, intent.clientAttribution);
     if (alias) return { ok: false, reason: alias };
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {
