@@ -4,7 +4,7 @@
  * - Never holds API keys; the adapter is injected.
  * - Applies hard-stop / cash-reserve / daily-cap style checks before the adapter.
  * - Rejects unsupported amount aliases (positions, portfolio, equity, nav, assets, holdings, …)
- *   and order-header / order-footer / order-annotation / order-attribution / order-audience metadata so a mistaken field cannot be silently ignored.
+ *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch metadata so a mistaken field cannot be silently ignored.
  * - Maintains a local paper book used by the bot and persistence layer.
  * - Live path still goes through the same method; keys stay on the server.
  */
@@ -27,6 +27,7 @@ import { orderFooterReason } from "./order-footer";
 import { orderAnnotationReason } from "./order-annotation";
 import { orderAttributionReason } from "./order-attribution";
 import { orderAudienceReason } from "./order-audience";
+import { orderBatchReason } from "./order-batch";
 
 export interface OrderIntent {
   symbol: string;
@@ -71,6 +72,9 @@ export interface OrderIntent {
   audience?: unknown;
   orderAudience?: unknown;
   clientAudience?: unknown;
+  batch?: unknown;
+  orderBatch?: unknown;
+  clientBatch?: unknown;
   [key: string]: unknown;
 }
 
@@ -175,7 +179,8 @@ export class OrderManager {
       orderFooterReason(intent.footer, intent.orderFooter, intent.clientFooter) ||
       orderAnnotationReason(intent.annotation, intent.orderAnnotation, intent.clientAnnotation) ||
       orderAttributionReason(intent.attribution, intent.orderAttribution, intent.clientAttribution) ||
-      orderAudienceReason(intent.audience, intent.orderAudience, intent.clientAudience);
+      orderAudienceReason(intent.audience, intent.orderAudience, intent.clientAudience) ||
+      orderBatchReason(intent.batch, intent.orderBatch, intent.clientBatch);
     if (alias) return { ok: false, reason: alias };
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {
