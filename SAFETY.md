@@ -6,7 +6,7 @@
 - [ ] No API keys are committed or sent to the browser.
 - [ ] Operator token is required for enable-live and clear-halt.
 - [ ] Hard-stop reasons are persisted and survive restarts.
-- [ ] OrderManager refuses unsupported metadata (including order-caption) before any adapter call.
+- [ ] OrderManager refuses unsupported metadata (including order-note) before any adapter call.
 
 ## Before any live enablement
 
