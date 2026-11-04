@@ -4,7 +4,7 @@
  * - Never holds API keys; the adapter is injected.
  * - Applies hard-stop / cash-reserve / daily-cap style checks before the adapter.
  * - Rejects unsupported amount aliases (positions, portfolio, equity, nav, assets, holdings, …)
- *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context metadata so a mistaken field cannot be silently ignored.
+ *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description metadata so a mistaken field cannot be silently ignored.
  * - Maintains a local paper book used by the bot and persistence layer.
  * - Live path still goes through the same method; keys stay on the server.
  */
@@ -33,6 +33,7 @@ import { orderCaptionReason } from "./order-caption";
 import { orderNoteReason } from "./order-note";
 import { orderCommentReason } from "./order-comment";
 import { orderContextReason } from "./order-context";
+import { orderDescriptionReason } from "./order-description";
 
 export interface OrderIntent {
   symbol: string;
@@ -95,6 +96,9 @@ export interface OrderIntent {
   context?: unknown;
   orderContext?: unknown;
   clientContext?: unknown;
+  description?: unknown;
+  orderDescription?: unknown;
+  clientDescription?: unknown;
   [key: string]: unknown;
 }
 
@@ -205,7 +209,8 @@ export class OrderManager {
       orderCaptionReason(intent.caption, intent.orderCaption, intent.clientCaption) ||
       orderNoteReason(intent.note, intent.orderNote, intent.clientNote) ||
       orderCommentReason(intent.comment, intent.orderComment, intent.clientComment) ||
-      orderContextReason(intent.context, intent.orderContext, intent.clientContext);
+      orderContextReason(intent.context, intent.orderContext, intent.clientContext) ||
+      orderDescriptionReason(intent.description, intent.orderDescription, intent.clientDescription);
     if (alias) return { ok: false, reason: alias };
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {
