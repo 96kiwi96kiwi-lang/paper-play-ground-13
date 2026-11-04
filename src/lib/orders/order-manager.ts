@@ -4,7 +4,7 @@
  * - Never holds API keys; the adapter is injected.
  * - Applies hard-stop / cash-reserve / daily-cap style checks before the adapter.
  * - Rejects unsupported amount aliases (positions, portfolio, equity, nav, assets, holdings, …)
- *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description / order-digest / order-expiry / order-hash / order-memo / order-message / order-metadata / order-name metadata so a mistaken field cannot be silently ignored.
+ *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description / order-digest / order-expiry / order-hash / order-memo / order-message / order-metadata / order-name / order-priority metadata so a mistaken field cannot be silently ignored.
  * - Maintains a local paper book used by the bot and persistence layer.
  * - Live path still goes through the same method; keys stay on the server.
  */
@@ -41,6 +41,7 @@ import { orderMemoReason } from "./order-memo";
 import { orderMessageReason } from "./order-message";
 import { orderMetadataReason } from "./order-metadata";
 import { orderNameReason } from "./order-name";
+import { orderPriorityReason } from "./order-priority";
 
 export interface OrderIntent {
   symbol: string;
@@ -127,6 +128,9 @@ export interface OrderIntent {
   name?: unknown;
   orderName?: unknown;
   clientName?: unknown;
+  priority?: unknown;
+  orderPriority?: unknown;
+  clientPriority?: unknown;
   [key: string]: unknown;
 }
 
@@ -245,7 +249,8 @@ export class OrderManager {
       orderMemoReason(intent.memo, intent.orderMemo, intent.clientMemo) ||
       orderMessageReason(intent.message, intent.orderMessage, intent.clientMessage) ||
       orderMetadataReason(intent.metadata, intent.orderMetadata, intent.clientMetadata) ||
-      orderNameReason(intent.name, intent.orderName, intent.clientName);
+      orderNameReason(intent.name, intent.orderName, intent.clientName) ||
+      orderPriorityReason(intent.priority, intent.orderPriority, intent.clientPriority);
     if (alias) return { ok: false, reason: alias };
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {
