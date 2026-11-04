@@ -92,6 +92,7 @@ import { orderSourceReason } from "./order-source";
 import { orderChannelReason } from "./order-channel";
 import { orderLabelReason } from "./order-label";
 import { orderCommentReason } from "./order-comment";
+import { orderHashReason } from "./order-hash";
 import { orderMemoReason } from "./order-memo";
 import { orderGroupReason } from "./order-group";
 import { orderNoteReason } from "./order-note";
@@ -676,6 +677,12 @@ export type OrderIntent = {
   orderComment?: string | number | boolean;
   /** Client-comment alias. Adapters do not forward it, so a present value is refused. */
   clientComment?: string | number | boolean;
+  /** Order hash. Adapters do not forward it, so a present value is refused. */
+  hash?: unknown;
+  /** Order-hash alias. Adapters do not forward it, so a present value is refused. */
+  orderHash?: unknown;
+  /** Client-hash alias. Adapters do not forward it, so a present value is refused. */
+  clientHash?: unknown;
   /** Order memo. Adapters do not forward it, so a present value is refused. */
   memo?: string | number | boolean;
   /** Order-memo alias. Adapters do not forward it, so a present value is refused. */
@@ -1118,6 +1125,9 @@ export class OrderManager {
       intent.clientComment,
     );
     if (comment) return this.fail(comment);
+
+    const hash = orderHashReason(intent.hash, intent.orderHash, intent.clientHash);
+    if (hash) return this.fail(hash);
 
     const memo = orderMemoReason(intent.memo, intent.orderMemo, intent.clientMemo);
     if (memo) return this.fail(memo);
