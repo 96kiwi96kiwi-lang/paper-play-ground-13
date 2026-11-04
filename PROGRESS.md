@@ -15,3 +15,11 @@
 - **Verification:** TypeScript passed; targeted hash/memo/runtime/restart tests passed (13/13); full Vitest passed (584/584); production Vite/SSR/Nitro build passed; built-server and worker smoke tests passed without exchange credentials or network-backed trading.
 - **Open problem:** the exact integrated head still needs GitHub Actions; the prior head's CI was blocked before runner allocation by the account billing lock.
 - **Next priority:** publish the verified tree without rewriting history and require green final-head CI before merge or deployment.
+
+## 2026-11-04 14:00 CET
+
+- **Verified state:** `main` advanced to `e0b3b6598a20861e1f253d3a80517a8fcf0879b6`; PR #11 was one commit behind at `64f8686258b6d9e6570db79fbc67fcb8e18da372`. There are no open issues or TODO/FIXME markers, and PR #8 still has no unique diff against `main`.
+- **Completed change:** merged current `main` into PR #11, retained the full `OrderManager` runtime, and wired the new fail-closed order-message floor into the runtime submit path after the existing hash and memo floors.
+- **Verification:** TypeScript passed; targeted message/hash/memo/runtime/restart tests passed (15/15); full Vitest passed (584/584); production Vite/SSR/Nitro build passed; built-server and worker smoke tests passed without exchange credentials or network-backed trading.
+- **Open problem:** the exact integrated head still needs GitHub Actions; the prior head's CI was blocked before runner allocation by the account billing lock.
+- **Next priority:** publish the verified tree without rewriting history, then require green final-head CI before merge or deployment.
