@@ -4,7 +4,7 @@
  * - Never holds API keys; the adapter is injected.
  * - Applies hard-stop / cash-reserve / daily-cap style checks before the adapter.
  * - Rejects unsupported amount aliases (positions, portfolio, equity, nav, assets, holdings, …)
- *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description / order-digest metadata so a mistaken field cannot be silently ignored.
+ *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description / order-digest / order-expiry metadata so a mistaken field cannot be silently ignored.
  * - Maintains a local paper book used by the bot and persistence layer.
  * - Live path still goes through the same method; keys stay on the server.
  */
@@ -35,6 +35,7 @@ import { orderCommentReason } from "./order-comment";
 import { orderContextReason } from "./order-context";
 import { orderDescriptionReason } from "./order-description";
 import { orderDigestReason } from "./order-digest";
+import { orderExpiryReason } from "./order-expiry";
 
 export interface OrderIntent {
   symbol: string;
@@ -103,6 +104,9 @@ export interface OrderIntent {
   digest?: unknown;
   orderDigest?: unknown;
   clientDigest?: unknown;
+  cancelAfter?: unknown;
+  expireTime?: unknown;
+  goodTillDate?: unknown;
   [key: string]: unknown;
 }
 
@@ -215,7 +219,8 @@ export class OrderManager {
       orderCommentReason(intent.comment, intent.orderComment, intent.clientComment) ||
       orderContextReason(intent.context, intent.orderContext, intent.clientContext) ||
       orderDescriptionReason(intent.description, intent.orderDescription, intent.clientDescription) ||
-      orderDigestReason(intent.digest, intent.orderDigest, intent.clientDigest);
+      orderDigestReason(intent.digest, intent.orderDigest, intent.clientDigest) ||
+      orderExpiryReason(intent.cancelAfter, intent.expireTime, intent.goodTillDate);
     if (alias) return { ok: false, reason: alias };
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {

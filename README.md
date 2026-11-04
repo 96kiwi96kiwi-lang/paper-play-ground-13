@@ -10,14 +10,14 @@ Paper trading bot (default) with an optional live path on KuCoin spot.
 - The frontend never receives keys or secrets.
 - Withdraw permission is refused; the key must be Trade-only.
 - Hard-stops (daily loss, max drawdown, losing streak, price gap, network errors) halt the bot until an operator clears them.
-- OrderManager applies cash-reserve, daily-trade-cap, notional, precision, alias, and metadata floors (including order-header, order-footer, order-annotation, order-attribution, order-audience, order-batch, order-body, order-caption, order-note, order-comment, order-context, order-description, and order-digest) before any adapter call.
+- OrderManager applies cash-reserve, daily-trade-cap, notional, precision, alias, and metadata floors (including order-header, order-footer, order-annotation, order-attribution, order-audience, order-batch, order-body, order-caption, order-note, order-comment, order-context, order-description, order-digest, and order-expiry) before any adapter call.
 - No live trading occurs without owner credentials present on the server.
 
 See `SAFETY.md` for the full checklist.
 
 ## Current status
 
-**Hour (odd):** Wired order-digest metadata floor into OrderManager. A present `digest`, `orderDigest`, or `clientDigest` is refused before the paper or live path so the adapter cannot silently drop it as a plain spot order. Matches the existing order-description and earlier metadata floors. Default remains paper. No secrets.
+**Hour (odd):** Wired order-expiry floor into OrderManager. A present `cancelAfter`, `expireTime`, or `goodTillDate` is refused before the paper or live path so the adapter cannot rest an order the caller expected to expire. Matches the existing order-digest and earlier metadata floors. Default remains paper. No secrets.
 
 ## Run
 
