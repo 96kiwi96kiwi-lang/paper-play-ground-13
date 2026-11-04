@@ -4,7 +4,7 @@
  * - Never holds API keys; the adapter is injected.
  * - Applies hard-stop / cash-reserve / daily-cap style checks before the adapter.
  * - Rejects unsupported amount aliases (positions, portfolio, equity, nav, assets, holdings, …)
- *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description / order-digest / order-expiry metadata so a mistaken field cannot be silently ignored.
+ *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description / order-digest / order-expiry / order-hash metadata so a mistaken field cannot be silently ignored.
  * - Maintains a local paper book used by the bot and persistence layer.
  * - Live path still goes through the same method; keys stay on the server.
  */
@@ -36,6 +36,7 @@ import { orderContextReason } from "./order-context";
 import { orderDescriptionReason } from "./order-description";
 import { orderDigestReason } from "./order-digest";
 import { orderExpiryReason } from "./order-expiry";
+import { orderHashReason } from "./order-hash";
 
 export interface OrderIntent {
   symbol: string;
@@ -107,6 +108,9 @@ export interface OrderIntent {
   cancelAfter?: unknown;
   expireTime?: unknown;
   goodTillDate?: unknown;
+  hash?: unknown;
+  orderHash?: unknown;
+  clientHash?: unknown;
   [key: string]: unknown;
 }
 
@@ -220,7 +224,8 @@ export class OrderManager {
       orderContextReason(intent.context, intent.orderContext, intent.clientContext) ||
       orderDescriptionReason(intent.description, intent.orderDescription, intent.clientDescription) ||
       orderDigestReason(intent.digest, intent.orderDigest, intent.clientDigest) ||
-      orderExpiryReason(intent.cancelAfter, intent.expireTime, intent.goodTillDate);
+      orderExpiryReason(intent.cancelAfter, intent.expireTime, intent.goodTillDate) ||
+      orderHashReason(intent.hash, intent.orderHash, intent.clientHash);
     if (alias) return { ok: false, reason: alias };
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {
