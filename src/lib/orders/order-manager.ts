@@ -4,7 +4,7 @@
  * - Never holds API keys; the adapter is injected.
  * - Applies hard-stop / cash-reserve / daily-cap style checks before the adapter.
  * - Rejects unsupported amount aliases (positions, portfolio, equity, nav, assets, holdings, …)
- *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description / order-digest / order-expiry / order-hash / order-memo / order-message metadata so a mistaken field cannot be silently ignored.
+ *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description / order-digest / order-expiry / order-hash / order-memo / order-message / order-metadata metadata so a mistaken field cannot be silently ignored.
  * - Maintains a local paper book used by the bot and persistence layer.
  * - Live path still goes through the same method; keys stay on the server.
  */
@@ -39,6 +39,7 @@ import { orderExpiryReason } from "./order-expiry";
 import { orderHashReason } from "./order-hash";
 import { orderMemoReason } from "./order-memo";
 import { orderMessageReason } from "./order-message";
+import { orderMetadataReason } from "./order-metadata";
 
 export interface OrderIntent {
   symbol: string;
@@ -119,6 +120,9 @@ export interface OrderIntent {
   message?: unknown;
   orderMessage?: unknown;
   clientMessage?: unknown;
+  metadata?: unknown;
+  orderMetadata?: unknown;
+  clientMetadata?: unknown;
   [key: string]: unknown;
 }
 
@@ -235,7 +239,8 @@ export class OrderManager {
       orderExpiryReason(intent.cancelAfter, intent.expireTime, intent.goodTillDate) ||
       orderHashReason(intent.hash, intent.orderHash, intent.clientHash) ||
       orderMemoReason(intent.memo, intent.orderMemo, intent.clientMemo) ||
-      orderMessageReason(intent.message, intent.orderMessage, intent.clientMessage);
+      orderMessageReason(intent.message, intent.orderMessage, intent.clientMessage) ||
+      orderMetadataReason(intent.metadata, intent.orderMetadata, intent.clientMetadata);
     if (alias) return { ok: false, reason: alias };
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {
