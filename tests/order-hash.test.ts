@@ -8,7 +8,7 @@ test("omitted, null, false, and blank hash aliases pass", () => {
 });
 
 test("a present hash alias is refused and does not halt", () => {
-  expect(orderHashReason("sha256-abc123")).toBe(
+  expect(orderHashReason("abc123def456")).toBe(
     "Hash is not supported; the adapter would place a plain spot order",
   );
   expect(orderHashReason(0)).toBe(

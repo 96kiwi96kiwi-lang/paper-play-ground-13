@@ -1,23 +1,27 @@
 import { expect, test } from "vitest";
 import { orderTextReason } from "@/lib/orders/order-text";
 
-test("omitted, null, false, and blank text aliases pass", () => {
+test("omitted, blank, and false pass", () => {
   expect(orderTextReason(undefined)).toBeNull();
   expect(orderTextReason(null, null, null)).toBeNull();
-  expect(orderTextReason(false, "", "  ")).toBeNull();
+  expect(orderTextReason("", "  ", false)).toBeNull();
+  expect(orderTextReason(false, false, false)).toBeNull();
 });
 
-test("a present text alias is refused and does not halt", () => {
-  expect(orderTextReason("hedge note")).toBe(
-    "Text is not supported; the adapter would place a plain spot order",
-  );
-  expect(orderTextReason(0)).toBe(
-    "Text is not supported; the adapter would place a plain spot order",
-  );
-  expect(orderTextReason(undefined, "client memo")).toBe(
+test("a present text is refused and does not halt", () => {
+  expect(orderTextReason("grid-text")).toBe(
     "Order text is not supported; the adapter would place a plain spot order",
   );
+  expect(orderTextReason(0)).toBe(
+    "Order text is not supported; the adapter would place a plain spot order",
+  );
+  expect(orderTextReason(undefined, "bybit-text")).toBe(
+    "Order text alias is not supported; the adapter would place a plain spot order",
+  );
+  expect(orderTextReason(undefined, undefined, "client-text")).toBe(
+    "Client text alias is not supported; the adapter would place a plain spot order",
+  );
   expect(orderTextReason(undefined, undefined, true)).toBe(
-    "Client text is not supported; the adapter would place a plain spot order",
+    "Client text alias is not supported; the adapter would place a plain spot order",
   );
 });

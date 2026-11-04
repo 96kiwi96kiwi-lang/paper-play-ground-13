@@ -8,4 +8,8 @@ Omitted, null, false, and blank still pass; zero is refused.
 
 This is a metadata floor, not a halt, and does not flatten positions.
 
+`OrderManager.submit` calls `orderExternalReason` after the order-sibling floor and before the paper path. A refuse does not burn `maxRejectsInWindow`.
+
+See `src/lib/orders/order-external.ts` and `tests/order-external.test.ts`.
+
 Default remains paper. No secrets.

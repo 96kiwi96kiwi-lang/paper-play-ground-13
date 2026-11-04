@@ -185,6 +185,8 @@ import { orderContextReason } from "./order-context";
 import { orderCorrelationReason } from "./order-correlation";
 import { orderTextReason } from "./order-text";
 import { orderTitleReason } from "./order-title";
+import { orderHeaderReason } from "./order-header";
+import { orderFooterReason } from "./order-footer";
 import { orderCaptionReason } from "./order-caption";
 import { orderDescriptionReason } from "./order-description";
 import { orderSummaryReason } from "./order-summary";
@@ -201,6 +203,8 @@ import { orderOriginReason } from "./order-origin";
 import { orderProvenanceReason } from "./order-provenance";
 import { orderReferenceReason } from "./order-reference";
 import { orderAnnotationReason } from "./order-annotation";
+import { orderAttributionReason } from "./order-attribution";
+import { orderBodyReason } from "./order-body";
 import { orderMetadataReason } from "./order-metadata";
 import { orderPayloadReason } from "./order-payload";
 import { orderUrgencyReason } from "./order-urgency";
@@ -797,6 +801,12 @@ export type OrderIntent = {
   title?: unknown;
   orderTitle?: unknown;
   clientTitle?: unknown;
+  header?: unknown;
+  orderHeader?: unknown;
+  clientHeader?: unknown;
+  footer?: unknown;
+  orderFooter?: unknown;
+  clientFooter?: unknown;
   caption?: unknown;
   orderCaption?: unknown;
   clientCaption?: unknown;
@@ -845,6 +855,12 @@ export type OrderIntent = {
   annotation?: unknown;
   orderAnnotation?: unknown;
   clientAnnotation?: unknown;
+  attribution?: unknown;
+  orderAttribution?: unknown;
+  clientAttribution?: unknown;
+  body?: unknown;
+  orderBody?: unknown;
+  clientBody?: unknown;
   metadata?: unknown;
   orderMetadata?: unknown;
   clientMetadata?: unknown;
@@ -1522,6 +1538,12 @@ export class OrderManager {
     const title = orderTitleReason(intent.title, intent.orderTitle, intent.clientTitle);
     if (title) return this.fail(title);
 
+    const header = orderHeaderReason(intent.header, intent.orderHeader, intent.clientHeader);
+    if (header) return this.fail(header);
+
+    const footer = orderFooterReason(intent.footer, intent.orderFooter, intent.clientFooter);
+    if (footer) return this.fail(footer);
+
     const caption = orderCaptionReason(intent.caption, intent.orderCaption, intent.clientCaption);
     if (caption) return this.fail(caption);
 
@@ -1569,6 +1591,16 @@ export class OrderManager {
 
     const ann = orderAnnotationReason(intent.annotation, intent.orderAnnotation, intent.clientAnnotation);
     if (ann) return this.fail(ann);
+
+    const attribution = orderAttributionReason(
+      intent.attribution,
+      intent.orderAttribution,
+      intent.clientAttribution,
+    );
+    if (attribution) return this.fail(attribution);
+
+    const body = orderBodyReason(intent.body, intent.orderBody, intent.clientBody);
+    if (body) return this.fail(body);
 
     const meta = orderMetadataReason(intent.metadata, intent.orderMetadata, intent.clientMetadata);
     if (meta) return this.fail(meta);
