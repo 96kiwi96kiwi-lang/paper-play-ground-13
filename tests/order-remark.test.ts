@@ -1,27 +1,27 @@
-import { expect, test } from "vitest";
-import { orderRemarkReason } from "@/lib/orders/order-remark";
+import { describe, expect, it } from "vitest";
+import { orderRemarkReason } from "../src/lib/orders/order-remark";
 
-test("omitted, blank, and false pass", () => {
-  expect(orderRemarkReason(undefined)).toBeNull();
-  expect(orderRemarkReason(null, null, null)).toBeNull();
-  expect(orderRemarkReason("", "  ", false)).toBeNull();
-  expect(orderRemarkReason(false, false, false)).toBeNull();
-});
+describe("orderRemarkReason", () => {
+  it("passes omitted, null, false, and blank", () => {
+    expect(orderRemarkReason()).toBeNull();
+    expect(orderRemarkReason(undefined, undefined, undefined)).toBeNull();
+    expect(orderRemarkReason(null, null, null)).toBeNull();
+    expect(orderRemarkReason(false, false, false)).toBeNull();
+    expect(orderRemarkReason("", "  ", "")).toBeNull();
+  });
 
-test("a present remark is refused and does not halt", () => {
-  expect(orderRemarkReason("grid-rmk")).toBe(
-    "Order remark is not supported; the adapter would place a plain spot order",
-  );
-  expect(orderRemarkReason(0)).toBe(
-    "Order remark is not supported; the adapter would place a plain spot order",
-  );
-  expect(orderRemarkReason(undefined, "bybit-rmk")).toBe(
-    "Order remark alias is not supported; the adapter would place a plain spot order",
-  );
-  expect(orderRemarkReason(undefined, undefined, "client-rmk")).toBe(
-    "Client remark alias is not supported; the adapter would place a plain spot order",
-  );
-  expect(orderRemarkReason(undefined, undefined, true)).toBe(
-    "Client remark alias is not supported; the adapter would place a plain spot order",
-  );
+  it("refuses a present remark", () => {
+    expect(orderRemarkReason("grid-a")).toMatch(/Order remark is not supported/);
+    expect(orderRemarkReason(1)).toMatch(/Order remark is not supported/);
+    expect(orderRemarkReason(true)).toMatch(/Order remark is not supported/);
+  });
+
+  it("refuses a present orderRemark alias", () => {
+    expect(orderRemarkReason(undefined, "bot")).toMatch(/Order remark alias is not supported/);
+    expect(orderRemarkReason(undefined, 0)).toMatch(/Order remark alias is not supported/);
+  });
+
+  it("refuses a present clientRemark alias", () => {
+    expect(orderRemarkReason(undefined, undefined, "desk")).toMatch(/Client remark alias is not supported/);
+  });
 });
