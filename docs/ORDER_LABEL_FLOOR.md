@@ -1,11 +1,11 @@
-# Order label floor
+# Order-label floor
 
-A submit is refused when `label`, `orderLabel`, or `clientLabel` is present (`Order label is not supported` / `Order label alias is not supported` / `Client label alias is not supported`).
+Refuse present `label`, `orderLabel`, or `clientLabel` before the adapter so a label-tracking intent cannot be ignored on a plain spot order.
 
-Paper and KuCoin adapters place one plain spot order and do not set an order label, so a label intent would be ignored and the base size would rest or fill as a plain spot order.
+Adapters place one plain spot order and do not attach a label, so a label intent would otherwise be dropped and the order would rest or fill as a plain spot order.
 
-Omitted, null, false, and blank still pass. Zero is present and is refused.
+Omitted, null, false, and blank still pass; zero is refused.
 
-`OrderManager.submit` calls `orderLabelReason` before the adapter, so a refuse does not burn `maxRejectsInWindow`. This is a metadata floor, not a halt, and does not flatten positions.
+This is a metadata floor, not a halt, and does not flatten positions.
 
-Vitest: `tests/order-label.test.ts` (no exchange, no secrets).
+Wired into OrderManager.submit. Default remains paper. No secrets.
