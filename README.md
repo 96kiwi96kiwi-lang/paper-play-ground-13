@@ -10,14 +10,14 @@ Paper trading bot (default) with an optional live path on KuCoin spot.
 - The frontend never receives keys or secrets.
 - Withdraw permission is refused; the key must be Trade-only.
 - Hard-stops (daily loss, max drawdown, losing streak, price gap, network errors) halt the bot until an operator clears them.
-- OrderManager applies cash-reserve, daily-trade-cap, notional, precision, alias, and metadata floors (including order-header, order-footer, order-annotation, order-attribution, order-audience, order-batch, order-body, order-caption, order-note, order-comment, order-context, order-description, order-digest, order-expiry, order-hash, order-memo, order-message, order-metadata, order-name, order-priority, order-tag, and order-label) before any adapter call.
+- OrderManager applies cash-reserve, daily-trade-cap, notional, precision, alias, and metadata floors (including order-header, order-footer, order-annotation, order-attribution, order-audience, order-batch, order-body, order-caption, order-note, order-comment, order-context, order-description, order-digest, order-expiry, order-hash, order-memo, order-message, order-metadata, order-name, order-priority, order-tag, order-label, and order-source) before any adapter call.
 - No live trading occurs without owner credentials present on the server.
 
 See `SAFETY.md` for the full checklist.
 
 ## Current status
 
-**Hour (odd):** Wired order-label metadata floor into OrderManager. A present `label`, `orderLabel`, or `clientLabel` is refused before the paper or live path so a label-tracking intent cannot be silently ignored. Matches the existing order-tag and earlier metadata floors. Default remains paper. No secrets.
+**Hour (odd):** Wired order-source metadata floor into OrderManager. A present `source`, `orderSource`, or `clientSource` is refused before the paper or live path so a source-tracking intent cannot be silently ignored. Matches the existing order-label and earlier metadata floors. Default remains paper. No secrets.
 
 ## Run
 

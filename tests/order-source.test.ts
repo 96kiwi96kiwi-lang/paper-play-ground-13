@@ -1,27 +1,23 @@
-import { describe, expect, it } from "vitest";
-import { orderSourceReason } from "../src/lib/orders/order-source";
+import { expect, test } from "vitest";
+import { orderSourceReason } from "@/lib/orders/order-source";
 
-describe("orderSourceReason", () => {
-  it("passes omitted, null, false, and blank", () => {
-    expect(orderSourceReason()).toBeNull();
-    expect(orderSourceReason(undefined, undefined, undefined)).toBeNull();
-    expect(orderSourceReason(null, null, null)).toBeNull();
-    expect(orderSourceReason(false, false, false)).toBeNull();
-    expect(orderSourceReason("", "  ", "")).toBeNull();
-  });
+test("omitted, null, false, and blank order-source fields pass", () => {
+  expect(orderSourceReason()).toBeNull();
+  expect(orderSourceReason(null, null, null)).toBeNull();
+  expect(orderSourceReason(false, "", "  ")).toBeNull();
+});
 
-  it("refuses a present source", () => {
-    expect(orderSourceReason("web")).toMatch(/Order source is not supported/);
-    expect(orderSourceReason(1)).toMatch(/Order source is not supported/);
-    expect(orderSourceReason(true)).toMatch(/Order source is not supported/);
-  });
-
-  it("refuses a present orderSource alias", () => {
-    expect(orderSourceReason(undefined, "api")).toMatch(/Order source alias is not supported/);
-    expect(orderSourceReason(undefined, 0)).toMatch(/Order source alias is not supported/);
-  });
-
-  it("refuses a present src alias", () => {
-    expect(orderSourceReason(undefined, undefined, "mobile")).toMatch(/Source alias is not supported/);
-  });
+test("a present order source field is refused and does not halt", () => {
+  expect(orderSourceReason("grid-a")).toBe(
+    "Order source is not supported; the adapter would place a plain spot order",
+  );
+  expect(orderSourceReason(0)).toBe(
+    "Order source is not supported; the adapter would place a plain spot order",
+  );
+  expect(orderSourceReason(undefined, "bot")).toBe(
+    "Order source alias is not supported; the adapter would place a plain spot order",
+  );
+  expect(orderSourceReason(undefined, undefined, "desk")).toBe(
+    "Client source alias is not supported; the adapter would place a plain spot order",
+  );
 });

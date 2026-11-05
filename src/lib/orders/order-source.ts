@@ -2,10 +2,10 @@
 
 /**
  * Omitted, null, false, and blank pass. A present source, orderSource, or
- * src is refused: placeLimitOrder / placeMarketOrder do not set an order
- * source or partner tag, so a source intent would be ignored and the order
- * would rest or fill as a plain spot order. Zero is present and is refused.
- * This is a metadata floor, not a halt, and does not flatten positions.
+ * clientSource is refused: placeLimitOrder / placeMarketOrder do not set an
+ * order source or client source, so a source intent would be ignored and the
+ * order would rest or fill as a plain spot order. Zero is present and is
+ * refused. This is a metadata floor, not a halt, and does not flatten positions.
  */
 function present(value: unknown): boolean {
   if (value == null) return false;
@@ -17,7 +17,7 @@ function present(value: unknown): boolean {
 export function orderSourceReason(
   source?: unknown,
   orderSource?: unknown,
-  src?: unknown,
+  clientSource?: unknown,
 ): string | null {
   if (present(source)) {
     return "Order source is not supported; the adapter would place a plain spot order";
@@ -25,8 +25,8 @@ export function orderSourceReason(
   if (present(orderSource)) {
     return "Order source alias is not supported; the adapter would place a plain spot order";
   }
-  if (present(src)) {
-    return "Source alias is not supported; the adapter would place a plain spot order";
+  if (present(clientSource)) {
+    return "Client source alias is not supported; the adapter would place a plain spot order";
   }
   return null;
 }
