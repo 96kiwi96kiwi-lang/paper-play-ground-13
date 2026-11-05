@@ -1,11 +1,11 @@
-# Order-signature floor
+# Order signature floor
 
-Refuse present `signature`, `orderSignature`, or `clientSignature` before the adapter so a signature-tracking intent cannot be ignored on a plain spot order.
+A submit is refused when `signature`, `orderSignature`, or `clientSignature` is present (`Order signature is not supported` / `Order signature alias is not supported` / `Client signature alias is not supported`).
 
-Adapters place one plain spot order and do not attach a signature, so a signature intent would otherwise be dropped and the order would rest or fill as a plain spot order.
+Paper and KuCoin adapters place one plain spot order and do not set an order signature, so a signature intent would be ignored and the base size would rest or fill as a plain spot order.
 
-Omitted, null, false, and blank still pass; zero is refused.
+Omitted, null, false, and blank still pass. Zero is present and is refused.
 
-This is a metadata floor, not a halt, and does not flatten positions.
+`OrderManager.submit` calls `orderSignatureReason` before the adapter, so a refuse does not burn `maxRejectsInWindow`. This is a metadata floor, not a halt, and does not flatten positions.
 
-Wired into OrderManager.submit (Hour 428). Default remains paper. No secrets.
+Vitest: `tests/order-signature.test.ts` (no exchange, no secrets).

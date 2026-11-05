@@ -1,23 +1,27 @@
-import { expect, test } from "vitest";
-import { orderSignatureReason } from "@/lib/orders/order-signature";
+import { describe, expect, it } from "vitest";
+import { orderSignatureReason } from "../src/lib/orders/order-signature";
 
-test("omitted, null, false, and blank signature aliases pass", () => {
-  expect(orderSignatureReason(undefined)).toBeNull();
-  expect(orderSignatureReason(null, null, null)).toBeNull();
-  expect(orderSignatureReason(false, "", "  ")).toBeNull();
-});
+describe("orderSignatureReason", () => {
+  it("passes omitted, null, false, and blank", () => {
+    expect(orderSignatureReason()).toBeNull();
+    expect(orderSignatureReason(undefined, undefined, undefined)).toBeNull();
+    expect(orderSignatureReason(null, null, null)).toBeNull();
+    expect(orderSignatureReason(false, false, false)).toBeNull();
+    expect(orderSignatureReason("", "  ", "")).toBeNull();
+  });
 
-test("a present signature alias is refused and does not halt", () => {
-  expect(orderSignatureReason("ed25519-abc123")).toBe(
-    "Signature is not supported; the adapter would place a plain spot order",
-  );
-  expect(orderSignatureReason(0)).toBe(
-    "Signature is not supported; the adapter would place a plain spot order",
-  );
-  expect(orderSignatureReason(undefined, "ord-sig")).toBe(
-    "Order signature is not supported; the adapter would place a plain spot order",
-  );
-  expect(orderSignatureReason(undefined, undefined, true)).toBe(
-    "Client signature is not supported; the adapter would place a plain spot order",
-  );
+  it("refuses a present signature", () => {
+    expect(orderSignatureReason("grid-a")).toMatch(/Order signature is not supported/);
+    expect(orderSignatureReason(1)).toMatch(/Order signature is not supported/);
+    expect(orderSignatureReason(true)).toMatch(/Order signature is not supported/);
+  });
+
+  it("refuses a present orderSignature alias", () => {
+    expect(orderSignatureReason(undefined, "bot")).toMatch(/Order signature alias is not supported/);
+    expect(orderSignatureReason(undefined, 0)).toMatch(/Order signature alias is not supported/);
+  });
+
+  it("refuses a present clientSignature alias", () => {
+    expect(orderSignatureReason(undefined, undefined, "desk")).toMatch(/Client signature alias is not supported/);
+  });
 });
