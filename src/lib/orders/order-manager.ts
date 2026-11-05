@@ -4,7 +4,7 @@
  * - Never holds API keys; the adapter is injected.
  * - Applies hard-stop / cash-reserve / daily-cap style checks before the adapter.
  * - Rejects unsupported amount aliases (positions, portfolio, equity, nav, assets, holdings, …)
- *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description / order-digest / order-expiry / order-hash / order-memo / order-message / order-metadata / order-name / order-priority / order-tag / order-label / order-source / order-span / order-trace / order-group / order-reference / order-remark / order-signature / order-subject / order-title / order-uuid metadata so a mistaken field cannot be silently ignored.
+ *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description / order-digest / order-expiry / order-hash / order-memo / order-message / order-metadata / order-name / order-priority / order-tag / order-label / order-source / order-span / order-trace / order-group / order-reference / order-remark / order-signature / order-subject / order-title / order-uuid / order-version metadata so a mistaken field cannot be silently ignored.
  * - Maintains a local paper book used by the bot and persistence layer.
  * - Live path still goes through the same method; keys stay on the server.
  */
@@ -54,6 +54,7 @@ import { orderSignatureReason } from "./order-signature";
 import { orderSubjectReason } from "./order-subject";
 import { orderTitleReason } from "./order-title";
 import { orderUuidReason } from "./order-uuid";
+import { orderVersionReason } from "./order-version";
 
 export interface OrderIntent {
   symbol: string;
@@ -179,6 +180,9 @@ export interface OrderIntent {
   uuid?: unknown;
   orderUuid?: unknown;
   clientUuid?: unknown;
+  version?: unknown;
+  orderVersion?: unknown;
+  clientVersion?: unknown;
   [key: string]: unknown;
 }
 
@@ -310,7 +314,8 @@ export class OrderManager {
       orderSignatureReason(intent.signature, intent.orderSignature, intent.clientSignature) ||
       orderSubjectReason(intent.subject, intent.orderSubject, intent.clientSubject) ||
       orderTitleReason(intent.title, intent.orderTitle, intent.clientTitle) ||
-      orderUuidReason(intent.uuid, intent.orderUuid, intent.clientUuid);
+      orderUuidReason(intent.uuid, intent.orderUuid, intent.clientUuid) ||
+      orderVersionReason(intent.version, intent.orderVersion, intent.clientVersion);
     if (alias) return { ok: false, reason: alias };
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {
