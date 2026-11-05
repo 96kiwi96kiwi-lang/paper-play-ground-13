@@ -4,7 +4,7 @@
  * - Never holds API keys; the adapter is injected.
  * - Applies hard-stop / cash-reserve / daily-cap style checks before the adapter.
  * - Rejects unsupported amount aliases (positions, portfolio, equity, nav, assets, holdings, …)
- *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description / order-digest / order-expiry / order-hash / order-memo / order-message / order-metadata / order-name / order-priority / order-tag / order-label / order-source / order-span / order-trace / order-group metadata so a mistaken field cannot be silently ignored.
+ *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description / order-digest / order-expiry / order-hash / order-memo / order-message / order-metadata / order-name / order-priority / order-tag / order-label / order-source / order-span / order-trace / order-group / order-reference metadata so a mistaken field cannot be silently ignored.
  * - Maintains a local paper book used by the bot and persistence layer.
  * - Live path still goes through the same method; keys stay on the server.
  */
@@ -48,6 +48,7 @@ import { orderSourceReason } from "./order-source";
 import { orderSpanReason } from "./order-span";
 import { orderTraceReason } from "./order-trace";
 import { orderGroupReason } from "./order-group";
+import { orderReferenceReason } from "./order-reference";
 
 export interface OrderIntent {
   symbol: string;
@@ -155,6 +156,9 @@ export interface OrderIntent {
   group?: unknown;
   orderGroup?: unknown;
   clientGroup?: unknown;
+  reference?: unknown;
+  orderReference?: unknown;
+  clientReference?: unknown;
   [key: string]: unknown;
 }
 
@@ -280,7 +284,8 @@ export class OrderManager {
       orderSourceReason(intent.source, intent.orderSource, intent.clientSource) ||
       orderSpanReason(intent.span, intent.orderSpan, intent.clientSpan) ||
       orderTraceReason(intent.trace, intent.orderTrace, intent.clientTrace) ||
-      orderGroupReason(intent.group, intent.orderGroup, intent.clientGroup);
+      orderGroupReason(intent.group, intent.orderGroup, intent.clientGroup) ||
+      orderReferenceReason(intent.reference, intent.orderReference, intent.clientReference);
     if (alias) return { ok: false, reason: alias };
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {

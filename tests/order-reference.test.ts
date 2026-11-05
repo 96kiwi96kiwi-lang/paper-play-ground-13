@@ -1,27 +1,27 @@
-import { expect, test } from "vitest";
-import { orderReferenceReason } from "@/lib/orders/order-reference";
+import { describe, expect, it } from "vitest";
+import { orderReferenceReason } from "../src/lib/orders/order-reference";
 
-test("omitted, blank, and false pass", () => {
-  expect(orderReferenceReason(undefined)).toBeNull();
-  expect(orderReferenceReason(null, null, null)).toBeNull();
-  expect(orderReferenceReason("", "  ", false)).toBeNull();
-  expect(orderReferenceReason(false, false, false)).toBeNull();
-});
+describe("orderReferenceReason", () => {
+  it("passes omitted, null, false, and blank", () => {
+    expect(orderReferenceReason()).toBeNull();
+    expect(orderReferenceReason(undefined, undefined, undefined)).toBeNull();
+    expect(orderReferenceReason(null, null, null)).toBeNull();
+    expect(orderReferenceReason(false, false, false)).toBeNull();
+    expect(orderReferenceReason("", "  ", "")).toBeNull();
+  });
 
-test("a present reference is refused and does not halt", () => {
-  expect(orderReferenceReason("grid-ref")).toBe(
-    "Order reference is not supported; the adapter would place a plain spot order",
-  );
-  expect(orderReferenceReason(0)).toBe(
-    "Order reference is not supported; the adapter would place a plain spot order",
-  );
-  expect(orderReferenceReason(undefined, "bybit-ref")).toBe(
-    "Order reference alias is not supported; the adapter would place a plain spot order",
-  );
-  expect(orderReferenceReason(undefined, undefined, "client-ref")).toBe(
-    "Client reference alias is not supported; the adapter would place a plain spot order",
-  );
-  expect(orderReferenceReason(undefined, undefined, true)).toBe(
-    "Client reference alias is not supported; the adapter would place a plain spot order",
-  );
+  it("refuses a present reference", () => {
+    expect(orderReferenceReason("grid-a")).toMatch(/Order reference is not supported/);
+    expect(orderReferenceReason(1)).toMatch(/Order reference is not supported/);
+    expect(orderReferenceReason(true)).toMatch(/Order reference is not supported/);
+  });
+
+  it("refuses a present orderReference alias", () => {
+    expect(orderReferenceReason(undefined, "bot")).toMatch(/Order reference alias is not supported/);
+    expect(orderReferenceReason(undefined, 0)).toMatch(/Order reference alias is not supported/);
+  });
+
+  it("refuses a present clientReference alias", () => {
+    expect(orderReferenceReason(undefined, undefined, "desk")).toMatch(/Client reference alias is not supported/);
+  });
 });

@@ -1,11 +1,11 @@
-/** Refuse order-reference text the spot adapters do not forward. Not a halt. */
+/** Refuse order-reference flags the spot adapters do not set. Not a halt. */
 
 /**
  * Omitted, null, false, and blank pass. A present reference, orderReference, or
  * clientReference is refused: placeLimitOrder / placeMarketOrder do not set an
- * order reference or client reference, so a reference intent would be ignored
- * and the order would rest or fill as a plain spot order. Zero is present and
- * is refused. This is a metadata floor, not a halt, and does not flatten positions.
+ * order reference, so a reference intent would be ignored and the order would rest or
+ * fill as a plain spot order. Zero is present and is refused. This is a
+ * metadata floor, not a halt, and does not flatten positions.
  */
 function present(value: unknown): boolean {
   if (value == null) return false;
