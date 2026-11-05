@@ -1,6 +1,6 @@
 # Order subject floor
 
-A submit is refused when `subject`, `orderSubject`, or `clientSubject` is present (`Subject is not supported` / `Order subject is not supported` / `Client subject is not supported`).
+A submit is refused when `subject`, `orderSubject`, or `clientSubject` is present (`Order subject is not supported` / `Order subject alias is not supported` / `Client subject alias is not supported`).
 
 Paper and KuCoin adapters place one plain spot order and do not set an order subject, so a subject intent would be ignored and the base size would rest or fill as a plain spot order.
 
