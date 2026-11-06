@@ -4,7 +4,7 @@
  * - Never holds API keys; the adapter is injected.
  * - Applies hard-stop / cash-reserve / daily-cap style checks before the adapter.
  * - Rejects unsupported amount aliases (positions, portfolio, equity, nav, assets, holdings, …)
- *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description / order-digest / order-expiry / order-hash / order-memo / order-message / order-metadata / order-name / order-priority / order-tag / order-label / order-source / order-span / order-trace / order-group / order-reference / order-remark / order-signature / order-subject / order-title / order-uuid / order-version / order-visibility / order-weight / order-window / order-zone / order-algo / order-strategy / order-tactic / order-template metadata so a mistaken field cannot be silently ignored.
+ *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description / order-digest / order-expiry / order-hash / order-memo / order-message / order-metadata / order-name / order-priority / order-tag / order-label / order-source / order-span / order-trace / order-group / order-reference / order-remark / order-signature / order-subject / order-title / order-uuid / order-version / order-visibility / order-weight / order-window / order-zone / order-algo / order-strategy / order-tactic / order-template / order-text metadata so a mistaken field cannot be silently ignored.
  * - Maintains a local paper book used by the bot and persistence layer.
  * - Live path still goes through the same method; keys stay on the server.
  */
@@ -63,6 +63,7 @@ import { orderAlgoReason } from "./order-algo";
 import { orderStrategyReason } from "./order-strategy";
 import { orderTacticReason } from "./order-tactic";
 import { orderTemplateReason } from "./order-template";
+import { orderTextReason } from "./order-text";
 
 export interface OrderIntent {
   symbol: string;
@@ -215,6 +216,9 @@ export interface OrderIntent {
   template?: unknown;
   orderTemplate?: unknown;
   clientTemplate?: unknown;
+  text?: unknown;
+  orderText?: unknown;
+  clientText?: unknown;
   [key: string]: unknown;
 }
 
@@ -355,7 +359,8 @@ export class OrderManager {
       orderAlgoReason(intent.algo, intent.algoType, intent.clientAlgo) ||
       orderStrategyReason(intent.strategy, intent.strategyId, intent.clientStrategy) ||
       orderTacticReason(intent.tactic, intent.tacticId, intent.clientTactic) ||
-      orderTemplateReason(intent.template, intent.orderTemplate, intent.clientTemplate);
+      orderTemplateReason(intent.template, intent.orderTemplate, intent.clientTemplate) ||
+      orderTextReason(intent.text, intent.orderText, intent.clientText);
     if (alias) return { ok: false, reason: alias };
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {
