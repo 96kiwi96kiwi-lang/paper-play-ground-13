@@ -4,7 +4,7 @@
  * - Never holds API keys; the adapter is injected.
  * - Applies hard-stop / cash-reserve / daily-cap style checks before the adapter.
  * - Rejects unsupported amount aliases (positions, portfolio, equity, nav, assets, holdings, …)
- *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description / order-digest / order-expiry / order-hash / order-memo / order-message / order-metadata / order-name / order-priority / order-tag / order-label / order-source / order-span / order-trace / order-group / order-reference / order-remark / order-signature / order-subject / order-title / order-uuid / order-version / order-visibility / order-weight metadata so a mistaken field cannot be silently ignored.
+ *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description / order-digest / order-expiry / order-hash / order-memo / order-message / order-metadata / order-name / order-priority / order-tag / order-label / order-source / order-span / order-trace / order-group / order-reference / order-remark / order-signature / order-subject / order-title / order-uuid / order-version / order-visibility / order-weight / order-window metadata so a mistaken field cannot be silently ignored.
  * - Maintains a local paper book used by the bot and persistence layer.
  * - Live path still goes through the same method; keys stay on the server.
  */
@@ -57,6 +57,7 @@ import { orderUuidReason } from "./order-uuid";
 import { orderVersionReason } from "./order-version";
 import { orderVisibilityReason } from "./order-visibility";
 import { orderWeightReason } from "./order-weight";
+import { orderWindowReason } from "./order-window";
 
 export interface OrderIntent {
   symbol: string;
@@ -191,6 +192,9 @@ export interface OrderIntent {
   weight?: unknown;
   orderWeight?: unknown;
   clientWeight?: unknown;
+  window?: unknown;
+  orderWindow?: unknown;
+  clientWindow?: unknown;
   [key: string]: unknown;
 }
 
@@ -325,7 +329,8 @@ export class OrderManager {
       orderUuidReason(intent.uuid, intent.orderUuid, intent.clientUuid) ||
       orderVersionReason(intent.version, intent.orderVersion, intent.clientVersion) ||
       orderVisibilityReason(intent.visibility, intent.orderVisibility, intent.clientVisibility) ||
-      orderWeightReason(intent.weight, intent.orderWeight, intent.clientWeight);
+      orderWeightReason(intent.weight, intent.orderWeight, intent.clientWeight) ||
+      orderWindowReason(intent.window, intent.orderWindow, intent.clientWindow);
     if (alias) return { ok: false, reason: alias };
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {
