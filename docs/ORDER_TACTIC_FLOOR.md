@@ -1,0 +1,9 @@
+# Order-tactic metadata floor
+
+OrderManager refuses a present `tactic`, `tacticId`, or `clientTactic` before any paper or live adapter call.
+
+The spot adapters place one plain market or limit order. They do not forward tactic / playbook metadata. A present value would otherwise be dropped and the order would rest or fill as a plain spot order.
+
+This is a metadata floor, not a halt. It does not flatten positions.
+
+Zero is treated as present and is refused. Omitted, null, false, and blank strings pass.
