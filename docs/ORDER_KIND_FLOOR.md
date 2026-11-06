@@ -1,8 +1,8 @@
 # Order kind floor
 
-A submit is refused when `kind`, `orderKind`, or `clientKind` is present (`Kind is not supported` / `Order kind is not supported` / `Client kind is not supported`).
+A submit is refused when `kind`, `orderKind`, or `clientKind` is present (`Order kind is not supported` / `Order kind alias is not supported` / `Client kind alias is not supported`).
 
-Paper and KuCoin adapters place one plain spot order and do not attach a kind or order type tag. A kind intent would otherwise be dropped and the order would rest or fill as a plain spot order.
+Paper and KuCoin adapters place one plain spot order and do not set an order kind, so a kind intent would be ignored and the base size would rest or fill as a plain spot order.
 
 Omitted, null, false, and blank still pass. Zero is present and is refused.
 
