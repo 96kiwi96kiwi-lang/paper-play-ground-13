@@ -4,7 +4,7 @@
  * - Never holds API keys; the adapter is injected.
  * - Applies hard-stop / cash-reserve / daily-cap style checks before the adapter.
  * - Rejects unsupported amount aliases (positions, portfolio, equity, nav, assets, holdings, …)
- *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description / order-digest / order-expiry / order-hash / order-memo / order-message / order-metadata / order-name / order-priority / order-tag / order-label / order-source / order-span / order-trace / order-group / order-reference / order-remark / order-signature / order-subject / order-title / order-uuid / order-version / order-visibility / order-weight / order-window / order-zone / order-algo / order-strategy / order-tactic / order-template / order-text / order-kind / order-leg / order-locale / order-region / order-timezone / order-currency / order-device metadata so a mistaken field cannot be silently ignored.
+ *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description / order-digest / order-expiry / order-hash / order-memo / order-message / order-metadata / order-name / order-priority / order-tag / order-label / order-source / order-span / order-trace / order-group / order-reference / order-remark / order-signature / order-subject / order-title / order-uuid / order-version / order-visibility / order-weight / order-window / order-zone / order-algo / order-strategy / order-tactic / order-template / order-text / order-kind / order-leg / order-locale / order-region / order-timezone / order-currency / order-device / order-platform metadata so a mistaken field cannot be silently ignored.
  * - Maintains a local paper book used by the bot and persistence layer.
  * - Live path still goes through the same method; keys stay on the server.
  */
@@ -71,6 +71,7 @@ import { orderRegionReason } from "./order-region";
 import { orderTimezoneReason } from "./order-timezone";
 import { orderCurrencyReason } from "./order-currency";
 import { orderDeviceReason } from "./order-device";
+import { orderPlatformReason } from "./order-platform";
 
 export interface OrderIntent {
   symbol: string;
@@ -247,6 +248,9 @@ export interface OrderIntent {
   device?: unknown;
   orderDevice?: unknown;
   clientDevice?: unknown;
+  platform?: unknown;
+  orderPlatform?: unknown;
+  clientPlatform?: unknown;
   [key: string]: unknown;
 }
 
@@ -395,7 +399,8 @@ export class OrderManager {
       orderRegionReason(intent.region, intent.orderRegion, intent.clientRegion) ||
       orderTimezoneReason(intent.timezone, intent.orderTimezone, intent.clientTimezone) ||
       orderCurrencyReason(intent.currency, intent.orderCurrency, intent.clientCurrency) ||
-      orderDeviceReason(intent.device, intent.orderDevice, intent.clientDevice);
+      orderDeviceReason(intent.device, intent.orderDevice, intent.clientDevice) ||
+      orderPlatformReason(intent.platform, intent.orderPlatform, intent.clientPlatform);
     if (alias) return { ok: false, reason: alias };
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {
@@ -480,29 +485,25 @@ export class OrderManager {
       return { ok: false, reason: err instanceof Error ? err.message : String(err) };
     }
 
-    this.seen.unshift(order);
-    if (this.seen.length > 500) this.seen.length = 500;
+    this.lastSubmitAt = now;
+    this.seen.push(order);
+    this.applyFill(order);
 
-    if (order.status !== "rejected" && (order.filled ?? 0) > 0) {
-      this.applyFillToBook(order);
-      this.lastSubmitAt = now;
-    }
+    if (this.onPortfolioChange) this.onPortfolioChange(this.snapshot());
+    if (this.onSeenOrdersChange) this.onSeenOrdersChange(this.seenOrders());
+    if (this.onLastSubmitAtChange) this.onLastSubmitAtChange(this.lastSubmitAt);
 
-    return {
-      ok: order.status !== "rejected",
-      reason: order.rejectReason,
-      order,
-    };
+    return { ok: true, order };
   }
 
-  private applyFillToBook(order: UnifiedOrder): void {
+  private applyFill(order: UnifiedOrder) {
     const filled = order.filled ?? 0;
-    if (!(filled > 0)) return;
-    const px = order.price && order.price > 0 ? order.price : 0;
-    const cost = order.cost && order.cost > 0 ? order.cost : filled * px;
+    if (filled <= 0) return;
+    const px = order.price ?? order.average ?? 0;
+    const cost = filled * px;
 
     if (order.side === "buy") {
-      this.cash = Math.max(0, this.cash - cost);
+      this.cash -= cost;
       const existing = this.positions[order.symbol];
       if (existing) {
         const total = existing.amount + filled;
