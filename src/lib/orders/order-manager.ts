@@ -4,7 +4,7 @@
  * - Never holds API keys; the adapter is injected.
  * - Applies hard-stop / cash-reserve / daily-cap style checks before the adapter.
  * - Rejects unsupported amount aliases (positions, portfolio, equity, nav, assets, holdings, …)
- *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description / order-digest / order-expiry / order-hash / order-memo / order-message / order-metadata / order-name / order-priority / order-tag / order-label / order-source / order-span / order-trace / order-group / order-reference / order-remark / order-signature / order-subject / order-title / order-uuid / order-version / order-visibility / order-weight / order-window / order-zone / order-algo / order-strategy / order-tactic / order-template / order-text / order-kind / order-leg / order-locale / order-region / order-timezone / order-currency / order-device / order-platform metadata so a mistaken field cannot be silently ignored.
+ *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description / order-digest / order-expiry / order-hash / order-memo / order-message / order-metadata / order-name / order-priority / order-tag / order-label / order-source / order-span / order-trace / order-group / order-reference / order-remark / order-signature / order-subject / order-title / order-uuid / order-version / order-visibility / order-weight / order-window / order-zone / order-algo / order-strategy / order-tactic / order-template / order-text / order-kind / order-leg / order-locale / order-region / order-timezone / order-currency / order-device / order-platform / order-channel metadata so a mistaken field cannot be silently ignored.
  * - Maintains a local paper book used by the bot and persistence layer.
  * - Live path still goes through the same method; keys stay on the server.
  */
@@ -72,6 +72,7 @@ import { orderTimezoneReason } from "./order-timezone";
 import { orderCurrencyReason } from "./order-currency";
 import { orderDeviceReason } from "./order-device";
 import { orderPlatformReason } from "./order-platform";
+import { orderChannelReason } from "./order-channel";
 
 export interface OrderIntent {
   symbol: string;
@@ -251,6 +252,9 @@ export interface OrderIntent {
   platform?: unknown;
   orderPlatform?: unknown;
   clientPlatform?: unknown;
+  channel?: unknown;
+  orderChannel?: unknown;
+  origin?: unknown;
   [key: string]: unknown;
 }
 
@@ -400,7 +404,8 @@ export class OrderManager {
       orderTimezoneReason(intent.timezone, intent.orderTimezone, intent.clientTimezone) ||
       orderCurrencyReason(intent.currency, intent.orderCurrency, intent.clientCurrency) ||
       orderDeviceReason(intent.device, intent.orderDevice, intent.clientDevice) ||
-      orderPlatformReason(intent.platform, intent.orderPlatform, intent.clientPlatform);
+      orderPlatformReason(intent.platform, intent.orderPlatform, intent.clientPlatform) ||
+      orderChannelReason(intent.channel, intent.orderChannel, intent.origin);
     if (alias) return { ok: false, reason: alias };
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {
@@ -466,59 +471,54 @@ export class OrderManager {
     let order: UnifiedOrder;
     try {
       if (type === "limit" && intent.price && intent.price > 0) {
-        order = await this.adapter.placeLimitOrder(
-          intent.symbol,
-          intent.side,
-          intent.amount,
-          intent.price,
-          intent.clientOrderId,
-        );
+        order = await this.adapter.placeLimitOrder({
+          symbol: intent.symbol,
+          side: intent.side,
+          amount: intent.amount,
+          price: intent.price,
+          clientOrderId: intent.clientOrderId,
+        });
       } else {
-        order = await this.adapter.placeMarketOrder(
-          intent.symbol,
-          intent.side,
-          intent.amount,
-          intent.clientOrderId,
-        );
+        order = await this.adapter.placeMarketOrder({
+          symbol: intent.symbol,
+          side: intent.side,
+          amount: intent.amount,
+          clientOrderId: intent.clientOrderId,
+        });
       }
     } catch (err) {
-      return { ok: false, reason: err instanceof Error ? err.message : String(err) };
+      const msg = err instanceof Error ? err.message : String(err);
+      return { ok: false, reason: msg };
     }
 
     this.lastSubmitAt = now;
     this.seen.push(order);
-    this.applyFill(order);
+    this.onSeenOrdersChange?.(this.seen);
+    this.onLastSubmitAtChange?.(this.lastSubmitAt);
 
-    if (this.onPortfolioChange) this.onPortfolioChange(this.snapshot());
-    if (this.onSeenOrdersChange) this.onSeenOrdersChange(this.seenOrders());
-    if (this.onLastSubmitAtChange) this.onLastSubmitAtChange(this.lastSubmitAt);
+    if (order.status === "closed" || order.status === "filled") {
+      const fillPrice = order.price ?? intent.price ?? 0;
+      if (intent.side === "buy" && fillPrice > 0) {
+        const cost = intent.amount * fillPrice;
+        this.cash -= cost;
+        const prev = this.positions[intent.symbol] ?? { amount: 0, avgEntry: 0 };
+        const newAmount = prev.amount + intent.amount;
+        const newAvg =
+          newAmount > 0 ? (prev.amount * prev.avgEntry + intent.amount * fillPrice) / newAmount : 0;
+        this.positions[intent.symbol] = { amount: newAmount, avgEntry: newAvg };
+      } else if (intent.side === "sell" && fillPrice > 0) {
+        const proceeds = intent.amount * fillPrice;
+        this.cash += proceeds;
+        const prev = this.positions[intent.symbol];
+        if (prev) {
+          const newAmount = Math.max(0, prev.amount - intent.amount);
+          this.positions[intent.symbol] =
+            newAmount > 1e-12 ? { amount: newAmount, avgEntry: prev.avgEntry } : { amount: 0, avgEntry: 0 };
+        }
+      }
+      this.onPortfolioChange?.(this.snapshot());
+    }
 
     return { ok: true, order };
-  }
-
-  private applyFill(order: UnifiedOrder) {
-    const filled = order.filled ?? 0;
-    if (filled <= 0) return;
-    const px = order.price ?? order.average ?? 0;
-    const cost = filled * px;
-
-    if (order.side === "buy") {
-      this.cash -= cost;
-      const existing = this.positions[order.symbol];
-      if (existing) {
-        const total = existing.amount + filled;
-        existing.avgEntry = (existing.avgEntry * existing.amount + px * filled) / total;
-        existing.amount = total;
-      } else {
-        this.positions[order.symbol] = { amount: filled, avgEntry: px || 0 };
-      }
-    } else {
-      this.cash += cost;
-      const pos = this.positions[order.symbol];
-      if (pos) {
-        pos.amount = Math.max(0, pos.amount - filled);
-        if (pos.amount <= 1e-12) delete this.positions[order.symbol];
-      }
-    }
   }
 }
