@@ -4,7 +4,7 @@
  * - Never holds API keys; the adapter is injected.
  * - Applies hard-stop / cash-reserve / daily-cap style checks before the adapter.
  * - Rejects unsupported amount aliases (positions, portfolio, equity, nav, assets, holdings, …)
- *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description / order-digest / order-expiry / order-hash / order-memo / order-message / order-metadata / order-name / order-priority / order-tag / order-label / order-source / order-span / order-trace / order-group / order-reference / order-remark / order-signature / order-subject / order-title / order-uuid / order-version / order-visibility / order-weight / order-window / order-zone / order-algo / order-strategy / order-tactic / order-template / order-text / order-kind / order-leg / order-locale / order-region / order-timezone / order-currency / order-device / order-platform / order-channel / order-session / order-sibling metadata so a mistaken field cannot be silently ignored.
+ *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description / order-digest / order-expiry / order-hash / order-memo / order-message / order-metadata / order-name / order-priority / order-tag / order-label / order-source / order-span / order-trace / order-group / order-reference / order-remark / order-signature / order-subject / order-title / order-uuid / order-version / order-visibility / order-weight / order-window / order-zone / order-algo / order-strategy / order-tactic / order-template / order-text / order-kind / order-leg / order-locale / order-region / order-timezone / order-currency / order-device / order-platform / order-channel / order-session / order-sibling / order-parent metadata so a mistaken field cannot be silently ignored.
  * - Maintains a local paper book used by the bot and persistence layer.
  * - Live path still goes through the same method; keys stay on the server.
  */
@@ -75,6 +75,7 @@ import { orderPlatformReason } from "./order-platform";
 import { orderChannelReason } from "./order-channel";
 import { orderSessionReason } from "./order-session";
 import { orderSiblingReason } from "./order-sibling";
+import { orderParentReason } from "./order-parent";
 
 export interface OrderIntent {
   symbol: string;
@@ -263,6 +264,9 @@ export interface OrderIntent {
   siblingId?: unknown;
   orderSibling?: unknown;
   clientSibling?: unknown;
+  parentId?: unknown;
+  orderParent?: unknown;
+  clientParent?: unknown;
   [key: string]: unknown;
 }
 
@@ -394,7 +398,8 @@ export class OrderManager {
       orderPlatformReason(intent.platform, intent.orderPlatform, intent.clientPlatform) ||
       orderChannelReason(intent.channel, intent.orderChannel, intent.origin) ||
       orderSessionReason(intent.session, intent.orderSession, intent.clientSession) ||
-      orderSiblingReason(intent.siblingId, intent.orderSibling, intent.clientSibling);
+      orderSiblingReason(intent.siblingId, intent.orderSibling, intent.clientSibling) ||
+      orderParentReason(intent.parentId, intent.orderParent, intent.clientParent);
     if (alias) return { ok: false, reason: alias };
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {
@@ -450,40 +455,32 @@ export class OrderManager {
 
     if (intent.side === "sell") {
       const held = this.positionAmount(intent.symbol);
-      if (held + 1e-12 < intent.amount) {
-        return { ok: false, reason: `Inventory: no long position in ${intent.symbol}` };
+      if (intent.amount > held + 1e-12) {
+        return { ok: false, reason: `Insufficient position (held ${held})` };
       }
     }
 
-    // Adapter call (paper or kucoin)
+    // Adapter call (paper or live) — keys never leave the server.
     let order: UnifiedOrder;
     try {
-      if (intent.type === "limit" && intent.price && intent.price > 0) {
-        order = await this.adapter.placeLimitOrder({
-          symbol: intent.symbol,
-          side: intent.side,
-          amount: intent.amount,
-          price: intent.price,
-          clientOrderId: intent.clientOrderId,
-        });
-      } else {
-        order = await this.adapter.placeMarketOrder({
-          symbol: intent.symbol,
-          side: intent.side,
-          amount: intent.amount,
-          clientOrderId: intent.clientOrderId,
-        });
-      }
+      order = await this.adapter.placeOrder({
+        symbol: intent.symbol,
+        side: intent.side,
+        amount: intent.amount,
+        type: intent.type ?? "market",
+        price: intent.price,
+        clientOrderId: intent.clientOrderId,
+      });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      return { ok: false, reason: msg };
+      return { ok: false, reason: err instanceof Error ? err.message : "Adapter placeOrder failed" };
     }
 
-    this.lastSubmitAt = now;
     this.seen.push(order);
     this.onSeenOrdersChange?.(this.seen);
-    this.onLastSubmitAtChange?.(this.lastSubmitAt);
+    this.lastSubmitAt = now;
+    this.onLastSubmitAtChange?.(now);
 
+    // Paper book update for fills.
     if (order.status === "closed" || order.status === "filled") {
       const fillPrice = order.price ?? intent.price ?? 0;
       if (intent.side === "buy" && fillPrice > 0) {
