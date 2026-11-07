@@ -3,7 +3,7 @@
 /**
  * Omitted, null, false, and blank pass. A present parentId, orderParent,
  * or clientParent is refused: adapters place one plain spot order and do
- * not attach a parent, so a parent-child intent would otherwise be
+ * not attach a parent, so a parent-child or linked intent would otherwise be
  * dropped and the order would rest or fill as a plain spot order. This is a
  * metadata floor, not a halt, and does not flatten positions.
  */

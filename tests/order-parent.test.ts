@@ -8,13 +8,13 @@ test("omitted, null, false, and blank parent aliases pass", () => {
 });
 
 test("a present parent alias is refused and does not halt", () => {
-  expect(orderParentReason("parent-1")).toBe(
+  expect(orderParentReason("par-1")).toBe(
     "Parent id is not supported; the adapter would place a plain spot order",
   );
   expect(orderParentReason(0)).toBe(
     "Parent id is not supported; the adapter would place a plain spot order",
   );
-  expect(orderParentReason(undefined, "ord-parent")).toBe(
+  expect(orderParentReason(undefined, "ord-par")).toBe(
     "Order parent is not supported; the adapter would place a plain spot order",
   );
   expect(orderParentReason(undefined, undefined, true)).toBe(

@@ -1,11 +1,13 @@
-# Order parent floor
+# Order Parent Floor
 
-A submit is refused when `parentId`, `orderParent`, or `clientParent` is present (`Parent id is not supported` / `Order parent is not supported` / `Client parent is not supported`).
+Refuse present `parentId`, `orderParent`, or `clientParent` on submit.
 
-Paper and KuCoin adapters place one plain spot order and do not attach a parent. A parent-child intent would otherwise be dropped and the order would rest or fill as a plain spot order.
+Paper and KuCoin spot adapters place one plain spot order and do not attach a parent. A parent-child or linked intent would otherwise be dropped and the order would rest or fill as a plain spot order.
 
-Omitted, null, false, and blank still pass. Zero is present and is refused.
+Omitted, null, false, and blank still pass; zero is refused.
 
-`OrderManager.submit` calls `orderParentReason` before the adapter, so a refuse does not burn `maxRejectsInWindow`. This is a metadata floor, not a halt, and does not flatten positions.
+This is a metadata floor, not a halt, and does not flatten positions.
 
-Vitest: `tests/order-parent.test.ts` (no exchange, no secrets).
+`OrderManager.submit` calls `orderParentReason` after the order-sibling floor and before the paper path. A refuse does not burn `maxRejectsInWindow`.
+
+See `src/lib/orders/order-parent.ts` and `tests/order-parent.test.ts`.
