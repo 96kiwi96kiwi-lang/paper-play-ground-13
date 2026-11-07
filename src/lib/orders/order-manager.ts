@@ -4,7 +4,7 @@
  * - Never holds API keys; the adapter is injected.
  * - Applies hard-stop / cash-reserve / daily-cap style checks before the adapter.
  * - Rejects unsupported amount aliases (positions, portfolio, equity, nav, assets, holdings, …)
- *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description / order-digest / order-expiry / order-hash / order-memo / order-message / order-metadata / order-name / order-priority / order-tag / order-label / order-source / order-span / order-trace / order-group / order-reference / order-remark / order-signature / order-subject / order-title / order-uuid / order-version / order-visibility / order-weight / order-window / order-zone / order-algo / order-strategy / order-tactic / order-template / order-text / order-kind / order-leg / order-locale / order-region metadata so a mistaken field cannot be silently ignored.
+ *   and order-header / order-footer / order-annotation / order-attribution / order-audience / order-batch / order-body / order-caption / order-note / order-comment / order-context / order-description / order-digest / order-expiry / order-hash / order-memo / order-message / order-metadata / order-name / order-priority / order-tag / order-label / order-source / order-span / order-trace / order-group / order-reference / order-remark / order-signature / order-subject / order-title / order-uuid / order-version / order-visibility / order-weight / order-window / order-zone / order-algo / order-strategy / order-tactic / order-template / order-text / order-kind / order-leg / order-locale / order-region / order-timezone metadata so a mistaken field cannot be silently ignored.
  * - Maintains a local paper book used by the bot and persistence layer.
  * - Live path still goes through the same method; keys stay on the server.
  */
@@ -68,6 +68,7 @@ import { orderKindReason } from "./order-kind";
 import { orderLegReason } from "./order-leg";
 import { orderLocaleReason } from "./order-locale";
 import { orderRegionReason } from "./order-region";
+import { orderTimezoneReason } from "./order-timezone";
 
 export interface OrderIntent {
   symbol: string;
@@ -235,6 +236,9 @@ export interface OrderIntent {
   region?: unknown;
   orderRegion?: unknown;
   clientRegion?: unknown;
+  timezone?: unknown;
+  orderTimezone?: unknown;
+  clientTimezone?: unknown;
   [key: string]: unknown;
 }
 
@@ -380,7 +384,8 @@ export class OrderManager {
       orderKindReason(intent.kind, intent.orderKind, intent.clientKind) ||
       orderLegReason(intent.legId, intent.orderLeg, intent.clientLeg) ||
       orderLocaleReason(intent.locale, intent.orderLocale, intent.clientLocale) ||
-      orderRegionReason(intent.region, intent.orderRegion, intent.clientRegion);
+      orderRegionReason(intent.region, intent.orderRegion, intent.clientRegion) ||
+      orderTimezoneReason(intent.timezone, intent.orderTimezone, intent.clientTimezone);
     if (alias) return { ok: false, reason: alias };
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {
