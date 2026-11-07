@@ -8,6 +8,6 @@ Omitted, null, false, and blank still pass; zero is refused.
 
 This is a metadata floor, not a halt, and does not flatten positions.
 
-`OrderManager.submit` calls `orderChildReason` after the order-chain floor and before the paper path. A refuse does not burn `maxRejectsInWindow`.
+`OrderManager.submit` calls `orderChildReason` after the order-payload floor and before the paper path. A refuse does not burn `maxRejectsInWindow`.
 
 See `src/lib/orders/order-child.ts` and `tests/order-child.test.ts`.
