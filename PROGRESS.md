@@ -1,5 +1,13 @@
 # Development progress
 
+## 2026-11-09 01:00 CET
+
+- **Verified state:** `main` advanced to `e2358c8f1342eb846bb2640141e52079a2d3e7b9` with reference/source/origin metadata-floor wiring. PR #13 remained open at `4e68e8fa8f1e2aafec438f5cd655fe0694d1d39a`; PR #11 and PR #8 remained open and stale. There were no open issues or actionable TODO/FIXME markers.
+- **Completed change:** merged current `main` into PR #13 without rewriting history, retained the complete persistent `OrderManager`, and integrated the new reference/source/origin floors into the real runtime. Added the canonical `clientSource` alias without dropping the legacy `src` alias, and expanded the runtime regression to prove all reference/source/origin aliases fail before adapter invocation.
+- **Verification:** TypeScript passed; focused source/reference/origin/runtime tests passed (13/13); paper-loop and worker-lease tests passed (18/18); full Vitest passed (613/613 across 231 files); production build, built-server smoke, and worker smoke passed without exchange credentials or network-backed trading.
+- **Open problem:** GitHub Actions on the previous PR #13 head failed before all steps with no runner log, consistent with the account billing lock. This exact final SHA still requires real successful CI before merge or deployment.
+- **Next priority:** publish this verified merge to PR #13 and inspect final-head CI; then re-parent the locally verified fail-closed public quote fallback onto the synchronized PR branch.
+
 ## 2026-11-08 19:00 CET
 
 - **Verified state:** `main` advanced to `2929b472503ba8fbf6c45ef82c1c8f9c3147612e` with chain/group/link/list/related metadata-floor commits. PR #13 remained open and locally verified but was nine commits behind; PR #11 and PR #8 remained open and stale. There were no open issues or actionable TODO/FIXME markers.

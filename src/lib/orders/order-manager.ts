@@ -684,6 +684,8 @@ export type OrderIntent = {
   orderSource?: string | number | boolean;
   /** Source alias. Adapters do not set it, so a present value is refused. */
   src?: string | number | boolean;
+  /** Client source alias. Adapters do not set it, so a present value is refused. */
+  clientSource?: string | number | boolean;
   /** Order channel. Adapters do not set it, so a present value is refused. */
   channel?: string | number | boolean;
   /** Order channel alias. Adapters do not set it, so a present value is refused. */
@@ -1222,8 +1224,11 @@ export class OrderManager {
     const remark = orderRemarkReason(intent.remark, intent.tag, intent.clientTag);
     if (remark) return this.fail(remark);
 
-    const source = orderSourceReason(intent.source, intent.orderSource, intent.src);
+    const source = orderSourceReason(intent.source, intent.orderSource, intent.clientSource);
     if (source) return this.fail(source);
+
+    const sourceAlias = orderSourceReason(undefined, undefined, intent.src);
+    if (sourceAlias) return this.fail(sourceAlias);
 
     const channel = orderChannelReason(intent.channel, intent.orderChannel, intent.origin);
     if (channel) return this.fail(channel);
