@@ -1,5 +1,13 @@
 # Development progress
 
+## 2026-11-08 08:00 CET
+
+- **Verified state:** `main` advanced to `36b463184baedf54269b1d2a361a2eda6f864bd8`, but its 7 KB `OrderManager` still omits the persistent runtime, restart recovery, and most fail-closed floors restored by PR #13. PR #11 and PR #8 remain open and stale; there are no open issues or TODO/FIXME markers.
+- **Completed change:** merged the five new `main` commits into PR #13 without rewriting history, retained its complete `OrderManager`, and incorporated the current sibling/root documentation updates. The restored implementation already enforces those floors before adapter invocation.
+- **Verification:** on this exact merge tree, TypeScript passed; targeted OrderManager/sibling/root/restart/lease tests passed (19/19); full Vitest passed (611/611 across 231 files); production build, built-server smoke, and worker smoke passed without exchange credentials or network-backed trading.
+- **Open problem:** GitHub Actions for the prior PR #13 head was blocked before steps by the account billing lock. This merge must not be merged or deployed until its exact final SHA has real successful CI.
+- **Next priority:** run the complete local verification on this merge tree, publish it to PR #13, then inspect final-head CI. After that, re-parent the already locally verified public quote fallback onto the synchronized PR #13 branch without force-push.
+
 ## 2026-11-08 03:00 CET
 
 - **Verified state:** `main` was `9f951de45bf7719adddd3bf8a88a5bf79001ccbd`; its `src/lib/orders/order-manager.ts` contained only `PLACEHOLDER_WILL_FAILPLACEHOLDER_WILL_FAIL`. PR #11 remained open but was 94 commits behind; PR #8 remained open with no unique diff. There were no open issues or TODO/FIXME markers.
