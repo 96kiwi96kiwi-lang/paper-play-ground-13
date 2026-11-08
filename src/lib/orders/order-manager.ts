@@ -1,7 +1,7 @@
 /**
  * OrderManager – single gate for paper and live submits.
  * Applies hard-stops, notional/reserve/trade-cap floors, and metadata floors
- * (child/root/sibling/parent/payload/chain/group/link/list/related/reference) before any adapter call.
+ * (child/root/sibling/parent/payload/chain/group/link/list/related/reference/source) before any adapter call.
  * Default path is paper. No secrets. No live without server-side keys.
  */
 
@@ -19,6 +19,7 @@ import { orderLinkReason } from "./order-link";
 import { orderListReason } from "./order-list";
 import { orderRelatedReason } from "./order-related";
 import { orderReferenceReason } from "./order-reference";
+import { orderSourceReason } from "./order-source";
 
 export interface OrderIntent {
   symbol: string;
@@ -66,6 +67,9 @@ export interface OrderIntent {
   reference?: unknown;
   orderReference?: unknown;
   clientReference?: unknown;
+  source?: unknown;
+  orderSource?: unknown;
+  clientSource?: unknown;
 }
 
 export interface SubmitResult {
@@ -133,7 +137,7 @@ export class OrderManager {
       return this.refuse(`Hard-stop active: ${riskState.haltReason}`);
     }
 
-    // Metadata floors – refuse unsupported parent/child/root/sibling/payload/chain/group/link/list/related/reference intent
+    // Metadata floors – refuse unsupported parent/child/root/sibling/payload/chain/group/link/list/related/reference/source intent
     const child = orderChildReason(intent.childId, intent.orderChild, intent.clientChild);
     if (child) return this.refuse(child);
     const root = orderRootReason(intent.rootId, intent.orderRoot, intent.clientRoot);
@@ -163,6 +167,8 @@ export class OrderManager {
     if (related) return this.refuse(related);
     const reference = orderReferenceReason(intent.reference, intent.orderReference, intent.clientReference);
     if (reference) return this.refuse(reference);
+    const source = orderSourceReason(intent.source, intent.orderSource, intent.clientSource);
+    if (source) return this.refuse(source);
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {
       return this.refuse(`Unsupported symbol ${intent.symbol}`);
