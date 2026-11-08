@@ -17,7 +17,7 @@ See `SAFETY.md` for the full checklist.
 
 ## Current status
 
-**Hour (odd):** Wired order-child metadata floor into OrderManager. A present `childId`, `orderChild`, or `clientChild` is refused before the paper or live path so a parent-child or bracket intent cannot be silently ignored. Matches the existing order-payload and earlier metadata floors. Default remains paper. No secrets.
+**Hour (odd):** Restored the complete persistent `OrderManager` after `main` regressed to a placeholder. The runtime contract again includes constructor state, snapshot/inventory, risk-gated submit, persistence callbacks, restart recovery, and cancel helpers. All metadata floors documented above—including algo/strategy/tactic through root/parent/child/sibling—now fail closed in `OrderManager.submit()` before any adapter call. Default remains paper. No secrets.
 
 ## Run
 
