@@ -54,6 +54,7 @@ test("declared metadata floors fail through OrderManager before adapter invocati
     "algo", "strategy", "tactic", "template", "kind", "legId", "subject", "uuid",
     "version", "weight", "window", "zone", "locale", "region", "timezone", "currency",
     "device", "platform", "siblingId", "parentId", "childId", "rootId",
+    "chainId", "orderChain", "clientChain", "relatedId", "orderRelated", "clientRelated",
   ];
 
   for (const field of fields) {

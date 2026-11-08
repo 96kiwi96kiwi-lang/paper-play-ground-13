@@ -95,6 +95,7 @@ import { orderCommentReason } from "./order-comment";
 import { orderHashReason } from "./order-hash";
 import { orderMemoReason } from "./order-memo";
 import { orderMessageReason } from "./order-message";
+import { orderChainReason } from "./order-chain";
 import { orderGroupReason } from "./order-group";
 import { orderNoteReason } from "./order-note";
 import { orderPriorityReason } from "./order-priority";
@@ -162,6 +163,7 @@ import { sideEffectReason } from "./side-effect";
 import { feeCurrencyReason } from "./fee-currency";
 import { brokerAttributionReason } from "./broker-attribution";
 import { orderLinkReason } from "./order-link";
+import { orderRelatedReason } from "./order-related";
 import { normalizeOrderSide } from "./side-form";
 import { normalizePairSymbol } from "./symbol-form";
 import { symbolFlipCooldownReason } from "./symbol-flip";
@@ -718,6 +720,12 @@ export type OrderIntent = {
   orderMessage?: unknown;
   /** Client-message alias. Adapters do not forward it, so a present value is refused. */
   clientMessage?: unknown;
+  /** Order-chain id. Adapters place one plain spot order, so a present value is refused. */
+  chainId?: unknown;
+  /** Order-chain alias. Adapters place one plain spot order, so a present value is refused. */
+  orderChain?: unknown;
+  /** Client-chain alias. Adapters place one plain spot order, so a present value is refused. */
+  clientChain?: unknown;
   /** Order group. Adapters do not set it, so a present value is refused. */
   group?: string | number | boolean;
   /** Order group alias. Adapters do not set it, so a present value is refused. */
@@ -776,6 +784,10 @@ export type OrderIntent = {
   orderLinkId?: string | number | boolean;
   /** Link id. Adapters identify by clientOrderId, so a present value is refused. */
   linkId?: string | number | boolean;
+  /** Linked-order alias. Adapters place one plain spot order, so a present value is refused. */
+  orderLink?: unknown;
+  /** Client linked-order alias. Adapters place one plain spot order, so a present value is refused. */
+  clientLink?: unknown;
   /** Algo strategy id. Adapters place one plain spot order, so a present value is refused. */
   strategyId?: string | number | boolean;
   /** Algo strategy type. Adapters place one plain spot order, so a present value is refused. */
@@ -984,6 +996,12 @@ export type OrderIntent = {
   rootId?: unknown;
   orderRoot?: unknown;
   clientRoot?: unknown;
+  /** Related-order id. Adapters place one plain spot order, so a present value is refused. */
+  relatedId?: unknown;
+  /** Related-order alias. Adapters place one plain spot order, so a present value is refused. */
+  orderRelated?: unknown;
+  /** Client related-order alias. Adapters place one plain spot order, so a present value is refused. */
+  clientRelated?: unknown;
 };
 
 /**
@@ -1228,6 +1246,9 @@ export class OrderManager {
 
     const message = orderMessageReason(intent.message, intent.orderMessage, intent.clientMessage);
     if (message) return this.fail(message);
+
+    const chain = orderChainReason(intent.chainId, intent.orderChain, intent.clientChain);
+    if (chain) return this.fail(chain);
 
     const group = orderGroupReason(intent.group, intent.orderGroup, intent.clientGroup);
     if (group) return this.fail(group);
@@ -1478,8 +1499,10 @@ export class OrderManager {
     );
     if (brokerAttribution) return this.fail(brokerAttribution);
 
-    const orderLink = orderLinkReason(intent.clOrdId, intent.orderLinkId, intent.linkId);
+    const orderLink = orderLinkReason(intent.linkId, intent.orderLink, intent.clientLink);
     if (orderLink) return this.fail(orderLink);
+    const legacyOrderLink = orderLinkReason(intent.clOrdId, intent.orderLinkId);
+    if (legacyOrderLink) return this.fail(legacyOrderLink);
 
     const trailing = trailingReason(
       intent.trailingStop,
@@ -1654,6 +1677,13 @@ export class OrderManager {
       intent.stopLimitPrice,
     );
     if (orderList) return this.fail(orderList);
+
+    const related = orderRelatedReason(
+      intent.relatedId,
+      intent.orderRelated,
+      intent.clientRelated,
+    );
+    if (related) return this.fail(related);
 
     const positionIdx = positionIdxReason(undefined, intent.posIdx, intent.hedgeIdx);
     if (positionIdx) return this.fail(positionIdx);
