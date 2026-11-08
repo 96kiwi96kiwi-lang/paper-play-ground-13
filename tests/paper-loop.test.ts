@@ -109,6 +109,7 @@ test("market tick uses a fresh quote, strategy, lease and persisted paper order"
   resetPaperMarketRuntimeForTests();
   setPaperQuoteSourceForTests(async () => ({
     fetchedAt: now,
+    provider: "coingecko",
     tickers: {
       "BTC/USDT": {
         symbol: "BTC/USDT",
@@ -140,6 +141,7 @@ test("market runtime restores paper inventory after a process restart", async ()
   resetPaperMarketRuntimeForTests();
   setPaperQuoteSourceForTests(async (at = now) => ({
     fetchedAt: at,
+    provider: "coingecko",
     tickers: {
       "BTC/USDT": { symbol: "BTC/USDT", last: 103, bid: 103, ask: 103, timestamp: at },
     },
@@ -161,7 +163,11 @@ test("market runtime restores paper inventory after a process restart", async ()
 test("standby startup resumes after the previous deployment lease expires", async () => {
   process.env.PAPER_SERVER_LOOP = "1";
   expect(acquireWorkerLease("previous-deployment").ok).toBe(true);
-  const quotes = vi.fn(async () => ({ fetchedAt: Date.now(), tickers: {} }));
+  const quotes = vi.fn(async () => ({
+    fetchedAt: Date.now(),
+    provider: "coingecko" as const,
+    tickers: {},
+  }));
   setPaperQuoteSourceForTests(quotes);
   const first = startPaperServerLoop();
   expect(first.reason).toMatch(/standby/);
