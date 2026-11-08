@@ -1,7 +1,7 @@
 /**
  * OrderManager – single gate for paper and live submits.
  * Applies hard-stops, notional/reserve/trade-cap floors, and metadata floors
- * (child/root/sibling/parent/payload/chain/group) before any adapter call.
+ * (child/root/sibling/parent/payload/chain/group/link) before any adapter call.
  * Default path is paper. No secrets. No live without server-side keys.
  */
 
@@ -15,6 +15,7 @@ import { orderParentReason } from "./order-parent";
 import { orderPayloadReason } from "./order-payload";
 import { orderChainReason } from "./order-chain";
 import { orderGroupReason } from "./order-group";
+import { orderLinkReason } from "./order-link";
 
 export interface OrderIntent {
   symbol: string;
@@ -47,6 +48,9 @@ export interface OrderIntent {
   group?: unknown;
   orderGroup?: unknown;
   clientGroup?: unknown;
+  linkId?: unknown;
+  orderLink?: unknown;
+  clientLink?: unknown;
 }
 
 export interface SubmitResult {
@@ -114,7 +118,7 @@ export class OrderManager {
       return this.refuse(`Hard-stop active: ${riskState.haltReason}`);
     }
 
-    // Metadata floors – refuse unsupported parent/child/root/sibling/payload/chain/group intent
+    // Metadata floors – refuse unsupported parent/child/root/sibling/payload/chain/group/link intent
     const child = orderChildReason(intent.childId, intent.orderChild, intent.clientChild);
     if (child) return this.refuse(child);
     const root = orderRootReason(intent.rootId, intent.orderRoot, intent.clientRoot);
@@ -129,6 +133,8 @@ export class OrderManager {
     if (chain) return this.refuse(chain);
     const group = orderGroupReason(intent.group, intent.orderGroup, intent.clientGroup);
     if (group) return this.refuse(group);
+    const link = orderLinkReason(intent.linkId, intent.orderLink, intent.clientLink);
+    if (link) return this.refuse(link);
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {
       return this.refuse(`Unsupported symbol ${intent.symbol}`);

@@ -1,23 +1,27 @@
-import { expect, test } from "vitest";
-import { orderLinkReason } from "@/lib/orders/order-link";
+import { describe, expect, it } from "vitest";
+import { orderLinkReason } from "../src/lib/orders/order-link";
 
-test("omitted, null, false, and blank link aliases pass", () => {
-  expect(orderLinkReason(undefined)).toBeNull();
-  expect(orderLinkReason(null, null, null)).toBeNull();
-  expect(orderLinkReason(false, "", "  ")).toBeNull();
-});
+describe("orderLinkReason", () => {
+  it("passes omitted, null, false, and blank", () => {
+    expect(orderLinkReason()).toBeNull();
+    expect(orderLinkReason(undefined, undefined, undefined)).toBeNull();
+    expect(orderLinkReason(null, null, null)).toBeNull();
+    expect(orderLinkReason(false, false, false)).toBeNull();
+    expect(orderLinkReason("", "  ", "")).toBeNull();
+  });
 
-test("a present link alias is refused and does not halt", () => {
-  expect(orderLinkReason("abc-123")).toBe(
-    "Client order id is not supported; the adapter identifies by clientOrderId",
-  );
-  expect(orderLinkReason(0)).toBe(
-    "Client order id is not supported; the adapter identifies by clientOrderId",
-  );
-  expect(orderLinkReason(undefined, "link-1")).toBe(
-    "Order link id is not supported; the adapter identifies by clientOrderId",
-  );
-  expect(orderLinkReason(undefined, undefined, true)).toBe(
-    "Link id is not supported; the adapter identifies by clientOrderId",
-  );
+  it("refuses a present linkId", () => {
+    expect(orderLinkReason("link-a")).toMatch(/Link id is not supported/);
+    expect(orderLinkReason(1)).toMatch(/Link id is not supported/);
+    expect(orderLinkReason(true)).toMatch(/Link id is not supported/);
+  });
+
+  it("refuses a present orderLink alias", () => {
+    expect(orderLinkReason(undefined, "bot")).toMatch(/Order link is not supported/);
+    expect(orderLinkReason(undefined, 0)).toMatch(/Order link is not supported/);
+  });
+
+  it("refuses a present clientLink alias", () => {
+    expect(orderLinkReason(undefined, undefined, "desk")).toMatch(/Client link alias is not supported/);
+  });
 });

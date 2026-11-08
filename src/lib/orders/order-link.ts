@@ -1,12 +1,11 @@
-/** Refuse external order-link ids the spot adapters do not forward. Not a halt. */
+/** Refuse linked-order flags the spot adapters do not set. Not a halt. */
 
 /**
- * Omitted, null, false, and blank pass. A present clOrdId, orderLinkId, or
- * linkId is refused: placeLimitOrder / placeMarketOrder identify by
- * clientOrderId only, and KuCoin createOrder is not given an external link.
- * An alias would be ignored, so a retry would not be idempotent and could
- * double-place. Zero is present and is refused. This is a retry floor, not a
- * halt, and does not flatten positions.
+ * Omitted, null, false, and blank pass. A present linkId, orderLink, or
+ * clientLink is refused: placeLimitOrder / placeMarketOrder do not attach a
+ * link, so a linked-order intent would be ignored and the order would rest or
+ * fill as a plain spot order. Zero is present and is refused. This is a
+ * metadata floor, not a halt, and does not flatten positions.
  */
 function present(value: unknown): boolean {
   if (value == null) return false;
@@ -16,18 +15,18 @@ function present(value: unknown): boolean {
 }
 
 export function orderLinkReason(
-  clOrdId: unknown,
-  orderLinkId?: unknown,
   linkId?: unknown,
+  orderLink?: unknown,
+  clientLink?: unknown,
 ): string | null {
-  if (present(clOrdId)) {
-    return "Client order id is not supported; the adapter identifies by clientOrderId";
-  }
-  if (present(orderLinkId)) {
-    return "Order link id is not supported; the adapter identifies by clientOrderId";
-  }
   if (present(linkId)) {
-    return "Link id is not supported; the adapter identifies by clientOrderId";
+    return "Link id is not supported; the adapter would place a plain spot order";
+  }
+  if (present(orderLink)) {
+    return "Order link is not supported; the adapter would place a plain spot order";
+  }
+  if (present(clientLink)) {
+    return "Client link alias is not supported; the adapter would place a plain spot order";
   }
   return null;
 }
