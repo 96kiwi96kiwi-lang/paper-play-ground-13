@@ -17,7 +17,7 @@ See `SAFETY.md` for the full checklist.
 
 ## Current status
 
-**Hour (odd):** Restored full OrderManager submit path (hard-stop, notional, cash-reserve, daily-trade-cap, and metadata floors including order-child and order-root). A present child/root/parent/payload alias is refused before any adapter call so unsupported multi-leg intent cannot be silently dropped. Default remains paper. No secrets. No live without server-side owner credentials.
+**Hour (odd):** Wired order-sibling metadata floor into OrderManager (refuse present siblingId / orderSibling / clientSibling before any adapter call). Full submit path remains intact (hard-stop, notional, cash-reserve, daily-trade-cap, child/root/parent/payload floors). Default remains paper. No secrets. No live without server-side owner credentials.
 
 ## Run
 

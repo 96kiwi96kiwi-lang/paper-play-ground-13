@@ -1,7 +1,7 @@
 /**
  * OrderManager – single gate for paper and live submits.
  * Applies hard-stops, notional/reserve/trade-cap floors, and metadata floors
- * (child/root/parent/payload) before any adapter call.
+ * (child/root/sibling/parent/payload) before any adapter call.
  * Default path is paper. No secrets. No live without server-side keys.
  */
 
@@ -10,6 +10,7 @@ import type { ExchangeAdapter, Side, UnifiedOrder } from "@/lib/exchange/types";
 import type { RiskState } from "@/lib/risk";
 import { orderChildReason } from "./order-child";
 import { orderRootReason } from "./order-root";
+import { orderSiblingReason } from "./order-sibling";
 import { orderParentReason } from "./order-parent";
 import { orderPayloadReason } from "./order-payload";
 
@@ -29,6 +30,9 @@ export interface OrderIntent {
   rootId?: unknown;
   orderRoot?: unknown;
   clientRoot?: unknown;
+  siblingId?: unknown;
+  orderSibling?: unknown;
+  clientSibling?: unknown;
   parentId?: unknown;
   orderParent?: unknown;
   clientParent?: unknown;
@@ -102,11 +106,13 @@ export class OrderManager {
       return this.refuse(`Hard-stop active: ${riskState.haltReason}`);
     }
 
-    // Metadata floors – refuse unsupported parent/child/root/payload intent
+    // Metadata floors – refuse unsupported parent/child/root/sibling/payload intent
     const child = orderChildReason(intent.childId, intent.orderChild, intent.clientChild);
     if (child) return this.refuse(child);
     const root = orderRootReason(intent.rootId, intent.orderRoot, intent.clientRoot);
     if (root) return this.refuse(root);
+    const sibling = orderSiblingReason(intent.siblingId, intent.orderSibling, intent.clientSibling);
+    if (sibling) return this.refuse(sibling);
     const parent = orderParentReason(intent.parentId, intent.orderParent, intent.clientParent);
     if (parent) return this.refuse(parent);
     const payload = orderPayloadReason(intent.payload, intent.orderPayload, intent.clientPayload);
