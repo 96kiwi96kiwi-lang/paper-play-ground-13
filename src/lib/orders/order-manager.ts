@@ -1,7 +1,7 @@
 /**
  * OrderManager – single gate for paper and live submits.
  * Applies hard-stops, notional/reserve/trade-cap floors, and metadata floors
- * (child/root/sibling/parent/payload/chain/group/link/list/related) before any adapter call.
+ * (child/root/sibling/parent/payload/chain/group/link/list/related/reference) before any adapter call.
  * Default path is paper. No secrets. No live without server-side keys.
  */
 
@@ -18,6 +18,7 @@ import { orderGroupReason } from "./order-group";
 import { orderLinkReason } from "./order-link";
 import { orderListReason } from "./order-list";
 import { orderRelatedReason } from "./order-related";
+import { orderReferenceReason } from "./order-reference";
 
 export interface OrderIntent {
   symbol: string;
@@ -62,6 +63,9 @@ export interface OrderIntent {
   relatedId?: unknown;
   orderRelated?: unknown;
   clientRelated?: unknown;
+  reference?: unknown;
+  orderReference?: unknown;
+  clientReference?: unknown;
 }
 
 export interface SubmitResult {
@@ -129,7 +133,7 @@ export class OrderManager {
       return this.refuse(`Hard-stop active: ${riskState.haltReason}`);
     }
 
-    // Metadata floors – refuse unsupported parent/child/root/sibling/payload/chain/group/link/list/related intent
+    // Metadata floors – refuse unsupported parent/child/root/sibling/payload/chain/group/link/list/related/reference intent
     const child = orderChildReason(intent.childId, intent.orderChild, intent.clientChild);
     if (child) return this.refuse(child);
     const root = orderRootReason(intent.rootId, intent.orderRoot, intent.clientRoot);
@@ -157,6 +161,8 @@ export class OrderManager {
     if (list) return this.refuse(list);
     const related = orderRelatedReason(intent.relatedId, intent.orderRelated, intent.clientRelated);
     if (related) return this.refuse(related);
+    const reference = orderReferenceReason(intent.reference, intent.orderReference, intent.clientReference);
+    if (reference) return this.refuse(reference);
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {
       return this.refuse(`Unsupported symbol ${intent.symbol}`);
