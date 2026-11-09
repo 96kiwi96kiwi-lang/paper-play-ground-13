@@ -1,5 +1,7 @@
 # paper-play-ground-13
 
+[![CI](https://github.com/96kiwi96kiwi-lang/paper-play-ground-13/actions/workflows/ci.yml/badge.svg)](https://github.com/96kiwi96kiwi-lang/paper-play-ground-13/actions/workflows/ci.yml)
+
 Paper trading bot (default) with an optional live path on KuCoin spot.
 
 **Default is PAPER.** Live mode is never on by default and requires explicit operator confirmation + a server-side operator token.

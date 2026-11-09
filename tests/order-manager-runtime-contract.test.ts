@@ -45,3 +45,25 @@ test("recent unsupported amount aliases fail before adapter invocation", async (
   }
   expect(manager.seenOrders()).toEqual([]);
 });
+
+test("declared metadata floors fail through OrderManager before adapter invocation", async () => {
+  const manager = new OrderManager({ name: "paper" } as ExchangeAdapter);
+  const intent: OrderIntent = { symbol: "BTC/USDT", side: "buy", type: "market", amount: 0.01 };
+  const riskState = {} as RiskState;
+  const fields: Array<keyof OrderIntent> = [
+    "grid", "gridId", "algoId", "algo", "algoType", "clientAlgo",
+    "strategy", "strategyId", "clientStrategy", "tactic", "template", "kind", "legId", "subject", "uuid",
+    "version", "weight", "window", "zone", "locale", "region", "timezone", "currency",
+    "device", "platform", "siblingId", "parentId", "childId", "rootId",
+    "chainId", "orderChain", "clientChain", "relatedId", "orderRelated", "clientRelated",
+    "reference", "orderReference", "clientReference",
+    "source", "orderSource", "clientSource", "src",
+    "origin", "orderOrigin", "clientOrigin",
+  ];
+
+  for (const field of fields) {
+    const result = await manager.submit({ ...intent, [field]: "present" }, riskState);
+    expect(result.ok, `${field} must fail closed`).toBe(false);
+  }
+  expect(manager.seenOrders()).toEqual([]);
+});
