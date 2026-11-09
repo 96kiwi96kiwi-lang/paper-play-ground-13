@@ -1,7 +1,7 @@
 /**
  * OrderManager – single gate for paper and live submits.
  * Applies hard-stops, notional/reserve/trade-cap floors, and metadata floors
- * (child/root/sibling/parent/payload/chain/group/link/list/related/reference/source/origin/grid/algo/strategy/tactic/template/text/kind/leg/note/comment) before any adapter call.
+ * (child/root/sibling/parent/payload/chain/group/link/list/related/reference/source/origin/grid/algo/strategy/tactic/template/text/kind/leg/note/comment/memo) before any adapter call.
  * Default path is paper. No secrets. No live without server-side keys.
  */
 
@@ -31,6 +31,7 @@ import { orderKindReason } from "./order-kind";
 import { orderLegReason } from "./order-leg";
 import { orderNoteReason } from "./order-note";
 import { orderCommentReason } from "./order-comment";
+import { orderMemoReason } from "./order-memo";
 
 export interface OrderIntent {
   symbol: string;
@@ -114,6 +115,9 @@ export interface OrderIntent {
   comment?: unknown;
   orderComment?: unknown;
   clientComment?: unknown;
+  memo?: unknown;
+  orderMemo?: unknown;
+  clientMemo?: unknown;
 }
 
 export interface SubmitResult {
@@ -181,7 +185,7 @@ export class OrderManager {
       return this.refuse(`Hard-stop active: ${riskState.haltReason}`);
     }
 
-    // Metadata floors – refuse unsupported parent/child/root/sibling/payload/chain/group/link/list/related/reference/source/origin/grid/algo/strategy/tactic/template/text/kind/leg/note/comment intent
+    // Metadata floors – refuse unsupported parent/child/root/sibling/payload/chain/group/link/list/related/reference/source/origin/grid/algo/strategy/tactic/template/text/kind/leg/note/comment/memo intent
     const child = orderChildReason(intent.childId, intent.orderChild, intent.clientChild);
     if (child) return this.refuse(child);
     const root = orderRootReason(intent.rootId, intent.orderRoot, intent.clientRoot);
@@ -235,6 +239,8 @@ export class OrderManager {
     if (note) return this.refuse(note);
     const comment = orderCommentReason(intent.comment, intent.orderComment, intent.clientComment);
     if (comment) return this.refuse(comment);
+    const memo = orderMemoReason(intent.memo, intent.orderMemo, intent.clientMemo);
+    if (memo) return this.refuse(memo);
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {
       return this.refuse(`Unsupported symbol ${intent.symbol}`);
