@@ -1,7 +1,7 @@
 /**
  * OrderManager – single gate for paper and live submits.
  * Applies hard-stops, notional/reserve/trade-cap floors, and metadata floors
- * (child/root/sibling/parent/payload/chain/group/link/list/related/reference/source/origin/grid) before any adapter call.
+ * (child/root/sibling/parent/payload/chain/group/link/list/related/reference/source/origin/grid/algo) before any adapter call.
  * Default path is paper. No secrets. No live without server-side keys.
  */
 
@@ -22,6 +22,7 @@ import { orderReferenceReason } from "./order-reference";
 import { orderSourceReason } from "./order-source";
 import { orderOriginReason } from "./order-origin";
 import { gridIdReason } from "./grid-id";
+import { orderAlgoReason } from "./order-algo";
 
 export interface OrderIntent {
   symbol: string;
@@ -78,6 +79,9 @@ export interface OrderIntent {
   grid?: unknown;
   gridId?: unknown;
   algoId?: unknown;
+  algo?: unknown;
+  algoType?: unknown;
+  clientAlgo?: unknown;
 }
 
 export interface SubmitResult {
@@ -145,7 +149,7 @@ export class OrderManager {
       return this.refuse(`Hard-stop active: ${riskState.haltReason}`);
     }
 
-    // Metadata floors – refuse unsupported parent/child/root/sibling/payload/chain/group/link/list/related/reference/source/origin/grid intent
+    // Metadata floors – refuse unsupported parent/child/root/sibling/payload/chain/group/link/list/related/reference/source/origin/grid/algo intent
     const child = orderChildReason(intent.childId, intent.orderChild, intent.clientChild);
     if (child) return this.refuse(child);
     const root = orderRootReason(intent.rootId, intent.orderRoot, intent.clientRoot);
@@ -181,6 +185,8 @@ export class OrderManager {
     if (origin) return this.refuse(origin);
     const grid = gridIdReason(intent.grid, intent.gridId, intent.algoId);
     if (grid) return this.refuse(grid);
+    const algo = orderAlgoReason(intent.algo, intent.algoType, intent.clientAlgo);
+    if (algo) return this.refuse(algo);
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {
       return this.refuse(`Unsupported symbol ${intent.symbol}`);
