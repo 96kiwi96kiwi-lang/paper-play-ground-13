@@ -26,6 +26,14 @@ import { orderAlgoReason } from "./order-algo";
 import { orderStrategyReason } from "./order-strategy";
 import { orderTacticReason } from "./order-tactic";
 import { orderTemplateReason } from "./order-template";
+import { positionIdxReason } from "./position-idx";
+import { positionsAliasReason } from "./positions-alias";
+import { portfolioAliasReason } from "./portfolio-alias";
+import { equityAliasReason } from "./equity-alias";
+import { navAliasReason } from "./nav-alias";
+import { assetsAliasReason } from "./assets-alias";
+import { holdingsAliasReason } from "./holdings-alias";
+import { selectStaleOpenOrders, selectWorkingOrders } from "./stale-open";
 
 export interface OrderIntent {
   symbol: string;
@@ -94,6 +102,27 @@ export interface OrderIntent {
   template?: unknown;
   templateId?: unknown;
   clientTemplate?: unknown;
+  positionIdx?: unknown;
+  posIdx?: unknown;
+  hedgeIdx?: unknown;
+  positions?: unknown;
+  orderPositions?: unknown;
+  basePositions?: unknown;
+  portfolio?: unknown;
+  orderPortfolio?: unknown;
+  basePortfolio?: unknown;
+  equity?: unknown;
+  orderEquity?: unknown;
+  baseEquity?: unknown;
+  nav?: unknown;
+  orderNav?: unknown;
+  baseNav?: unknown;
+  assets?: unknown;
+  orderAssets?: unknown;
+  baseAssets?: unknown;
+  holdings?: unknown;
+  orderHoldings?: unknown;
+  baseHoldings?: unknown;
 }
 
 export interface SubmitResult {
@@ -110,18 +139,26 @@ export interface PortfolioSnapshot {
 export interface OrderManagerOptions {
   startingCash?: number;
   startingPositions?: Record<string, { amount: number; avgEntry: number }>;
-  seenOrders?: Set<string> | string[];
+  seenOrders?: UnifiedOrder[];
   lastSubmitAt?: number;
   onPortfolioChange?: (portfolio: PortfolioSnapshot) => void;
-  onSeenOrdersChange?: (seen: string[]) => void;
+  onSeenOrdersChange?: (seen: UnifiedOrder[]) => void;
   onLastSubmitAtChange?: (ts: number) => void;
+}
+
+export interface CancelSweep {
+  canceled: number;
+  failed: number;
 }
 
 export class OrderManager {
   private cash: number;
   private positions: Record<string, { amount: number; avgEntry: number }>;
-  private seen = new Set<string>();
+  private seen: UnifiedOrder[];
   private lastSubmitAt = 0;
+  private onPortfolioChange?: OrderManagerOptions["onPortfolioChange"];
+  private onSeenOrdersChange?: OrderManagerOptions["onSeenOrdersChange"];
+  private onLastSubmitAtChange?: OrderManagerOptions["onLastSubmitAtChange"];
 
   constructor(
     private adapter: ExchangeAdapter,
@@ -129,10 +166,11 @@ export class OrderManager {
   ) {
     this.cash = opts.startingCash ?? TRADING_CONFIG.paperStartingBalance;
     this.positions = { ...(opts.startingPositions ?? {}) };
-    if (opts.seenOrders) {
-      for (const id of opts.seenOrders) this.seen.add(id);
-    }
+    this.seen = [...(opts.seenOrders ?? [])];
     this.lastSubmitAt = opts.lastSubmitAt ?? 0;
+    this.onPortfolioChange = opts.onPortfolioChange;
+    this.onSeenOrdersChange = opts.onSeenOrdersChange;
+    this.onLastSubmitAtChange = opts.onLastSubmitAtChange;
   }
 
   positionAmount(symbol: string): number {
@@ -143,17 +181,51 @@ export class OrderManager {
     return { cash: this.cash, positions: { ...this.positions } };
   }
 
-  async cancelStaleOpenOrders(): Promise<void> {
-    // Stale-open floor lives in adapter / separate module; no-op here keeps the call site safe.
-    // Full cancel path can be wired in a later hour without changing this signature.
+  seenOrders(): UnifiedOrder[] {
+    return [...this.seen];
+  }
+
+  async cancelStaleOpenOrders(now = Date.now()): Promise<CancelSweep> {
+    return this.cancelSelected(
+      selectStaleOpenOrders(this.seen, now, TRADING_CONFIG.orders.staleOpenOrderMs),
+    );
+  }
+
+  async cancelAllWorkingOrders(): Promise<CancelSweep> {
+    return this.cancelSelected(selectWorkingOrders(this.seen));
+  }
+
+  private async cancelSelected(selected: UnifiedOrder[]): Promise<CancelSweep> {
+    if (selected.length === 0) return { canceled: 0, failed: 0 };
+    let canceled = 0;
+    let failed = 0;
+    const canceledIds = new Set<string>();
+    for (const order of selected) {
+      try {
+        await this.adapter.cancelOrder(order.id, order.symbol);
+        canceled += 1;
+        canceledIds.add(order.id);
+      } catch {
+        failed += 1;
+      }
+    }
+    if (canceledIds.size > 0) {
+      this.seen = this.seen.map((order) =>
+        canceledIds.has(order.id)
+          ? {
+              ...order,
+              status: "canceled",
+              remaining: order.remaining ?? Math.max(0, order.amount - (order.filled ?? 0)),
+            }
+          : order,
+      );
+      this.onSeenOrdersChange?.(this.seenOrders());
+    }
+    return { canceled, failed };
   }
 
   private refuse(reason: string): SubmitResult {
     return { ok: false, reason };
-  }
-
-  private notifyPortfolio(opts: OrderManagerOptions) {
-    opts.onPortfolioChange?.(this.snapshot());
   }
 
   async submit(intent: OrderIntent, riskState: RiskState): Promise<SubmitResult> {
@@ -205,6 +277,16 @@ export class OrderManager {
     if (tactic) return this.refuse(tactic);
     const template = orderTemplateReason(intent.template, intent.templateId, intent.clientTemplate);
     if (template) return this.refuse(template);
+    const positionIdx = positionIdxReason(intent.positionIdx, intent.posIdx, intent.hedgeIdx);
+    if (positionIdx) return this.refuse(positionIdx);
+    const alias =
+      positionsAliasReason(intent.positions, intent.orderPositions, intent.basePositions) ||
+      portfolioAliasReason(intent.portfolio, intent.orderPortfolio, intent.basePortfolio) ||
+      equityAliasReason(intent.equity, intent.orderEquity, intent.baseEquity) ||
+      navAliasReason(intent.nav, intent.orderNav, intent.baseNav) ||
+      assetsAliasReason(intent.assets, intent.orderAssets, intent.baseAssets) ||
+      holdingsAliasReason(intent.holdings, intent.orderHoldings, intent.baseHoldings);
+    if (alias) return this.refuse(alias);
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {
       return this.refuse(`Unsupported symbol ${intent.symbol}`);
@@ -286,8 +368,11 @@ export class OrderManager {
         }
       }
 
-      if (intent.clientOrderId) this.seen.add(intent.clientOrderId);
+      this.seen.push(order);
       this.lastSubmitAt = Date.now();
+      this.onPortfolioChange?.(this.snapshot());
+      this.onSeenOrdersChange?.(this.seenOrders());
+      this.onLastSubmitAtChange?.(this.lastSubmitAt);
       return { ok: true, order };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
