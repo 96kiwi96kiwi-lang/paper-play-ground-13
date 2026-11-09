@@ -17,7 +17,7 @@ See `SAFETY.md` for the full checklist.
 
 ## Current status
 
-**Hour (odd):** Wired order-memo metadata floor into OrderManager. A present `memo`, `orderMemo`, or `clientMemo` is refused before the paper or live path so a memo intent cannot be silently ignored. Matches the existing order-comment, order-note, order-leg, order-kind, order-text, order-template, order-tactic, order-strategy, order-algo, grid-id, order-origin, order-source, order-reference, order-related, order-list, order-link, order-group, order-chain, order-payload, order-child, order-root, order-sibling, and order-parent floors. Default remains paper. No secrets. No live without server-side owner credentials.
+**Hour (odd):** Restored the complete persistent `OrderManager` onto current main. The runtime keeps constructor state, snapshot/inventory, risk-gated submit, persistence callbacks, restart recovery, idempotent seen orders, duplicate-order protection, capital and risk checks, safe cancel, and fail-closed adapter errors. A present `memo`, `orderMemo`, or `clientMemo` is refused before the adapter, together with the order-comment, order-note, order-leg, order-kind, order-text, order-template, order-tactic, order-strategy, order-algo, grid-id, and earlier metadata floors. Default remains paper. No secrets. No live without server-side owner credentials.
 
 ## Run
 
