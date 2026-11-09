@@ -942,6 +942,7 @@ export type OrderIntent = {
   tacticId?: unknown;
   clientTactic?: unknown;
   template?: unknown;
+  templateId?: unknown;
   orderTemplate?: unknown;
   clientTemplate?: unknown;
   kind?: unknown;
@@ -1318,10 +1319,15 @@ export class OrderManager {
 
     const template = orderTemplateReason(
       intent.template,
-      intent.orderTemplate,
+      intent.templateId,
       intent.clientTemplate,
     );
     if (template) return this.fail(template);
+
+    // Keep the legacy alias fail-closed while the canonical helper contract
+    // uses templateId as its second argument.
+    const legacyTemplate = orderTemplateReason(undefined, intent.orderTemplate);
+    if (legacyTemplate) return this.fail(legacyTemplate);
 
     const kind = orderKindReason(intent.kind, intent.orderKind, intent.clientKind);
     if (kind) return this.fail(kind);

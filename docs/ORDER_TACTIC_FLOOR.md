@@ -7,3 +7,5 @@ The spot adapters place one plain market or limit order. They do not forward tac
 This is a metadata floor, not a halt. It does not flatten positions.
 
 Zero is treated as present and is refused. Omitted, null, false, and blank strings pass.
+
+Vitest: `tests/order-tactic.test.ts` (no exchange, no secrets).

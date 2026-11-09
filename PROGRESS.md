@@ -1,5 +1,13 @@
 # Development progress
 
+## 2026-11-09 12:00 CET
+
+- **Verified state:** `main` advanced to `861b1588945b846f95becf80e068c4ff5d8769a5`; draft PR #13 was still open at `e09826a9d9fe2a31363e0644394fa5dee86deef3`, two commits behind. Draft PR #14 remained dependent at `a84c155b2b9f733508c7c979e7b2fd146b3ee925`; PR #11, #12, and #8 remained open. There were no open issues. CI run `42572509280` still reported failure with no steps or logs, so it did not execute the test suite. A separate Cursor branch contains a partial alternative implementation and was not modified.
+- **Completed change:** merged current `main` into PR #13 without rewriting history and retained the complete persistent `OrderManager`. Resolved a real contract mismatch by routing the canonical `templateId` alias through the updated helper while preserving fail-closed handling of legacy `orderTemplate`; the integration regression now covers all tactic and template aliases before adapter invocation.
+- **Verification:** TypeScript passed; targeted tactic/template/runtime/paper-loop/lease tests passed (25/25); full Vitest passed (615/615 across 232 files); production Vite/SSR/Nitro build, built-server smoke, and worker smoke passed without exchange credentials or network-backed trading.
+- **Open problem:** this exact final merge SHA still needs a real GitHub Actions run. PR #14 must not be synchronized or merged until PR #13 has green final-head CI; older PR equivalence also remains unproven.
+- **Next priority:** publish this verified merge to PR #13 and inspect its exact-head CI. If CI runs and passes, review PR #13 for merge; only after that synchronize dependent PR #14 and rerun its quote-fallback regressions.
+
 ## 2026-11-09 06:00 CET
 
 - **Verified state:** `main` advanced to `8a3a42933edfbe96b8fd585dec713abb293ad199` with grid-id, order-algo, and order-strategy floor wiring. PR #13 remained open at `02ef3b0788d1263bbe9dc79c7cdfdd0dc64ef697`; dependent PR #14 remained open at `a84c155b2b9f733508c7c979e7b2fd146b3ee925`. PR #11, PR #8, and PR #12 remained open and stale. There were no open issues or actionable TODO/FIXME markers; CI #634 and #635 still failed before all steps with no runner logs.

@@ -52,7 +52,10 @@ test("declared metadata floors fail through OrderManager before adapter invocati
   const riskState = {} as RiskState;
   const fields: Array<keyof OrderIntent> = [
     "grid", "gridId", "algoId", "algo", "algoType", "clientAlgo",
-    "strategy", "strategyId", "clientStrategy", "tactic", "template", "kind", "legId", "subject", "uuid",
+    "strategy", "strategyId", "clientStrategy",
+    "tactic", "tacticId", "clientTactic",
+    "template", "templateId", "orderTemplate", "clientTemplate",
+    "kind", "legId", "subject", "uuid",
     "version", "weight", "window", "zone", "locale", "region", "timezone", "currency",
     "device", "platform", "siblingId", "parentId", "childId", "rootId",
     "chainId", "orderChain", "clientChain", "relatedId", "orderRelated", "clientRelated",
