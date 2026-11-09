@@ -79,7 +79,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Algo Paper Trader" },
-      { name: "description", content: "Crypto paper trader with optional KuCoin live mode. Default is paper." },
+      {
+        name: "description",
+        content: "Crypto paper trader with optional KuCoin live mode. Default is paper.",
+      },
       { name: "author", content: "Lovable" },
       { property: "og:title", content: "Algo Paper Trader" },
       { property: "og:description", content: "Paper by default. Live is opt-in only." },

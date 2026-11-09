@@ -17,11 +17,17 @@ describe("orderAttributionReason", () => {
   });
 
   it("refuses a present orderAttribution alias", () => {
-    expect(orderAttributionReason(undefined, "api")).toMatch(/Order attribution alias is not supported/);
-    expect(orderAttributionReason(undefined, 0)).toMatch(/Order attribution alias is not supported/);
+    expect(orderAttributionReason(undefined, "api")).toMatch(
+      /Order attribution alias is not supported/,
+    );
+    expect(orderAttributionReason(undefined, 0)).toMatch(
+      /Order attribution alias is not supported/,
+    );
   });
 
   it("refuses a present clientAttribution alias", () => {
-    expect(orderAttributionReason(undefined, undefined, "mobile")).toMatch(/Client attribution alias is not supported/);
+    expect(orderAttributionReason(undefined, undefined, "mobile")).toMatch(
+      /Client attribution alias is not supported/,
+    );
   });
 });

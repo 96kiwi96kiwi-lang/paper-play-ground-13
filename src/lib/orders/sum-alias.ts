@@ -12,11 +12,7 @@ function present(value: unknown): boolean {
   return true;
 }
 
-export function sumAliasReason(
-  sum: unknown,
-  orderSum?: unknown,
-  baseSum?: unknown,
-): string | null {
+export function sumAliasReason(sum: unknown, orderSum?: unknown, baseSum?: unknown): string | null {
   if (present(sum)) {
     return "Sum alias is not supported; the adapter reads amount";
   }

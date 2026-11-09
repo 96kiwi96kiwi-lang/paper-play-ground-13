@@ -16,9 +16,7 @@ export function workingBuyReservedUsd(
     const status = String(order.status ?? "");
     if (order.side !== "buy") continue;
     if (status !== "open" && status !== "partially_filled" && status !== "pending") continue;
-    const remaining =
-      order.remaining ??
-      Math.max(0, (order.amount ?? 0) - (order.filled ?? 0));
+    const remaining = order.remaining ?? Math.max(0, (order.amount ?? 0) - (order.filled ?? 0));
     if (!(remaining > 0)) continue;
     const px = order.price && order.price > 0 ? order.price : 0;
     const fromPx = remaining * px;

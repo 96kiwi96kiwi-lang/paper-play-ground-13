@@ -13,11 +13,7 @@ function present(value: unknown): boolean {
   return true;
 }
 
-export function sizeAliasReason(
-  qty: unknown,
-  size?: unknown,
-  quantity?: unknown,
-): string | null {
+export function sizeAliasReason(qty: unknown, size?: unknown, quantity?: unknown): string | null {
   if (present(qty)) {
     return "Qty alias is not supported; the adapter reads amount";
   }

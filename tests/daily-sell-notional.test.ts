@@ -31,7 +31,13 @@ test("unknown notional is refused only when the cap is already booked", () => {
 });
 
 test("per-symbol sell that would pass that pair's UTC cap is refused", () => {
-  const reason = dailySellNotionalPerSymbolReason("sell", "ETH/USDT", 200, perSymbol - 50, perSymbol);
+  const reason = dailySellNotionalPerSymbolReason(
+    "sell",
+    "ETH/USDT",
+    200,
+    perSymbol - 50,
+    perSymbol,
+  );
   expect(reason).toMatch(/ETH\/USDT/);
   expect(reason).toMatch(/exceed/);
 });
@@ -70,7 +76,15 @@ test("per-symbol sum ignores other pairs on the same UTC day", () => {
   const rows = [
     { side: "sell", symbol: "BTC/USDT", status: "closed", timestamp: sameDay, cost: 400 },
     { side: "sell", symbol: "ETH/USDT", status: "closed", timestamp: sameDay, cost: 900 },
-    { side: "sell", symbol: "BTC/USDT", status: "open", timestamp: sameDay, amount: 1, remaining: 1, price: 100 },
+    {
+      side: "sell",
+      symbol: "BTC/USDT",
+      status: "open",
+      timestamp: sameDay,
+      amount: 1,
+      remaining: 1,
+      price: 100,
+    },
     { side: "sell", symbol: "BTC/USDT", status: "rejected", timestamp: sameDay, cost: 9_999 },
     { side: "sell", symbol: "BTC/USDT", status: "closed", timestamp: priorDay, cost: 9_999 },
   ];

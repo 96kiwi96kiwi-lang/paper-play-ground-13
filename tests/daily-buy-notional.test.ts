@@ -70,7 +70,15 @@ test("per-symbol sum ignores other pairs on the same UTC day", () => {
   const rows = [
     { side: "buy", symbol: "BTC/USDT", status: "closed", timestamp: sameDay, cost: 400 },
     { side: "buy", symbol: "ETH/USDT", status: "closed", timestamp: sameDay, cost: 900 },
-    { side: "buy", symbol: "BTC/USDT", status: "open", timestamp: sameDay, amount: 1, remaining: 1, price: 100 },
+    {
+      side: "buy",
+      symbol: "BTC/USDT",
+      status: "open",
+      timestamp: sameDay,
+      amount: 1,
+      remaining: 1,
+      price: 100,
+    },
     { side: "buy", symbol: "BTC/USDT", status: "rejected", timestamp: sameDay, cost: 9_999 },
     { side: "buy", symbol: "BTC/USDT", status: "closed", timestamp: priorDay, cost: 9_999 },
   ];

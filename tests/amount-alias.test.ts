@@ -8,16 +8,12 @@ test("omitted, null, and blank amount aliases pass", () => {
 });
 
 test("present amount aliases are refused and do not halt", () => {
-  expect(amountAliasReason(1.5)).toBe(
-    "Amt alias is not supported; the adapter reads amount",
-  );
+  expect(amountAliasReason(1.5)).toBe("Amt alias is not supported; the adapter reads amount");
   expect(amountAliasReason(undefined, 2)).toBe(
     "Order amt alias is not supported; the adapter reads amount",
   );
   expect(amountAliasReason(undefined, undefined, "0.5")).toBe(
     "Base amt alias is not supported; the adapter reads amount",
   );
-  expect(amountAliasReason(0)).toBe(
-    "Amt alias is not supported; the adapter reads amount",
-  );
+  expect(amountAliasReason(0)).toBe("Amt alias is not supported; the adapter reads amount");
 });

@@ -17,11 +17,15 @@ describe("orderReferenceReason", () => {
   });
 
   it("refuses a present orderReference alias", () => {
-    expect(orderReferenceReason(undefined, "bot")).toMatch(/Order reference alias is not supported/);
+    expect(orderReferenceReason(undefined, "bot")).toMatch(
+      /Order reference alias is not supported/,
+    );
     expect(orderReferenceReason(undefined, 0)).toMatch(/Order reference alias is not supported/);
   });
 
   it("refuses a present clientReference alias", () => {
-    expect(orderReferenceReason(undefined, undefined, "desk")).toMatch(/Client reference alias is not supported/);
+    expect(orderReferenceReason(undefined, undefined, "desk")).toMatch(
+      /Client reference alias is not supported/,
+    );
   });
 });

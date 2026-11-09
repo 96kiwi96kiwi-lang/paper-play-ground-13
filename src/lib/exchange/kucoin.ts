@@ -86,9 +86,7 @@ function toOrderResult(
 /** Check if we have valid credentials (without throwing) */
 export function hasCredentials(): boolean {
   return Boolean(
-    process.env.KUCOIN_API_KEY &&
-      process.env.KUCOIN_SECRET &&
-      process.env.KUCOIN_PASSWORD,
+    process.env.KUCOIN_API_KEY && process.env.KUCOIN_SECRET && process.env.KUCOIN_PASSWORD,
   );
 }
 

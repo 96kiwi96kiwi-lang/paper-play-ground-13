@@ -38,7 +38,9 @@ test("an adjacent rung, other side, other symbol, and a disabled floor still pas
     { id: "s1", side: "sell", symbol: "SOL/USDT", price: 150 },
   ];
   expect(samePriceWorkingReason("buy", "SOL/USDT", 148.8, working, band, block)).toBeNull();
-  expect(samePriceWorkingReason("buy", "SOL/USDT", 150, working, band, block)).toMatch(/Same price/);
+  expect(samePriceWorkingReason("buy", "SOL/USDT", 150, working, band, block)).toMatch(
+    /Same price/,
+  );
   expect(samePriceWorkingReason("sell", "BTC/USDT", 150, working, band, block)).toBeNull();
   expect(samePriceWorkingReason("buy", "SOL/USDT", 150, working, band, false)).toBeNull();
   expect(samePriceWorkingReason("buy", "SOL/USDT", undefined, working, band, block)).toBeNull();

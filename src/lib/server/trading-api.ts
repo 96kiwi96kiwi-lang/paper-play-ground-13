@@ -170,7 +170,11 @@ export function getMode(): Mode {
   return getRuntimeMode();
 }
 
-export function markBotTick(partial: { symbol?: string; action?: string; hardStopped?: boolean }): void {
+export function markBotTick(partial: {
+  symbol?: string;
+  action?: string;
+  hardStopped?: boolean;
+}): void {
   restorePersistedGridBooks();
   recordBotHeartbeat(partial);
   persistGridBooks(snapshotGridBooks());
@@ -227,7 +231,13 @@ function paperBookFields(): HealthPaperBook | null {
     })
     .sort((a, b) => b.costUsd - a.costUsd);
   const used = positions.reduce((sum, pos) => sum + pos.costUsd, 0);
-  return { cash: stored.cash, used, total: stored.cash + used, positionCount: positions.length, positions };
+  return {
+    cash: stored.cash,
+    used,
+    total: stored.cash + used,
+    positionCount: positions.length,
+    positions,
+  };
 }
 
 function exposureWatchFields(): HealthExposureWatch {
@@ -254,7 +264,8 @@ function riskWatchFields(now = Date.now()): HealthRiskWatch | null {
   const risk = state.risk;
   if (!risk && !state.savedAt) return null;
   const cooldownUntil = risk?.cooldownUntil ?? null;
-  const cooldownRemainingMs = cooldownUntil != null && cooldownUntil > now ? cooldownUntil - now : 0;
+  const cooldownRemainingMs =
+    cooldownUntil != null && cooldownUntil > now ? cooldownUntil - now : 0;
   return {
     dailyPnlPct: Number(risk?.dailyPnlPct) || 0,
     drawdownPct: Number(risk?.drawdownPct) || 0,
@@ -300,7 +311,7 @@ function haltFields(): Pick<HealthResponse, "lastHardStop" | "haltReason" | "rec
   const cleared = Boolean(state.lastHardStop?.clearedAt) && !state.risk?.haltReason;
   return {
     lastHardStop: state.lastHardStop,
-    haltReason: cleared ? null : state.risk?.haltReason ?? state.lastHardStop?.reason ?? null,
+    haltReason: cleared ? null : (state.risk?.haltReason ?? state.lastHardStop?.reason ?? null),
     recentAlerts: loadRecentAlerts().slice(-10),
   };
 }
@@ -310,9 +321,11 @@ function gridFields(now = Date.now()): HealthGridBook[] {
   const books = snapshotGridBooks();
   const reservationTtlMs = TRADING_CONFIG.grid.reservationTtlMs;
   return Object.entries(books).map(([symbol, book]) => {
-    const lastFillAgeMs = book.lastFillAt && book.lastFillAt > 0 ? Math.max(0, now - book.lastFillAt) : null;
+    const lastFillAgeMs =
+      book.lastFillAt && book.lastFillAt > 0 ? Math.max(0, now - book.lastFillAt) : null;
     const reserved = Boolean(book.reserved);
-    const reservationRemainingMs = reserved && lastFillAgeMs != null ? Math.max(0, reservationTtlMs - lastFillAgeMs) : 0;
+    const reservationRemainingMs =
+      reserved && lastFillAgeMs != null ? Math.max(0, reservationTtlMs - lastFillAgeMs) : 0;
     return {
       symbol,
       mid: book.mid,
@@ -340,7 +353,7 @@ export function clearOperatorHalt(note?: string): {
   const cleared = Boolean(state.lastHardStop?.clearedAt) && !state.risk?.haltReason;
   return {
     ok: true,
-    haltReason: cleared ? null : state.risk?.haltReason ?? null,
+    haltReason: cleared ? null : (state.risk?.haltReason ?? null),
     lastHardStop: state.lastHardStop,
   };
 }
@@ -383,7 +396,9 @@ export async function getHealth(): Promise<HealthResponse> {
   return {
     ok: health.ok && !watch.stale,
     mode: "live",
-    message: watch.stale ? `LIVE heartbeat stale (${Math.round((watch.ageMs ?? 0) / 1000)}s)` : health.message,
+    message: watch.stale
+      ? `LIVE heartbeat stale (${Math.round((watch.ageMs ?? 0) / 1000)}s)`
+      : health.message,
     hasCredentials: kucoin.hasCredentials(),
     heartbeat: watch.heartbeat,
     heartbeatAgeMs: watch.ageMs,
@@ -397,8 +412,17 @@ export async function getBalance(paperCash?: number): Promise<BalanceResponse> {
   if (mode === "paper") {
     const stored = loadPaperPortfolio();
     const cash = stored?.cash ?? paperCash ?? TRADING_CONFIG.paperStartingBalance;
-    const used = stored ? Object.values(stored.positions).reduce((sum, p) => sum + p.amount * p.avgEntry, 0) : 0;
-    return { mode: "paper", free: cash, used, total: cash + used, source: "paper", positions: stored?.positions ?? {} };
+    const used = stored
+      ? Object.values(stored.positions).reduce((sum, p) => sum + p.amount * p.avgEntry, 0)
+      : 0;
+    return {
+      mode: "paper",
+      free: cash,
+      used,
+      total: cash + used,
+      source: "paper",
+      positions: stored?.positions ?? {},
+    };
   }
   const bal = await kucoin.fetchBalance();
   return { mode: "live", free: bal.free, used: bal.used, total: bal.total, source: "kucoin" };

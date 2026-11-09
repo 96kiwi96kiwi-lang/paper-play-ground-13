@@ -88,7 +88,8 @@ export async function setRuntimeMode(
   lastKeyAudit = audit;
   if (!audit.ok || audit.withdraw) {
     throw new Error(
-      audit.message || "Cannot enable live: API key permission audit failed (Withdraw must be off).",
+      audit.message ||
+        "Cannot enable live: API key permission audit failed (Withdraw must be off).",
     );
   }
 

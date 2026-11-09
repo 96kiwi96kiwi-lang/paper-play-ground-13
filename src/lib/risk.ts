@@ -60,7 +60,13 @@ export type RiskLogEntry = {
   code?: string;
   snapshot: Pick<
     RiskState,
-    "dailyPnlPct" | "drawdownPct" | "losingStreak" | "haltReason" | "openPositionsCount" | "portfolioValue" | "tradesToday"
+    | "dailyPnlPct"
+    | "drawdownPct"
+    | "losingStreak"
+    | "haltReason"
+    | "openPositionsCount"
+    | "portfolioValue"
+    | "tradesToday"
   >;
 };
 
@@ -189,7 +195,10 @@ function halt(state: RiskState, reason: string, code: HardStopReason, symbol?: s
  * When a currentPrice is supplied, store it on lastPrices even if a gap halt
  * fires — otherwise the next tick (or a cleared halt) has no baseline.
  */
-export function applyHardStops(state: RiskState, currentPrice?: { symbol: string; price: number }): RiskState {
+export function applyHardStops(
+  state: RiskState,
+  currentPrice?: { symbol: string; price: number },
+): RiskState {
   const { risk } = TRADING_CONFIG;
 
   rollDailyTradeWindow(state);
@@ -220,7 +229,11 @@ export function applyHardStops(state: RiskState, currentPrice?: { symbol: string
   }
 
   if ((state.networkErrorStreak ?? 0) >= NETWORK_ERROR_HARD_STOP) {
-    return halt(state, `HARD-STOP network error streak ${state.networkErrorStreak}`, "network_errors");
+    return halt(
+      state,
+      `HARD-STOP network error streak ${state.networkErrorStreak}`,
+      "network_errors",
+    );
   }
 
   if (currentPrice) {
@@ -269,11 +282,7 @@ function snap(state: RiskState): RiskLogEntry["snapshot"] {
   };
 }
 
-export function evaluateRisk(
-  state: RiskState,
-  side: "buy" | "sell",
-  symbol: string,
-): RiskDecision {
+export function evaluateRisk(state: RiskState, side: "buy" | "sell", symbol: string): RiskDecision {
   const { risk } = TRADING_CONFIG;
   const now = Date.now();
 
