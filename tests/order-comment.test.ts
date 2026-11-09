@@ -22,6 +22,8 @@ describe("orderCommentReason", () => {
   });
 
   it("refuses a present clientComment alias", () => {
-    expect(orderCommentReason(undefined, undefined, "desk")).toMatch(/Client comment alias is not supported/);
+    expect(orderCommentReason(undefined, undefined, "desk")).toMatch(
+      /Client comment alias is not supported/,
+    );
   });
 });

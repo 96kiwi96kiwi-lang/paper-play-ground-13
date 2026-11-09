@@ -189,11 +189,7 @@ export class OrderManager {
   }
 
   async cancelStaleOpenOrders(now = Date.now()): Promise<CancelOrdersResult> {
-    const stale = selectStaleOpenOrders(
-      this.orders,
-      now,
-      TRADING_CONFIG.orders.staleOpenOrderMs,
-    );
+    const stale = selectStaleOpenOrders(this.orders, now, TRADING_CONFIG.orders.staleOpenOrderMs);
     return this.cancelSelected(stale);
   }
 
@@ -278,7 +274,11 @@ export class OrderManager {
     if (list) return this.refuse(list);
     const related = orderRelatedReason(intent.relatedId, intent.orderRelated, intent.clientRelated);
     if (related) return this.refuse(related);
-    const reference = orderReferenceReason(intent.reference, intent.orderReference, intent.clientReference);
+    const reference = orderReferenceReason(
+      intent.reference,
+      intent.orderReference,
+      intent.clientReference,
+    );
     if (reference) return this.refuse(reference);
     const source = orderSourceReason(intent.source, intent.orderSource, intent.clientSource);
     if (source) return this.refuse(source);
@@ -354,7 +354,10 @@ export class OrderManager {
 
     // Daily trade cap (refuse, not halt)
     const dayKey = new Date().toISOString().slice(0, 10);
-    if (riskState.tradesDayKey === dayKey && (riskState.tradesToday ?? 0) >= TRADING_CONFIG.risk.maxDailyTrades) {
+    if (
+      riskState.tradesDayKey === dayKey &&
+      (riskState.tradesToday ?? 0) >= TRADING_CONFIG.risk.maxDailyTrades
+    ) {
       return this.refuse("Daily trade cap reached");
     }
 
@@ -391,7 +394,10 @@ export class OrderManager {
           const totalCost = existing.amount * existing.avgEntry + notional;
           this.positions[intent.symbol] = { amount: totalAmt, avgEntry: totalCost / totalAmt };
         } else {
-          this.positions[intent.symbol] = { amount: intent.amount, avgEntry: price || notional / intent.amount };
+          this.positions[intent.symbol] = {
+            amount: intent.amount,
+            avgEntry: price || notional / intent.amount,
+          };
         }
       } else {
         this.cash += notional;

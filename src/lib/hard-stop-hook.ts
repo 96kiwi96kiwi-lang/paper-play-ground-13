@@ -2,10 +2,7 @@
  * Decouples risk engine (shared client/server) from Node-only persist/alerts.
  */
 
-export type HardStopListener = (payload: {
-  reason: string;
-  code?: string;
-}) => void;
+export type HardStopListener = (payload: { reason: string; code?: string }) => void;
 
 const listeners: HardStopListener[] = [];
 

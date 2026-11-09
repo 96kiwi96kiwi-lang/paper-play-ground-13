@@ -9,7 +9,9 @@ export type TimeInForce = "GTC";
  * limit the caller thought would cancel immediately.
  * This is a shape floor, not a halt.
  */
-export function normalizeTimeInForce(raw: unknown): { timeInForce: TimeInForce } | { reason: string } {
+export function normalizeTimeInForce(
+  raw: unknown,
+): { timeInForce: TimeInForce } | { reason: string } {
   if (raw == null) return { timeInForce: "GTC" };
   if (typeof raw !== "string") return { reason: `Unsupported time in force: ${String(raw)}` };
   const shaped = raw.trim().toUpperCase();

@@ -22,6 +22,8 @@ describe("orderSubjectReason", () => {
   });
 
   it("refuses a present clientSubject alias", () => {
-    expect(orderSubjectReason(undefined, undefined, "desk")).toMatch(/Client subject alias is not supported/);
+    expect(orderSubjectReason(undefined, undefined, "desk")).toMatch(
+      /Client subject alias is not supported/,
+    );
   });
 });

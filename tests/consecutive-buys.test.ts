@@ -4,12 +4,7 @@ import { consecutiveBuysReason, trailingAcceptedBuys } from "@/lib/orders/consec
 
 const cap = TRADING_CONFIG.orders.maxConsecutiveBuysPerSymbol;
 
-function row(
-  side: "buy" | "sell",
-  status: string,
-  timestamp: number,
-  symbol = "BTC/USDT",
-) {
+function row(side: "buy" | "sell", status: string, timestamp: number, symbol = "BTC/USDT") {
   return { side, status, timestamp, symbol };
 }
 

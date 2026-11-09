@@ -29,12 +29,24 @@ test("recent unsupported amount aliases fail before adapter invocation", async (
   const intent: OrderIntent = { symbol: "BTC/USDT", side: "buy", type: "market", amount: 0.01 };
   const riskState = {} as RiskState;
   const inputs: Array<[keyof OrderIntent, string]> = [
-    ["positions", "Positions"], ["orderPositions", "Order positions"], ["basePositions", "Base positions"],
-    ["portfolio", "Portfolio"], ["orderPortfolio", "Order portfolio"], ["basePortfolio", "Base portfolio"],
-    ["equity", "Equity"], ["orderEquity", "Order equity"], ["baseEquity", "Base equity"],
-    ["nav", "Nav"], ["orderNav", "Order nav"], ["baseNav", "Base nav"],
-    ["assets", "Assets"], ["orderAssets", "Order assets"], ["baseAssets", "Base assets"],
-    ["holdings", "Holdings"], ["orderHoldings", "Order holdings"], ["baseHoldings", "Base holdings"],
+    ["positions", "Positions"],
+    ["orderPositions", "Order positions"],
+    ["basePositions", "Base positions"],
+    ["portfolio", "Portfolio"],
+    ["orderPortfolio", "Order portfolio"],
+    ["basePortfolio", "Base portfolio"],
+    ["equity", "Equity"],
+    ["orderEquity", "Order equity"],
+    ["baseEquity", "Base equity"],
+    ["nav", "Nav"],
+    ["orderNav", "Order nav"],
+    ["baseNav", "Base nav"],
+    ["assets", "Assets"],
+    ["orderAssets", "Order assets"],
+    ["baseAssets", "Base assets"],
+    ["holdings", "Holdings"],
+    ["orderHoldings", "Order holdings"],
+    ["baseHoldings", "Base holdings"],
   ];
   for (const [field, label] of inputs) {
     const result = await manager.submit({ ...intent, [field]: 0 }, riskState);

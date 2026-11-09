@@ -13,9 +13,7 @@ test("a non-spot product label is refused and does not halt", () => {
   expect(categoryReason("linear")).toBe(
     "Category is not supported; the adapter would place a spot order",
   );
-  expect(categoryReason(0)).toBe(
-    "Category is not supported; the adapter would place a spot order",
-  );
+  expect(categoryReason(0)).toBe("Category is not supported; the adapter would place a spot order");
   expect(categoryReason(undefined, "inverse")).toBe(
     "Product type is not supported; the adapter would place a spot order",
   );

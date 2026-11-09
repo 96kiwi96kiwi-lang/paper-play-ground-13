@@ -6,12 +6,7 @@
 export type Side = "buy" | "sell";
 
 export type OrderStatus =
-  | "pending"
-  | "open"
-  | "partially_filled"
-  | "closed"
-  | "rejected"
-  | "canceled";
+  "pending" | "open" | "partially_filled" | "closed" | "rejected" | "canceled";
 
 export interface UnifiedTicker {
   symbol: string; // e.g. "BTC/USDT"

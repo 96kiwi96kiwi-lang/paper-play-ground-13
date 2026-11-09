@@ -17,7 +17,5 @@ test("present notional aliases are refused and do not halt", () => {
   expect(notionalAliasReason(undefined, undefined, "0.5")).toBe(
     "Base notional alias is not supported; the adapter reads amount",
   );
-  expect(notionalAliasReason(0)).toBe(
-    "Notional alias is not supported; the adapter reads amount",
-  );
+  expect(notionalAliasReason(0)).toBe("Notional alias is not supported; the adapter reads amount");
 });

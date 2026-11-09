@@ -14,11 +14,7 @@ function present(value: unknown): boolean {
   return true;
 }
 
-export function gridIdReason(
-  grid: unknown,
-  gridId?: unknown,
-  algoId?: unknown,
-): string | null {
+export function gridIdReason(grid: unknown, gridId?: unknown, algoId?: unknown): string | null {
   if (present(grid)) {
     return "Grid is not supported; the adapter would place a plain spot order";
   }

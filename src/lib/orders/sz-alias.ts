@@ -12,11 +12,7 @@ function present(value: unknown): boolean {
   return true;
 }
 
-export function szAliasReason(
-  sz: unknown,
-  orderSz?: unknown,
-  szValue?: unknown,
-): string | null {
+export function szAliasReason(sz: unknown, orderSz?: unknown, szValue?: unknown): string | null {
   if (present(sz)) {
     return "Sz alias is not supported; the adapter reads amount";
   }

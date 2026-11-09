@@ -15,7 +15,10 @@ function payload(timestamp: number) {
 
 test("CoinGecko source accepts complete fresh provider timestamps", async () => {
   const now = 1_700_000_000_000;
-  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(payload(now / 1000)))));
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => new Response(JSON.stringify(payload(now / 1000)))),
+  );
 
   const snapshot = await fetchCoinGeckoMarketSnapshot(now);
 
@@ -26,7 +29,10 @@ test("CoinGecko source accepts complete fresh provider timestamps", async () => 
 test("CoinGecko source fails closed on a stale provider timestamp", async () => {
   const now = 1_700_000_000_000;
   const stale = now - TRADING_CONFIG.orders.maxPriceAgeMs - 1_000;
-  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(payload(stale / 1000)))));
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => new Response(JSON.stringify(payload(stale / 1000)))),
+  );
 
   await expect(fetchCoinGeckoMarketSnapshot(now)).rejects.toThrow(/stale bitcoin quote/);
 });

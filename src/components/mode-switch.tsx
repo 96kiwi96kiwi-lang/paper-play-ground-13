@@ -165,9 +165,7 @@ export function ModeSwitch() {
       setStatus(next);
       const health = await fetchExchangeHealth();
       setStale(Boolean(health.heartbeatStale));
-      setAgeSec(
-        health.heartbeatAgeMs != null ? Math.round(health.heartbeatAgeMs / 1000) : null,
-      );
+      setAgeSec(health.heartbeatAgeMs != null ? Math.round(health.heartbeatAgeMs / 1000) : null);
       setHaltReason(health.haltReason ?? null);
       setClearedAt(health.lastHardStop?.clearedAt ?? null);
       setAlerts(Array.isArray(health.recentAlerts) ? health.recentAlerts.slice(-5) : []);
@@ -239,10 +237,10 @@ export function ModeSwitch() {
   const workingAtCap = Boolean(orderWatch?.workingAtCap);
   const riskHot = Boolean(
     riskWatch &&
-      (riskWatch.cooldownRemainingMs > 0 ||
-        riskWatch.losingStreak >= 3 ||
-        riskWatch.drawdownPct <= -10 ||
-        riskWatch.dailyPnlPct <= -5),
+    (riskWatch.cooldownRemainingMs > 0 ||
+      riskWatch.losingStreak >= 3 ||
+      riskWatch.drawdownPct <= -10 ||
+      riskWatch.dailyPnlPct <= -5),
   );
   const exposureHot = Boolean(exposureWatch && (exposureWatch.nearLimit || exposureWatch.atLimit));
 
@@ -275,7 +273,9 @@ export function ModeSwitch() {
               ? "border-red-500 bg-red-600 text-white"
               : "border-border bg-muted/30 text-muted-foreground hover:text-foreground"
           }`}
-          title={liveReady ? "Enable live trading (confirmation required)" : "Server API keys required"}
+          title={
+            liveReady ? "Enable live trading (confirmation required)" : "Server API keys required"
+          }
         >
           <AlertTriangle className="size-3" />
           LIVE
@@ -311,7 +311,8 @@ export function ModeSwitch() {
           className="text-[10px] text-muted-foreground max-w-[18rem] truncate"
           title={`Paper cash=${paperBook.cash.toFixed(2)} used=${paperBook.used.toFixed(2)} equity=${paperBook.total.toFixed(2)} positions=${paperBook.positionCount}`}
         >
-          Paper ${paperBook.total.toFixed(0)} cash={paperBook.cash.toFixed(0)} pos={paperBook.positionCount}
+          Paper ${paperBook.total.toFixed(0)} cash={paperBook.cash.toFixed(0)} pos=
+          {paperBook.positionCount}
         </span>
       )}
       {paperBook && (paperBook.positions ?? []).length > 0 && (
@@ -322,7 +323,8 @@ export function ModeSwitch() {
               className="truncate"
               title={`${pos.symbol} amt=${pos.amount} avg=${pos.avgEntry} cost=${pos.costUsd.toFixed(2)}`}
             >
-              Pos {pos.symbol.split("/")[0]} {pos.amount.toPrecision(4)} @ {pos.avgEntry.toFixed(2)} (${pos.costUsd.toFixed(0)})
+              Pos {pos.symbol.split("/")[0]} {pos.amount.toPrecision(4)} @ {pos.avgEntry.toFixed(2)}{" "}
+              (${pos.costUsd.toFixed(0)})
             </li>
           ))}
         </ol>
@@ -343,8 +345,11 @@ export function ModeSwitch() {
           className={`text-[10px] max-w-[18rem] truncate ${riskHot ? "text-amber-400" : "text-muted-foreground"}`}
           title={`Persisted risk. Daily PnL ${formatPct(riskWatch.dailyPnlPct)} drawdown ${formatPct(riskWatch.drawdownPct)} lose-streak ${riskWatch.losingStreak} net-err ${riskWatch.networkErrorStreak} cooldown ${formatBurstCooldown(riskWatch.cooldownRemainingMs)} open=${riskWatch.openPositionsCount} state ${formatSubmitAge(riskWatch.stateAgeMs)}.`}
         >
-          Risk pnl={formatPct(riskWatch.dailyPnlPct)} dd={formatPct(riskWatch.drawdownPct)} lose={riskWatch.losingStreak}
-          {riskWatch.cooldownRemainingMs > 0 ? ` cd=${formatBurstCooldown(riskWatch.cooldownRemainingMs)}` : ""}
+          Risk pnl={formatPct(riskWatch.dailyPnlPct)} dd={formatPct(riskWatch.drawdownPct)} lose=
+          {riskWatch.losingStreak}
+          {riskWatch.cooldownRemainingMs > 0
+            ? ` cd=${formatBurstCooldown(riskWatch.cooldownRemainingMs)}`
+            : ""}
         </span>
       )}
       {dailyCap && (
@@ -359,11 +364,16 @@ export function ModeSwitch() {
       {orderWatch && (
         <span
           className={`text-[10px] max-w-[18rem] truncate ${
-            orderWatch.workingOrderCount > 0 || burstCooling || workingAtCap ? "text-amber-400" : "text-muted-foreground"
+            orderWatch.workingOrderCount > 0 || burstCooling || workingAtCap
+              ? "text-amber-400"
+              : "text-muted-foreground"
           }`}
           title={`Last accepted submit ${formatSubmitAge(orderWatch.lastSubmitAgeMs)}. Seen ledger ${orderWatch.seenOrderCount}. Working open/partial/pending ${orderWatch.workingOrderCount}/${orderWatch.maxConcurrentOpenOrders ?? 4} (slots left ${orderWatch.workingSlotsLeft ?? "?"}). Per-symbol cap ${orderWatch.maxOpenOrdersPerSymbol ?? 2}. Burst guard ${formatBurstCooldown(orderWatch.burstCooldownMs)} of ${Math.round((orderWatch.minSubmitIntervalMs ?? 8000) / 1000)}s (persisted lastSubmitAt).`}
         >
-          Orders work={orderWatch.workingOrderCount}/{orderWatch.maxConcurrentOpenOrders ?? 4}{workingAtCap ? " full" : ""} seen={orderWatch.seenOrderCount} last={formatSubmitAge(orderWatch.lastSubmitAgeMs)} burst={formatBurstCooldown(orderWatch.burstCooldownMs)}
+          Orders work={orderWatch.workingOrderCount}/{orderWatch.maxConcurrentOpenOrders ?? 4}
+          {workingAtCap ? " full" : ""} seen={orderWatch.seenOrderCount} last=
+          {formatSubmitAge(orderWatch.lastSubmitAgeMs)} burst=
+          {formatBurstCooldown(orderWatch.burstCooldownMs)}
         </span>
       )}
       {lastReject && (
@@ -371,7 +381,9 @@ export function ModeSwitch() {
           className="text-[10px] text-amber-400/90 max-w-[18rem] truncate"
           title={`Last refused submit ${formatSubmitAge(lastReject.ageMs)}. ${lastReject.side ?? ""} ${lastReject.symbol ?? ""} — ${lastReject.reason}. Not a hard-stop; persisted in data/last-reject.json.`}
         >
-          Reject {lastReject.side ?? ""}{lastReject.symbol ? ` ${lastReject.symbol.split("/")[0]}` : ""} {formatSubmitAge(lastReject.ageMs)}: {lastReject.reason}
+          Reject {lastReject.side ?? ""}
+          {lastReject.symbol ? ` ${lastReject.symbol.split("/")[0]}` : ""}{" "}
+          {formatSubmitAge(lastReject.ageMs)}: {lastReject.reason}
         </span>
       )}
       {gridBooks.length > 0 && (
@@ -402,17 +414,23 @@ export function ModeSwitch() {
       )}
       {alerts.length > 0 && (
         <ol className="text-[10px] text-muted-foreground max-w-[18rem] space-y-0.5">
-          {alerts.slice().reverse().map((a) => (
-            <li key={`${a.at}-${a.code ?? a.reason}`} className="truncate" title={a.reason}>
-              {a.code ? `${a.code}: ` : ""}
-              {a.reason}
-            </li>
-          ))}
+          {alerts
+            .slice()
+            .reverse()
+            .map((a) => (
+              <li key={`${a.at}-${a.code ?? a.reason}`} className="truncate" title={a.reason}>
+                {a.code ? `${a.code}: ` : ""}
+                {a.reason}
+              </li>
+            ))}
         </ol>
       )}
       {error && <span className="text-[10px] text-red-400 max-w-[18rem] truncate">{error}</span>}
       {status?.keyAuditMessage && mode === "paper" && (
-        <span className="text-[10px] text-muted-foreground max-w-[18rem] truncate" title={status.keyAuditMessage}>
+        <span
+          className="text-[10px] text-muted-foreground max-w-[18rem] truncate"
+          title={status.keyAuditMessage}
+        >
           {status.keyAuditMessage}
         </span>
       )}
