@@ -1,7 +1,7 @@
 /**
  * OrderManager – single gate for paper and live submits.
  * Applies hard-stops, notional/reserve/trade-cap floors, and metadata floors
- * (child/root/sibling/parent/payload/chain/group/link/list/related/reference/source/origin/grid/algo/strategy/tactic/template/text/kind/leg) before any adapter call.
+ * (child/root/sibling/parent/payload/chain/group/link/list/related/reference/source/origin/grid/algo/strategy/tactic/template/text/kind/leg/note) before any adapter call.
  * Default path is paper. No secrets. No live without server-side keys.
  */
 
@@ -29,6 +29,7 @@ import { orderTemplateReason } from "./order-template";
 import { orderTextReason } from "./order-text";
 import { orderKindReason } from "./order-kind";
 import { orderLegReason } from "./order-leg";
+import { orderNoteReason } from "./order-note";
 
 export interface OrderIntent {
   symbol: string;
@@ -106,6 +107,9 @@ export interface OrderIntent {
   legId?: unknown;
   orderLeg?: unknown;
   clientLeg?: unknown;
+  note?: unknown;
+  orderNote?: unknown;
+  clientNote?: unknown;
 }
 
 export interface SubmitResult {
@@ -173,7 +177,7 @@ export class OrderManager {
       return this.refuse(`Hard-stop active: ${riskState.haltReason}`);
     }
 
-    // Metadata floors – refuse unsupported parent/child/root/sibling/payload/chain/group/link/list/related/reference/source/origin/grid/algo/strategy/tactic/template/text/kind/leg intent
+    // Metadata floors – refuse unsupported parent/child/root/sibling/payload/chain/group/link/list/related/reference/source/origin/grid/algo/strategy/tactic/template/text/kind/leg/note intent
     const child = orderChildReason(intent.childId, intent.orderChild, intent.clientChild);
     if (child) return this.refuse(child);
     const root = orderRootReason(intent.rootId, intent.orderRoot, intent.clientRoot);
@@ -223,6 +227,8 @@ export class OrderManager {
     if (kind) return this.refuse(kind);
     const leg = orderLegReason(intent.legId, intent.orderLeg, intent.clientLeg);
     if (leg) return this.refuse(leg);
+    const note = orderNoteReason(intent.note, intent.orderNote, intent.clientNote);
+    if (note) return this.refuse(note);
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {
       return this.refuse(`Unsupported symbol ${intent.symbol}`);
