@@ -1,5 +1,13 @@
 # Development progress
 
+## 2026-11-09 06:00 CET
+
+- **Verified state:** `main` advanced to `8a3a42933edfbe96b8fd585dec713abb293ad199` with grid-id, order-algo, and order-strategy floor wiring. PR #13 remained open at `02ef3b0788d1263bbe9dc79c7cdfdd0dc64ef697`; dependent PR #14 remained open at `a84c155b2b9f733508c7c979e7b2fd146b3ee925`. PR #11, PR #8, and PR #12 remained open and stale. There were no open issues or actionable TODO/FIXME markers; CI #634 and #635 still failed before all steps with no runner logs.
+- **Completed change:** merged current `main` into PR #13 without rewriting history and retained the complete persistent `OrderManager`. The real runtime already enforced grid, algo, and strategy floors; expanded the integration regression to prove every new canonical/client alias (`grid`, `gridId`, `algoId`, `algoType`, `clientAlgo`, `strategyId`, `clientStrategy`) fails before adapter invocation.
+- **Verification:** TypeScript passed; targeted grid/algo/strategy/runtime/paper-loop/lease tests passed (27/27); full Vitest passed (613/613 across 231 files); production Vite/SSR/Nitro build, built-server smoke, and worker smoke passed without exchange credentials or network-backed trading.
+- **Open problem:** GitHub Actions billing still prevents a real runner from executing. This exact final SHA must not be merged or deployed before successful CI; dependent PR #14 must be synchronized onto the new PR #13 head afterward.
+- **Next priority:** publish this verified merge to PR #13, inspect exact-head CI, then merge the updated PR #13 branch into dependent PR #14 without force-push and re-run its quote regressions.
+
 ## 2026-11-09 01:00 CET
 
 - **Verified state:** `main` advanced to `e2358c8f1342eb846bb2640141e52079a2d3e7b9` with reference/source/origin metadata-floor wiring. PR #13 remained open at `4e68e8fa8f1e2aafec438f5cd655fe0694d1d39a`; PR #11 and PR #8 remained open and stale. There were no open issues or actionable TODO/FIXME markers.
