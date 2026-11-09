@@ -17,7 +17,7 @@ See `SAFETY.md` for the full checklist.
 
 ## Current status
 
-**Hour (odd):** Wired order-kind metadata floor into OrderManager. A present `kind`, `orderKind`, or `clientKind` is refused before the paper or live path so a kind intent cannot be silently ignored. Matches the existing order-text, order-template, order-tactic, order-strategy, order-algo, grid-id, order-origin, order-source, order-reference, order-related, order-list, order-link, order-group, order-chain, order-payload, order-child, order-root, order-sibling, and order-parent floors. Default remains paper. No secrets. No live without server-side owner credentials.
+**Hour (odd):** Wired order-leg metadata floor into OrderManager. A present `legId`, `orderLeg`, or `clientLeg` is refused before the paper or live path so a multi-leg intent cannot be silently ignored. Matches the existing order-kind, order-text, order-template, order-tactic, order-strategy, order-algo, grid-id, order-origin, order-source, order-reference, order-related, order-list, order-link, order-group, order-chain, order-payload, order-child, order-root, order-sibling, and order-parent floors. Default remains paper. No secrets. No live without server-side owner credentials.
 
 ## Run
 
