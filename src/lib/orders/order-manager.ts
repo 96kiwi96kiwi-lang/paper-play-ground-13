@@ -1129,11 +1129,7 @@ export class OrderManager {
     );
     if (requestWindow) return this.fail(requestWindow);
 
-    const slippage = slippageReason(
-      intent.maxSlippage,
-      intent.slippage,
-      intent.slippageTolerance,
-    );
+    const slippage = slippageReason(intent.maxSlippage, intent.slippage, intent.slippageTolerance);
     if (slippage) return this.fail(slippage);
 
     const priceProtect = priceProtectReason(
@@ -1172,7 +1168,11 @@ export class OrderManager {
     const crossMargin = crossMarginReason(intent.mgnMode, intent.tradeMode, intent.isCross);
     if (crossMargin) return this.fail(crossMargin);
 
-    const isLeverage = isLeverageReason(intent.isLeverage, intent.leverageFlag, intent.marginLeverage);
+    const isLeverage = isLeverageReason(
+      intent.isLeverage,
+      intent.leverageFlag,
+      intent.marginLeverage,
+    );
     if (isLeverage) return this.fail(isLeverage);
 
     const isMargin = isMarginReason(intent.isMargin, intent.margin, intent.is_margin);
@@ -1237,11 +1237,7 @@ export class OrderManager {
     const label = orderLabelReason(intent.label, intent.orderLabel, intent.clientLabel);
     if (label) return this.fail(label);
 
-    const comment = orderCommentReason(
-      intent.comment,
-      intent.orderComment,
-      intent.clientComment,
-    );
+    const comment = orderCommentReason(intent.comment, intent.orderComment, intent.clientComment);
     if (comment) return this.fail(comment);
 
     const hash = orderHashReason(intent.hash, intent.orderHash, intent.clientHash);
@@ -1269,11 +1265,7 @@ export class OrderManager {
     );
     if (priority) return this.fail(priority);
 
-    const urgency = orderUrgencyReason(
-      intent.urgency,
-      intent.orderUrgency,
-      intent.clientUrgency,
-    );
+    const urgency = orderUrgencyReason(intent.urgency, intent.orderUrgency, intent.clientUrgency);
     if (urgency) return this.fail(urgency);
 
     const visibility = orderVisibilityReason(
@@ -1290,18 +1282,10 @@ export class OrderManager {
     );
     if (audience) return this.fail(audience);
 
-    const scope = orderScopeReason(
-      intent.scope,
-      intent.orderScope,
-      intent.clientScope,
-    );
+    const scope = orderScopeReason(intent.scope, intent.orderScope, intent.clientScope);
     if (scope) return this.fail(scope);
 
-    const custom = orderCustomReason(
-      intent.custom,
-      intent.customField,
-      intent.clientCustom,
-    );
+    const custom = orderCustomReason(intent.custom, intent.customField, intent.clientCustom);
     if (custom) return this.fail(custom);
 
     const algo = orderAlgoReason(intent.algo, intent.algoType, intent.clientAlgo);
@@ -1317,11 +1301,7 @@ export class OrderManager {
     const tactic = orderTacticReason(intent.tactic, intent.tacticId, intent.clientTactic);
     if (tactic) return this.fail(tactic);
 
-    const template = orderTemplateReason(
-      intent.template,
-      intent.templateId,
-      intent.clientTemplate,
-    );
+    const template = orderTemplateReason(intent.template, intent.templateId, intent.clientTemplate);
     if (template) return this.fail(template);
 
     // Keep the legacy alias fail-closed while the canonical helper contract
@@ -1383,11 +1363,7 @@ export class OrderManager {
     );
     if (platform) return this.fail(platform);
 
-    const sibling = orderSiblingReason(
-      intent.siblingId,
-      intent.orderSibling,
-      intent.clientSibling,
-    );
+    const sibling = orderSiblingReason(intent.siblingId, intent.orderSibling, intent.clientSibling);
     if (sibling) return this.fail(sibling);
 
     const parent = orderParentReason(intent.parentId, intent.orderParent, intent.clientParent);
@@ -1482,7 +1458,13 @@ export class OrderManager {
     const quoteQty = quoteQtyReason(intent.quoteQty, intent.quoteOrderQty, intent.notional);
     if (quoteQty) return this.fail(quoteQty);
 
-    const spotOnly = spotOnlyReason(intent.leverage, intent.marginMode, intent.tradeType, intent.marginTrade, intent.isMargin);
+    const spotOnly = spotOnlyReason(
+      intent.leverage,
+      intent.marginMode,
+      intent.tradeType,
+      intent.marginTrade,
+      intent.isMargin,
+    );
     if (spotOnly) return this.fail(spotOnly);
 
     const autoBorrow = autoBorrowReason(intent.autoBorrow, intent.autoRepay);
@@ -1494,10 +1476,18 @@ export class OrderManager {
     const repaySize = repaySizeReason(intent.repayAmount, intent.repaySize, intent.debtAmount);
     if (repaySize) return this.fail(repaySize);
 
-    const settleCurrency = settleCurrencyReason(intent.settleCcy, intent.settleCoin, intent.quoteCoin);
+    const settleCurrency = settleCurrencyReason(
+      intent.settleCcy,
+      intent.settleCoin,
+      intent.quoteCoin,
+    );
     if (settleCurrency) return this.fail(settleCurrency);
 
-    const sideEffect = sideEffectReason(intent.sideEffectType, intent.sideEffect, intent.marginEffect);
+    const sideEffect = sideEffectReason(
+      intent.sideEffectType,
+      intent.sideEffect,
+      intent.marginEffect,
+    );
     if (sideEffect) return this.fail(sideEffect);
 
     const feeCurrency = feeCurrencyReason(intent.feeCurrency, intent.feeCcy, intent.deductFee);
@@ -1568,11 +1558,7 @@ export class OrderManager {
     );
     if (positionIndex) return this.fail(positionIndex);
 
-    const openOffset = openOffsetReason(
-      intent.openClose,
-      intent.posOffset,
-      intent.closeFraction,
-    );
+    const openOffset = openOffsetReason(intent.openClose, intent.posOffset, intent.closeFraction);
     if (openOffset) return this.fail(openOffset);
 
     const tradeSide = tradeSideReason(intent.tradeSide, intent.holdSide, intent.openType);
@@ -1599,11 +1585,7 @@ export class OrderManager {
     );
     if (contractsAlias) return this.fail(contractsAlias);
 
-    const piecesAlias = piecesAliasReason(
-      intent.pieces,
-      intent.orderPieces,
-      intent.basePieces,
-    );
+    const piecesAlias = piecesAliasReason(intent.pieces, intent.orderPieces, intent.basePieces);
     if (piecesAlias) return this.fail(piecesAlias);
 
     const szAlias = szAliasReason(intent.sz, intent.orderSz, intent.szValue);
@@ -1628,11 +1610,7 @@ export class OrderManager {
     const sumAlias = sumAliasReason(intent.sum, intent.orderSum, intent.baseSum);
     if (sumAlias) return this.fail(sumAlias);
 
-    const volumeAlias = volumeAliasReason(
-      intent.volume,
-      intent.orderVolume,
-      intent.baseVolume,
-    );
+    const volumeAlias = volumeAliasReason(intent.volume, intent.orderVolume, intent.baseVolume);
     if (volumeAlias) return this.fail(volumeAlias);
 
     const baseQtyAlias = baseQtyAliasReason(
@@ -1648,18 +1626,10 @@ export class OrderManager {
     const countAlias = countAliasReason(intent.count, intent.orderCount, intent.baseCount);
     if (countAlias) return this.fail(countAlias);
 
-    const quantityAlias = quantityAliasReason(
-      undefined,
-      intent.orderQuantity,
-      intent.baseQuantity,
-    );
+    const quantityAlias = quantityAliasReason(undefined, intent.orderQuantity, intent.baseQuantity);
     if (quantityAlias) return this.fail(quantityAlias);
 
-    const sharesAlias = sharesAliasReason(
-      intent.shares,
-      intent.orderShares,
-      intent.baseShares,
-    );
+    const sharesAlias = sharesAliasReason(intent.shares, intent.orderShares, intent.baseShares);
     if (sharesAlias) return this.fail(sharesAlias);
 
     const lotsAlias = lotsAliasReason(intent.lots, intent.orderLots, intent.baseLots);
@@ -1689,11 +1659,7 @@ export class OrderManager {
     );
     if (orderList) return this.fail(orderList);
 
-    const related = orderRelatedReason(
-      intent.relatedId,
-      intent.orderRelated,
-      intent.clientRelated,
-    );
+    const related = orderRelatedReason(intent.relatedId, intent.orderRelated, intent.clientRelated);
     if (related) return this.fail(related);
 
     const positionIdx = positionIdxReason(undefined, intent.posIdx, intent.hedgeIdx);
@@ -1719,7 +1685,11 @@ export class OrderManager {
     const symbolAlias = symbolAliasReason(intent.pair, intent.market, intent.instrument);
     if (symbolAlias) return this.fail(symbolAlias);
 
-    const accountRoute = accountRouteReason(intent.accountType, intent.account, intent.fundsAccount);
+    const accountRoute = accountRouteReason(
+      intent.accountType,
+      intent.account,
+      intent.fundsAccount,
+    );
     if (accountRoute) return this.fail(accountRoute);
 
     const credentialBody = credentialBodyReason(
@@ -1734,7 +1704,11 @@ export class OrderManager {
     const pos = positionsAliasReason(intent.positions, intent.orderPositions, intent.basePositions);
     if (pos) return this.fail(pos);
 
-    const port = portfolioAliasReason(intent.portfolio, intent.orderPortfolio, intent.basePortfolio);
+    const port = portfolioAliasReason(
+      intent.portfolio,
+      intent.orderPortfolio,
+      intent.basePortfolio,
+    );
     if (port) return this.fail(port);
 
     const eq = equityAliasReason(intent.equity, intent.orderEquity, intent.baseEquity);
@@ -1746,7 +1720,11 @@ export class OrderManager {
     const assets = assetsAliasReason(intent.assets, intent.orderAssets, intent.baseAssets);
     if (assets) return this.fail(assets);
 
-    const holdings = holdingsAliasReason(intent.holdings, intent.orderHoldings, intent.baseHoldings);
+    const holdings = holdingsAliasReason(
+      intent.holdings,
+      intent.orderHoldings,
+      intent.baseHoldings,
+    );
     if (holdings) return this.fail(holdings);
 
     const batch = orderBatchReason(intent.batch, intent.orderBatch, intent.clientBatch);
@@ -1767,7 +1745,11 @@ export class OrderManager {
     const ctx = orderContextReason(intent.context, intent.orderContext, intent.clientContext);
     if (ctx) return this.fail(ctx);
 
-    const corr = orderCorrelationReason(intent.correlation, intent.orderCorrelation, intent.clientCorrelation);
+    const corr = orderCorrelationReason(
+      intent.correlation,
+      intent.orderCorrelation,
+      intent.clientCorrelation,
+    );
     if (corr) return this.fail(corr);
 
     const text = orderTextReason(intent.text, intent.orderText, intent.clientText);
@@ -1785,7 +1767,11 @@ export class OrderManager {
     const caption = orderCaptionReason(intent.caption, intent.orderCaption, intent.clientCaption);
     if (caption) return this.fail(caption);
 
-    const desc = orderDescriptionReason(intent.description, intent.orderDescription, intent.clientDescription);
+    const desc = orderDescriptionReason(
+      intent.description,
+      intent.orderDescription,
+      intent.clientDescription,
+    );
     if (desc) return this.fail(desc);
 
     const sum = orderSummaryReason(intent.summary, intent.orderSummary, intent.clientSummary);
@@ -1812,22 +1798,42 @@ export class OrderManager {
     const dig = orderDigestReason(intent.digest, intent.orderDigest, intent.clientDigest);
     if (dig) return this.fail(dig);
 
-    const fp = orderFingerprintReason(intent.fingerprint, intent.orderFingerprint, intent.clientFingerprint);
+    const fp = orderFingerprintReason(
+      intent.fingerprint,
+      intent.orderFingerprint,
+      intent.clientFingerprint,
+    );
     if (fp) return this.fail(fp);
 
-    const sig = orderSignatureReason(intent.signature, intent.orderSignature, intent.clientSignature);
+    const sig = orderSignatureReason(
+      intent.signature,
+      intent.orderSignature,
+      intent.clientSignature,
+    );
     if (sig) return this.fail(sig);
 
     const org = orderOriginReason(intent.origin, intent.orderOrigin, intent.clientOrigin);
     if (org) return this.fail(org);
 
-    const prov = orderProvenanceReason(intent.provenance, intent.orderProvenance, intent.clientProvenance);
+    const prov = orderProvenanceReason(
+      intent.provenance,
+      intent.orderProvenance,
+      intent.clientProvenance,
+    );
     if (prov) return this.fail(prov);
 
-    const ref = orderReferenceReason(intent.reference, intent.orderReference, intent.clientReference);
+    const ref = orderReferenceReason(
+      intent.reference,
+      intent.orderReference,
+      intent.clientReference,
+    );
     if (ref) return this.fail(ref);
 
-    const ann = orderAnnotationReason(intent.annotation, intent.orderAnnotation, intent.clientAnnotation);
+    const ann = orderAnnotationReason(
+      intent.annotation,
+      intent.orderAnnotation,
+      intent.clientAnnotation,
+    );
     if (ann) return this.fail(ann);
 
     const attribution = orderAttributionReason(
@@ -1937,9 +1943,7 @@ export class OrderManager {
 
     const working = this.seen.filter((o) => isWorking(String(o.status)));
     if (working.length >= cfg.maxConcurrentOpenOrders) {
-      return this.fail(
-        `Working-order cap: ${working.length}/${cfg.maxConcurrentOpenOrders}`,
-      );
+      return this.fail(`Working-order cap: ${working.length}/${cfg.maxConcurrentOpenOrders}`);
     }
     const perSymbol = working.filter((o) => o.symbol === intent.symbol).length;
     if (perSymbol >= cfg.maxOpenOrdersPerSymbol) {
@@ -1948,12 +1952,7 @@ export class OrderManager {
       );
     }
 
-    const cross = selfCrossReason(
-      intent.side,
-      intent.symbol,
-      working,
-      cfg.blockOppositeWorking,
-    );
+    const cross = selfCrossReason(intent.side, intent.symbol, working, cfg.blockOppositeWorking);
     if (cross) return this.fail(cross);
 
     const samePrice = samePriceWorkingReason(
@@ -2039,14 +2038,10 @@ export class OrderManager {
     const notional = px != null ? intent.amount * px : undefined;
     if (px != null && notional != null) {
       if (notional > cfg.maxOrderNotionalUsd) {
-        return this.fail(
-          `Notional ${notional.toFixed(2)} exceeds max ${cfg.maxOrderNotionalUsd}`,
-        );
+        return this.fail(`Notional ${notional.toFixed(2)} exceeds max ${cfg.maxOrderNotionalUsd}`);
       }
       if (notional < cfg.minOrderNotionalUsd) {
-        return this.fail(
-          `Notional ${notional.toFixed(2)} below min ${cfg.minOrderNotionalUsd}`,
-        );
+        return this.fail(`Notional ${notional.toFixed(2)} below min ${cfg.minOrderNotionalUsd}`);
       }
       if (intent.side === "buy") {
         const booked = Object.values(this.positions).reduce(
@@ -2214,6 +2209,7 @@ export class OrderManager {
       return this.fail(`Adapter error: ${msg}`);
     }
 
+    const prior = this.seen.find((existing) => existing.id === order.id);
     this.remember(order);
     this.lastSubmitAt = now;
     this.onLastSubmitAtChange?.(now);
@@ -2222,7 +2218,7 @@ export class OrderManager {
       return { ok: false, reason: order.rejectReason ?? "Rejected by adapter", order };
     }
 
-    this.applyFill(order);
+    this.applyFill(order, prior);
     return { ok: true, order };
   }
 
@@ -2238,31 +2234,38 @@ export class OrderManager {
     this.onSeenOrdersChange?.(this.seenOrders());
   }
 
-  private applyFill(order: UnifiedOrder): void {
+  private applyFill(order: UnifiedOrder, prior?: UnifiedOrder): void {
     const filled = order.filled ?? 0;
-    if (filled <= 0) return;
+    const priorFilled = prior?.filled ?? 0;
+    const delta = filled - priorFilled;
+    if (!(delta > 1e-12)) return;
     const px = order.price && order.price > 0 ? order.price : 0;
-    const cost = order.cost > 0 ? order.cost : filled * px;
+    const totalCost = order.cost > 0 ? order.cost : filled * px;
+    const priorPx = prior && prior.price && prior.price > 0 ? prior.price : px;
+    const priorCost =
+      priorFilled > 0 ? (prior && prior.cost > 0 ? prior.cost : priorFilled * priorPx) : 0;
+    const cost = Math.max(0, totalCost - priorCost);
 
     if (order.side === "buy") {
       this.cash = Math.max(0, this.cash - cost);
       const existing = this.positions[order.symbol];
       if (existing) {
-        const total = existing.amount + filled;
+        const total = existing.amount + delta;
         const basis = existing.amount * existing.avgEntry + cost;
         this.positions[order.symbol] = {
           amount: total,
           avgEntry: total > 0 ? basis / total : existing.avgEntry,
         };
       } else {
-        this.positions[order.symbol] = { amount: filled, avgEntry: px };
+        this.positions[order.symbol] = { amount: delta, avgEntry: px };
       }
     } else {
       this.cash += cost;
       const existing = this.positions[order.symbol];
       if (existing) {
-        existing.amount -= filled;
-        if (existing.amount <= 1e-8) delete this.positions[order.symbol];
+        const left = existing.amount - delta;
+        if (left <= 1e-8) delete this.positions[order.symbol];
+        else this.positions[order.symbol] = { amount: left, avgEntry: existing.avgEntry };
       }
     }
     this.onPortfolioChange?.(this.snapshot());
