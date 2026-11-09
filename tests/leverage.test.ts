@@ -9,12 +9,8 @@ test("omitted, blank, and false pass", () => {
 });
 
 test("a present leverage, isolated, or margin mode is refused and does not halt", () => {
-  expect(leverageReason(5)).toBe(
-    "Leverage is not supported; the adapter would place a spot order",
-  );
-  expect(leverageReason(0)).toBe(
-    "Leverage is not supported; the adapter would place a spot order",
-  );
+  expect(leverageReason(5)).toBe("Leverage is not supported; the adapter would place a spot order");
+  expect(leverageReason(0)).toBe("Leverage is not supported; the adapter would place a spot order");
   expect(leverageReason(undefined, true)).toBe(
     "Isolated margin is not supported; the adapter would place a spot order",
   );

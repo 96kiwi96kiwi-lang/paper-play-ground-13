@@ -52,7 +52,9 @@ function armPaperLoop(): void {
   loopArmed = true;
   void import("./paper-loop").then(({ startPaperServerLoop }) => {
     const status = startPaperServerLoop();
-    console.info(`[paper-loop] ${status.reason} running=${status.running} enabled=${status.enabled}`);
+    console.info(
+      `[paper-loop] ${status.reason} running=${status.running} enabled=${status.enabled}`,
+    );
   });
 }
 

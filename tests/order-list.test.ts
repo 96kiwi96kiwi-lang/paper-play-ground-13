@@ -8,12 +8,8 @@ test("omitted, null, false, and blank order-list fields pass", () => {
 });
 
 test("a present OCO or order-list field is refused and does not halt", () => {
-  expect(orderListReason(true)).toBe(
-    "OCO is not supported; the adapter places one spot order",
-  );
-  expect(orderListReason(0)).toBe(
-    "OCO is not supported; the adapter places one spot order",
-  );
+  expect(orderListReason(true)).toBe("OCO is not supported; the adapter places one spot order");
+  expect(orderListReason(0)).toBe("OCO is not supported; the adapter places one spot order");
   expect(orderListReason(undefined, "list-1")).toBe(
     "Order list id is not supported; the adapter places one spot order",
   );

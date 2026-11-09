@@ -11,9 +11,7 @@ test("a present grid id is refused and does not halt", () => {
   expect(gridIdReason(true)).toBe(
     "Grid is not supported; the adapter would place a plain spot order",
   );
-  expect(gridIdReason(0)).toBe(
-    "Grid is not supported; the adapter would place a plain spot order",
-  );
+  expect(gridIdReason(0)).toBe("Grid is not supported; the adapter would place a plain spot order");
   expect(gridIdReason(undefined, "grid-1")).toBe(
     "Grid id is not supported; the adapter would place a plain spot order",
   );

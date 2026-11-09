@@ -1,9 +1,6 @@
 import { expect, test } from "vitest";
 import type { UnifiedOrder } from "@/lib/exchange/types";
-import {
-  lastAcceptedSameSide,
-  sameSideCooldownReason,
-} from "@/lib/orders/same-side-cooldown";
+import { lastAcceptedSameSide, sameSideCooldownReason } from "@/lib/orders/same-side-cooldown";
 
 function order(
   partial: Partial<UnifiedOrder> & Pick<UnifiedOrder, "id" | "side" | "status" | "timestamp">,

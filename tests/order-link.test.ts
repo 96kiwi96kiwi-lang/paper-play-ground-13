@@ -22,6 +22,8 @@ describe("orderLinkReason", () => {
   });
 
   it("refuses a present clientLink alias", () => {
-    expect(orderLinkReason(undefined, undefined, "desk")).toMatch(/Client link alias is not supported/);
+    expect(orderLinkReason(undefined, undefined, "desk")).toMatch(
+      /Client link alias is not supported/,
+    );
   });
 });

@@ -8,16 +8,12 @@ test("omitted, null, and blank count aliases pass", () => {
 });
 
 test("present count aliases are refused and do not halt", () => {
-  expect(countAliasReason(1.5)).toBe(
-    "Count alias is not supported; the adapter reads amount",
-  );
+  expect(countAliasReason(1.5)).toBe("Count alias is not supported; the adapter reads amount");
   expect(countAliasReason(undefined, 2)).toBe(
     "Order count alias is not supported; the adapter reads amount",
   );
   expect(countAliasReason(undefined, undefined, "0.5")).toBe(
     "Base count alias is not supported; the adapter reads amount",
   );
-  expect(countAliasReason(0)).toBe(
-    "Count alias is not supported; the adapter reads amount",
-  );
+  expect(countAliasReason(0)).toBe("Count alias is not supported; the adapter reads amount");
 });

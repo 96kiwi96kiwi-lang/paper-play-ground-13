@@ -17,7 +17,5 @@ test("present exposure aliases are refused and do not halt", () => {
   expect(exposureAliasReason(undefined, undefined, "0.5")).toBe(
     "Base exposure alias is not supported; the adapter reads amount",
   );
-  expect(exposureAliasReason(0)).toBe(
-    "Exposure alias is not supported; the adapter reads amount",
-  );
+  expect(exposureAliasReason(0)).toBe("Exposure alias is not supported; the adapter reads amount");
 });

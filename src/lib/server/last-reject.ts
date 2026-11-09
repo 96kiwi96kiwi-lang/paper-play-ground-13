@@ -3,7 +3,14 @@
  * No secrets. Not a hard-stop.
  */
 
-import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, resolve } from "node:path";
 
 export type PersistedLastReject = {
@@ -23,7 +30,8 @@ export function sanitizeLastReject(raw: unknown): PersistedLastReject | null {
   if (!Number.isFinite(at) || at <= 0) return null;
   if (typeof r.reason !== "string" || !r.reason.trim()) return null;
   const reason = r.reason.trim().slice(0, 280);
-  const symbol = typeof r.symbol === "string" && r.symbol.trim() ? r.symbol.trim().slice(0, 32) : undefined;
+  const symbol =
+    typeof r.symbol === "string" && r.symbol.trim() ? r.symbol.trim().slice(0, 32) : undefined;
   const side = r.side === "buy" || r.side === "sell" ? r.side : undefined;
   return { at, reason, symbol, side };
 }

@@ -22,6 +22,8 @@ describe("orderOriginReason", () => {
   });
 
   it("refuses a present clientOrigin alias", () => {
-    expect(orderOriginReason(undefined, undefined, "mobile")).toMatch(/Client origin alias is not supported/);
+    expect(orderOriginReason(undefined, undefined, "mobile")).toMatch(
+      /Client origin alias is not supported/,
+    );
   });
 });

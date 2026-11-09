@@ -10,11 +10,7 @@ function inWindow(order: UnifiedOrder, now: number, windowMs: number): boolean {
   return age >= 0 && age < windowMs;
 }
 
-export function rejectedCountInWindow(
-  seen: UnifiedOrder[],
-  now: number,
-  windowMs: number,
-): number {
+export function rejectedCountInWindow(seen: UnifiedOrder[], now: number, windowMs: number): number {
   let count = 0;
   for (const order of seen) {
     if (inWindow(order, now, windowMs)) count += 1;
@@ -36,11 +32,7 @@ export function rejectedCountInWindowForSymbol(
   return count;
 }
 
-export function rejectBurstReason(
-  count: number,
-  max: number,
-  windowMs: number,
-): string | null {
+export function rejectBurstReason(count: number, max: number, windowMs: number): string | null {
   if (!(max > 0) || !(windowMs > 0)) return null;
   if (count < max) return null;
   return `Reject burst: ${count} rejected orders in the last ${windowMs}ms (max ${max})`;

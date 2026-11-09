@@ -44,10 +44,18 @@ export function momentumStrategy(ctx: StrategyContext): StrategySignal {
   if (change5m === null) return { action: "hold", reason: "Insufficient history" };
 
   if (!ctx.hasPosition && change5m > 2.0) {
-    return { action: "buy", reason: `Momentum +${change5m.toFixed(2)}% (5m)`, confidence: Math.min(change5m / 5, 1) };
+    return {
+      action: "buy",
+      reason: `Momentum +${change5m.toFixed(2)}% (5m)`,
+      confidence: Math.min(change5m / 5, 1),
+    };
   }
   if (ctx.hasPosition && change5m < -1.5) {
-    return { action: "sell", reason: `Momentum ${change5m.toFixed(2)}% (5m)`, confidence: Math.min(Math.abs(change5m) / 4, 1) };
+    return {
+      action: "sell",
+      reason: `Momentum ${change5m.toFixed(2)}% (5m)`,
+      confidence: Math.min(Math.abs(change5m) / 4, 1),
+    };
   }
   return { action: "hold", reason: `Momentum ${change5m.toFixed(2)}%` };
 }
@@ -60,10 +68,18 @@ export function meanReversionStrategy(ctx: StrategyContext): StrategySignal {
   const deviation = ((ctx.currentPrice - avg1h) / avg1h) * 100;
 
   if (!ctx.hasPosition && deviation < -3.0) {
-    return { action: "buy", reason: `Mean-rev ${deviation.toFixed(2)}% below 1h avg`, confidence: Math.min(Math.abs(deviation) / 6, 1) };
+    return {
+      action: "buy",
+      reason: `Mean-rev ${deviation.toFixed(2)}% below 1h avg`,
+      confidence: Math.min(Math.abs(deviation) / 6, 1),
+    };
   }
   if (ctx.hasPosition && deviation > -0.5) {
-    return { action: "sell", reason: `Mean-rev returned near average (${deviation.toFixed(2)}%)`, confidence: 0.7 };
+    return {
+      action: "sell",
+      reason: `Mean-rev returned near average (${deviation.toFixed(2)}%)`,
+      confidence: 0.7,
+    };
   }
   return { action: "hold", reason: `Mean-rev ${deviation.toFixed(2)}%` };
 }
@@ -75,10 +91,18 @@ export function rsiStrategy(ctx: StrategyContext): StrategySignal {
   if (value === null) return { action: "hold", reason: "Insufficient history for RSI" };
 
   if (!ctx.hasPosition && value < 30) {
-    return { action: "buy", reason: `RSI oversold ${value.toFixed(1)}`, confidence: (30 - value) / 30 };
+    return {
+      action: "buy",
+      reason: `RSI oversold ${value.toFixed(1)}`,
+      confidence: (30 - value) / 30,
+    };
   }
   if (ctx.hasPosition && value > 70) {
-    return { action: "sell", reason: `RSI overbought ${value.toFixed(1)}`, confidence: (value - 70) / 30 };
+    return {
+      action: "sell",
+      reason: `RSI overbought ${value.toFixed(1)}`,
+      confidence: (value - 70) / 30,
+    };
   }
   return { action: "hold", reason: `RSI ${value.toFixed(1)}` };
 }
@@ -164,7 +188,12 @@ function flipBlocked(book: GridBook, nextSide: Side, nextLevel: number): string 
 export function normalizeBookLastLevel(book: GridBook): void {
   const half = gridHalfLevels();
   if (book.lastFillPrice && book.lastFillPrice > 0 && book.mid > 0 && book.spacingPct > 0) {
-    book.lastLevel = remapLastLevelAfterRebalance(book.lastFillPrice, book.mid, book.spacingPct, half);
+    book.lastLevel = remapLastLevelAfterRebalance(
+      book.lastFillPrice,
+      book.mid,
+      book.spacingPct,
+      half,
+    );
     return;
   }
   if (book.lastLevel != null && Math.abs(book.lastLevel) > half) {
@@ -252,7 +281,10 @@ export function gridStrategy(ctx: StrategyContext): StrategySignal {
   if (!book) {
     book = rebuildGrid(ctx.symbol, midHint, spacingPct);
     reconcileGridInventory(ctx.symbol, ctx.hasPosition);
-    return { action: "hold", reason: `Grid seeded mid=${book.mid.toFixed(4)} spacing=${spacingPct.toFixed(2)}%` };
+    return {
+      action: "hold",
+      reason: `Grid seeded mid=${book.mid.toFixed(4)} spacing=${spacingPct.toFixed(2)}%`,
+    };
   }
 
   if (Math.abs(book.spacingPct - spacingPct) > 1e-6) {
@@ -451,8 +483,12 @@ function sanitizeOneBook(book: GridBook): GridBook | null {
     builtAt: Number.isFinite(builtAt) && builtAt > 0 ? builtAt : Date.now(),
     lastSide,
     lastLevel: lastLevel != null && Number.isFinite(lastLevel) ? lastLevel : undefined,
-    lastFillPrice: lastFillPrice != null && Number.isFinite(lastFillPrice) && lastFillPrice > 0 ? lastFillPrice : undefined,
-    lastFillAt: lastFillAt != null && Number.isFinite(lastFillAt) && lastFillAt > 0 ? lastFillAt : undefined,
+    lastFillPrice:
+      lastFillPrice != null && Number.isFinite(lastFillPrice) && lastFillPrice > 0
+        ? lastFillPrice
+        : undefined,
+    lastFillAt:
+      lastFillAt != null && Number.isFinite(lastFillAt) && lastFillAt > 0 ? lastFillAt : undefined,
     stackedBuys: Number.isFinite(stackedRaw) && stackedRaw > 0 ? Math.floor(stackedRaw) : 0,
     reserved: Boolean(book.reserved),
   };

@@ -10,7 +10,8 @@ export function normalizePairSymbol(
   raw: string,
   allowed: ReadonlySet<string>,
 ): { symbol: string } | { reason: string } {
-  const shaped = typeof raw === "string" ? raw.trim().toUpperCase().replace(/\s+/g, "").replace(/-/g, "/") : "";
+  const shaped =
+    typeof raw === "string" ? raw.trim().toUpperCase().replace(/\s+/g, "").replace(/-/g, "/") : "";
   if (!shaped || !allowed.has(shaped)) {
     return { reason: `Unsupported pair: ${shaped || raw}` };
   }

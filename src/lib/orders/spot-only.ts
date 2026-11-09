@@ -35,7 +35,10 @@ export function spotOnlyReason(
     return "Margin mode is not supported; the adapter would place a spot order";
   }
   if (present(tradeType)) {
-    const raw = String(tradeType).trim().toUpperCase().replace(/[\s-]+/g, "_");
+    const raw = String(tradeType)
+      .trim()
+      .toUpperCase()
+      .replace(/[\s-]+/g, "_");
     if (raw !== "TRADE" && raw !== "SPOT") {
       return "Trade type is not supported; the adapter would place a spot order";
     }

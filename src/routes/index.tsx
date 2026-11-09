@@ -55,7 +55,8 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "Algo Paper Trader" },
       {
         property: "og:description",
-        content: "Automated crypto paper trading with risk management, cooldowns and compound growth tracking.",
+        content:
+          "Automated crypto paper trading with risk management, cooldowns and compound growth tracking.",
       },
     ],
   }),
@@ -69,12 +70,12 @@ const MAX_HISTORY = 200;
 const MAX_EQUITY = 500;
 
 // Risk management constants
-const TRADE_SIZE_PCT = 0.20;       // 20% of portfolio per trade
-const MAX_POSITION_PCT = 0.25;     // never more than 25% of portfolio in one trade
-const STOP_LOSS_PCT = -5;          // auto-sell at -5%
-const TAKE_PROFIT_PCT = 8;         // auto-sell at +8%
-const DAILY_LOSS_LIMIT_PCT = -15;  // halt for the rest of the day
-const MAX_DRAWDOWN_PCT = -25;      // pause 24h
+const TRADE_SIZE_PCT = 0.2; // 20% of portfolio per trade
+const MAX_POSITION_PCT = 0.25; // never more than 25% of portfolio in one trade
+const STOP_LOSS_PCT = -5; // auto-sell at -5%
+const TAKE_PROFIT_PCT = 8; // auto-sell at +8%
+const DAILY_LOSS_LIMIT_PCT = -15; // halt for the rest of the day
+const MAX_DRAWDOWN_PCT = -25; // pause 24h
 const DRAWDOWN_PAUSE_MS = 24 * 60 * 60 * 1000;
 
 // Losing streak cooldowns
@@ -127,10 +128,16 @@ function App() {
   const persisted = persistedRef.current;
 
   const [prices, setPrices] = useState<Record<CoinId, number>>({
-    bitcoin: 0, ethereum: 0, solana: 0, binancecoin: 0,
+    bitcoin: 0,
+    ethereum: 0,
+    solana: 0,
+    binancecoin: 0,
   });
   const [history, setHistory] = useState<Record<CoinId, PricePoint[]>>({
-    bitcoin: [], ethereum: [], solana: [], binancecoin: [],
+    bitcoin: [],
+    ethereum: [],
+    solana: [],
+    binancecoin: [],
   });
   const [cash, setCash] = useState(persisted?.cash ?? STARTING_BALANCE);
   const [positions, setPositions] = useState<Record<CoinId, Position | null>>(
@@ -150,7 +157,9 @@ function App() {
     persisted?.dayAnchor ?? { key: dayKey(Date.now()), value: STARTING_BALANCE },
   );
   const [losingStreak, setLosingStreak] = useState(persisted?.losingStreak ?? 0);
-  const [cooldownUntil, setCooldownUntil] = useState<number | null>(persisted?.cooldownUntil ?? null);
+  const [cooldownUntil, setCooldownUntil] = useState<number | null>(
+    persisted?.cooldownUntil ?? null,
+  );
   const [haltReason, setHaltReason] = useState<HaltReason>(persisted?.haltReason ?? null);
   const [now, setNow] = useState(Date.now());
 
@@ -169,15 +178,35 @@ function App() {
 
   // Keep latest state in refs
   const stateRef = useRef({
-    prices, history, cash, positions, strategy,
-    peak, dayAnchor, losingStreak, cooldownUntil, haltReason,
-    trades, equity, botRunning,
+    prices,
+    history,
+    cash,
+    positions,
+    strategy,
+    peak,
+    dayAnchor,
+    losingStreak,
+    cooldownUntil,
+    haltReason,
+    trades,
+    equity,
+    botRunning,
   });
   useEffect(() => {
     stateRef.current = {
-      prices, history, cash, positions, strategy,
-      peak, dayAnchor, losingStreak, cooldownUntil, haltReason,
-      trades, equity, botRunning,
+      prices,
+      history,
+      cash,
+      positions,
+      strategy,
+      peak,
+      dayAnchor,
+      losingStreak,
+      cooldownUntil,
+      haltReason,
+      trades,
+      equity,
+      botRunning,
     };
   });
 
@@ -232,7 +261,12 @@ function App() {
   // --- Wake Lock: keep screen awake while bot runs
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   useEffect(() => {
-    const nav = typeof navigator !== "undefined" ? (navigator as Navigator & { wakeLock?: { request: (t: "screen") => Promise<WakeLockSentinel> } }) : null;
+    const nav =
+      typeof navigator !== "undefined"
+        ? (navigator as Navigator & {
+            wakeLock?: { request: (t: "screen") => Promise<WakeLockSentinel> };
+          })
+        : null;
     if (!nav?.wakeLock) return;
 
     let cancelled = false;
@@ -263,7 +297,11 @@ function App() {
       wakeLockRef.current = null;
       setWakeLockActive(false);
       if (s) {
-        try { await s.release(); } catch { /* noop */ }
+        try {
+          await s.release();
+        } catch {
+          /* noop */
+        }
       }
     };
 
@@ -283,7 +321,6 @@ function App() {
       release();
     };
   }, [botRunning]);
-
 
   // Fetch prices
   const fetchPrices = useCallback(async () => {
@@ -340,7 +377,12 @@ function App() {
         const trade: Trade = {
           id: crypto.randomUUID(),
           ts: Date.now(),
-          coin, action, price, amount, usd: spend, reason,
+          coin,
+          action,
+          price,
+          amount,
+          usd: spend,
+          reason,
         };
         setCash((c) => c - spend);
         setPositions((p) => ({ ...p, [coin]: { coin, amount, avgEntry: price } }));
@@ -355,9 +397,14 @@ function App() {
         const trade: Trade = {
           id: crypto.randomUUID(),
           ts: Date.now(),
-          coin, action, price,
-          amount: pos.amount, usd: proceeds, reason,
-          realizedPnl, realizedPct,
+          coin,
+          action,
+          price,
+          amount: pos.amount,
+          usd: proceeds,
+          reason,
+          realizedPnl,
+          realizedPct,
         };
         setCash((c) => c + proceeds);
         setPositions((p) => ({ ...p, [coin]: null }));
@@ -432,9 +479,8 @@ function App() {
   // Drawdown & daily-loss monitoring
   useEffect(() => {
     const ddPct = peak > 0 ? ((portfolioValue - peak) / peak) * 100 : 0;
-    const dayPct = dayAnchor.value > 0
-      ? ((portfolioValue - dayAnchor.value) / dayAnchor.value) * 100
-      : 0;
+    const dayPct =
+      dayAnchor.value > 0 ? ((portfolioValue - dayAnchor.value) / dayAnchor.value) * 100 : 0;
 
     if (ddPct <= MAX_DRAWDOWN_PCT && haltReason !== "drawdown" && haltReason !== "manual_streak") {
       setHaltReason("drawdown");
@@ -481,7 +527,8 @@ function App() {
         const ch = pctChangeSince(hist, 5 * 60 * 1000);
         if (ch == null) continue;
         if (!hasPos && ch > 2) executeTrade(c.id, "BUY", last, `Momentum +${ch.toFixed(2)}% / 5m`);
-        else if (hasPos && ch < -1.5) executeTrade(c.id, "SELL", last, `Momentum ${ch.toFixed(2)}% / 5m`);
+        else if (hasPos && ch < -1.5)
+          executeTrade(c.id, "SELL", last, `Momentum ${ch.toFixed(2)}% / 5m`);
       } else if (strat === "mean_reversion") {
         const avg = avgSince(hist, 60 * 60 * 1000);
         if (avg == null) continue;
@@ -493,7 +540,8 @@ function App() {
         const r = rsi(ps, 14);
         if (r == null) continue;
         if (!hasPos && r < 30) executeTrade(c.id, "BUY", last, `RSI ${r.toFixed(1)} oversold`);
-        else if (hasPos && r > 70) executeTrade(c.id, "SELL", last, `RSI ${r.toFixed(1)} overbought`);
+        else if (hasPos && r > 70)
+          executeTrade(c.id, "SELL", last, `RSI ${r.toFixed(1)} overbought`);
       }
     }
   }, [executeTrade, tradingAllowed]);
@@ -512,7 +560,8 @@ function App() {
 
   const drawdownPct = peak > 0 ? ((portfolioValue - peak) / peak) * 100 : 0;
   const maxDrawdownPct = useMemo(() => {
-    let pk = STARTING_BALANCE, mdd = 0;
+    let pk = STARTING_BALANCE,
+      mdd = 0;
     for (const p of equity) {
       if (p.value > pk) pk = p.value;
       const dd = ((p.value - pk) / pk) * 100;
@@ -521,13 +570,15 @@ function App() {
     return mdd;
   }, [equity]);
 
-  const dayPct = dayAnchor.value > 0
-    ? ((portfolioValue - dayAnchor.value) / dayAnchor.value) * 100
-    : 0;
+  const dayPct =
+    dayAnchor.value > 0 ? ((portfolioValue - dayAnchor.value) / dayAnchor.value) * 100 : 0;
 
-  const riskLevel: "green" | "yellow" | "red" =
-    haltReason ? "red"
-    : (losingStreak >= 1 || drawdownPct <= -10 || dayPct <= -7 || (cooldownUntil && now < cooldownUntil))
+  const riskLevel: "green" | "yellow" | "red" = haltReason
+    ? "red"
+    : losingStreak >= 1 ||
+        drawdownPct <= -10 ||
+        dayPct <= -7 ||
+        (cooldownUntil && now < cooldownUntil)
       ? "yellow"
       : "green";
 
@@ -536,17 +587,22 @@ function App() {
   const chartData = useMemo(
     () =>
       (history[selectedCoin] ?? []).slice(-30).map((p) => ({
-        time: new Date(p.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+        time: new Date(p.t).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        }),
         price: p.price,
       })),
     [history, selectedCoin],
   );
 
   const equityChart = useMemo(
-    () => equity.map((p) => ({
-      time: new Date(p.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      value: p.value,
-    })),
+    () =>
+      equity.map((p) => ({
+        time: new Date(p.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        value: p.value,
+      })),
     [equity],
   );
 
@@ -562,11 +618,14 @@ function App() {
     setCooldownUntil(null);
     setHaltReason(null);
     setSessionRestored(null);
-    try { window.localStorage.removeItem(STORAGE_KEY); } catch { /* noop */ }
+    try {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* noop */
+    }
   };
 
   const dismissRestored = () => setSessionRestored(null);
-
 
   const startBot = () => {
     // Manual start clears non-permanent halts; resets streak only on hard-stop restart
@@ -581,11 +640,15 @@ function App() {
   const coinMeta = (id: CoinId) => COINS.find((c) => c.id === id)!;
 
   const haltLabel =
-    haltReason === "manual_streak" ? `Hard-stopped after ${STREAK_HARD_STOP} losing trades`
-    : haltReason === "daily_loss"  ? `Daily loss limit hit (${dayPct.toFixed(2)}%)`
-    : haltReason === "drawdown"    ? `Drawdown ${drawdownPct.toFixed(2)}% — 24h pause`
-    : haltReason === "cooldown"    ? `Losing-streak cooldown active`
-    : null;
+    haltReason === "manual_streak"
+      ? `Hard-stopped after ${STREAK_HARD_STOP} losing trades`
+      : haltReason === "daily_loss"
+        ? `Daily loss limit hit (${dayPct.toFixed(2)}%)`
+        : haltReason === "drawdown"
+          ? `Drawdown ${drawdownPct.toFixed(2)}% — 24h pause`
+          : haltReason === "cooldown"
+            ? `Losing-streak cooldown active`
+            : null;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -598,12 +661,16 @@ function App() {
             </div>
             <div>
               <h1 className="text-sm font-semibold tracking-tight">Algo Paper Trader</h1>
-              <p className="text-[11px] text-muted-foreground">Virtual money · risk-managed · CoinGecko live data</p>
+              <p className="text-[11px] text-muted-foreground">
+                Virtual money · risk-managed · CoinGecko live data
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className={`size-2 rounded-full ${lastUpdate ? "bg-bull animate-pulse" : "bg-muted-foreground"}`} />
+              <span
+                className={`size-2 rounded-full ${lastUpdate ? "bg-bull animate-pulse" : "bg-muted-foreground"}`}
+              />
               {lastUpdate ? `Live · ${new Date(lastUpdate).toLocaleTimeString()}` : "Connecting…"}
             </div>
             <div
@@ -622,20 +689,27 @@ function App() {
               onChange={(e) => setStrategy(e.target.value as Strategy)}
               className="bg-input border border-border rounded-md px-2 py-1.5 text-xs tabular"
             >
-
               <option value="momentum">Momentum</option>
               <option value="mean_reversion">Mean Reversion</option>
               <option value="rsi">RSI</option>
             </select>
             <button
-              onClick={() => botRunning ? setBotRunning(false) : startBot()}
+              onClick={() => (botRunning ? setBotRunning(false) : startBot())}
               className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
                 botRunning
                   ? "bg-bear/15 text-bear hover:bg-bear/25"
                   : "bg-primary text-primary-foreground hover:bg-primary/90"
               }`}
             >
-              {botRunning ? <><Square className="size-3.5" /> Stop Bot</> : <><Play className="size-3.5" /> Start Bot</>}
+              {botRunning ? (
+                <>
+                  <Square className="size-3.5" /> Stop Bot
+                </>
+              ) : (
+                <>
+                  <Play className="size-3.5" /> Start Bot
+                </>
+              )}
             </button>
             <button
               onClick={resetSim}
@@ -652,7 +726,9 @@ function App() {
         <div className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-2.5 flex items-start gap-3">
           <Info className="size-4 text-amber-400 shrink-0 mt-0.5" />
           <div className="text-xs text-foreground/80">
-            <span className="font-medium text-amber-400">⚠️ Bot only runs while this tab is open in browser.</span>{" "}
+            <span className="font-medium text-amber-400">
+              ⚠️ Bot only runs while this tab is open in browser.
+            </span>{" "}
             For 24/7 trading, a server is needed. State auto-saves every 30s and restores on return.
           </div>
         </div>
@@ -685,7 +761,6 @@ function App() {
           </div>
         )}
 
-
         {/* Halt banner */}
         {haltLabel && (
           <div className="rounded-lg border border-bear/40 bg-bear/10 px-4 py-3 flex items-center gap-3">
@@ -694,10 +769,15 @@ function App() {
               <span className="font-medium text-bear">Bot paused.</span>{" "}
               <span className="text-foreground/80">{haltLabel}</span>
               {cooldownLeft > 0 && (
-                <span className="ml-2 text-muted-foreground">· resumes in <span className="tabular text-foreground">{fmtDuration(cooldownLeft)}</span></span>
+                <span className="ml-2 text-muted-foreground">
+                  · resumes in{" "}
+                  <span className="tabular text-foreground">{fmtDuration(cooldownLeft)}</span>
+                </span>
               )}
               {haltReason === "manual_streak" && (
-                <span className="ml-2 text-muted-foreground">Press <span className="text-foreground">Start Bot</span> to resume.</span>
+                <span className="ml-2 text-muted-foreground">
+                  Press <span className="text-foreground">Start Bot</span> to resume.
+                </span>
               )}
             </div>
           </div>
@@ -716,10 +796,20 @@ function App() {
             value={fmtPct(totalReturnPct)}
             sub={fmtUSD(pnl)}
             tone={totalReturnPct >= 0 ? "bull" : "bear"}
-            icon={totalReturnPct >= 0 ? <TrendingUp className="size-4" /> : <TrendingDown className="size-4" />}
+            icon={
+              totalReturnPct >= 0 ? (
+                <TrendingUp className="size-4" />
+              ) : (
+                <TrendingDown className="size-4" />
+              )
+            }
             big
           />
-          <MetricCard label="Cash (USDT)" value={fmtUSD(cash)} sub={`Invested ${fmtUSD(positionsValue)}`} />
+          <MetricCard
+            label="Cash (USDT)"
+            value={fmtUSD(cash)}
+            sub={`Invested ${fmtUSD(positionsValue)}`}
+          />
           <MetricCard
             label="Bot Status"
             value={botRunning && !haltReason ? "Running" : haltReason ? "Paused" : "Stopped"}
@@ -738,10 +828,13 @@ function App() {
             tone={losingStreak >= 2 ? "bear" : undefined}
             icon={<Flame className="size-4" />}
             sub={
-              losingStreak >= STREAK_HARD_STOP ? "Hard stop"
-              : losingStreak === 3 ? "1h cooldown"
-              : losingStreak === 2 ? "15m cooldown"
-              : "—"
+              losingStreak >= STREAK_HARD_STOP
+                ? "Hard stop"
+                : losingStreak === 3
+                  ? "1h cooldown"
+                  : losingStreak === 2
+                    ? "15m cooldown"
+                    : "—"
             }
           />
           <MetricCard
@@ -774,8 +867,13 @@ function App() {
                 <p className="text-xs text-muted-foreground">Last 30 ticks (30s interval)</p>
               </div>
               <div className="text-right">
-                <div className="tabular text-lg">{prices[selectedCoin] ? fmtUSD(prices[selectedCoin]) : "—"}</div>
-                <ChangeBadge value={pctChangeSince(history[selectedCoin] ?? [], 5 * 60 * 1000)} suffix="5m" />
+                <div className="tabular text-lg">
+                  {prices[selectedCoin] ? fmtUSD(prices[selectedCoin]) : "—"}
+                </div>
+                <ChangeBadge
+                  value={pctChangeSince(history[selectedCoin] ?? [], 5 * 60 * 1000)}
+                  suffix="5m"
+                />
               </div>
             </div>
             <div className="h-[280px] p-2">
@@ -786,15 +884,27 @@ function App() {
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chartData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
-                    <CartesianGrid stroke="var(--color-grid)" strokeDasharray="2 4" vertical={false} />
-                    <XAxis dataKey="time" tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} tickLine={false} axisLine={false} minTickGap={30} />
+                    <CartesianGrid
+                      stroke="var(--color-grid)"
+                      strokeDasharray="2 4"
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="time"
+                      tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
+                      tickLine={false}
+                      axisLine={false}
+                      minTickGap={30}
+                    />
                     <YAxis
                       domain={["auto", "auto"]}
                       tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
                       tickLine={false}
                       axisLine={false}
                       width={70}
-                      tickFormatter={(v: number) => `$${v.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                      tickFormatter={(v: number) =>
+                        `$${v.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                      }
                     />
                     <Tooltip
                       contentStyle={{
@@ -806,7 +916,14 @@ function App() {
                       labelStyle={{ color: "var(--color-muted-foreground)" }}
                       formatter={(v: number) => [fmtUSD(v), "Price"]}
                     />
-                    <Line type="monotone" dataKey="price" stroke="var(--color-primary)" strokeWidth={2} dot={false} isAnimationActive={false} />
+                    <Line
+                      type="monotone"
+                      dataKey="price"
+                      stroke="var(--color-primary)"
+                      strokeWidth={2}
+                      dot={false}
+                      isAnimationActive={false}
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               )}
@@ -852,7 +969,9 @@ function App() {
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <div>
               <h2 className="text-sm font-semibold">Portfolio Growth (Compounded)</h2>
-              <p className="text-xs text-muted-foreground">All profits auto-reinvested · position sized off live equity</p>
+              <p className="text-xs text-muted-foreground">
+                All profits auto-reinvested · position sized off live equity
+              </p>
             </div>
             <div className="text-right text-xs text-muted-foreground">
               Start <span className="text-foreground tabular">{fmtUSD(STARTING_BALANCE)}</span>
@@ -866,15 +985,27 @@ function App() {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={equityChart} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
-                  <CartesianGrid stroke="var(--color-grid)" strokeDasharray="2 4" vertical={false} />
-                  <XAxis dataKey="time" tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} tickLine={false} axisLine={false} minTickGap={40} />
+                  <CartesianGrid
+                    stroke="var(--color-grid)"
+                    strokeDasharray="2 4"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="time"
+                    tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
+                    tickLine={false}
+                    axisLine={false}
+                    minTickGap={40}
+                  />
                   <YAxis
                     domain={["auto", "auto"]}
                     tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
                     tickLine={false}
                     axisLine={false}
                     width={70}
-                    tickFormatter={(v: number) => `$${v.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                    tickFormatter={(v: number) =>
+                      `$${v.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                    }
                   />
                   <Tooltip
                     contentStyle={{
@@ -886,11 +1017,17 @@ function App() {
                     labelStyle={{ color: "var(--color-muted-foreground)" }}
                     formatter={(v: number) => [fmtUSD(v), "Equity"]}
                   />
-                  <ReferenceLine y={STARTING_BALANCE} stroke="var(--color-muted-foreground)" strokeDasharray="3 3" />
+                  <ReferenceLine
+                    y={STARTING_BALANCE}
+                    stroke="var(--color-muted-foreground)"
+                    strokeDasharray="3 3"
+                  />
                   <Line
                     type="monotone"
                     dataKey="value"
-                    stroke={portfolioValue >= STARTING_BALANCE ? "var(--color-bull)" : "var(--color-bear)"}
+                    stroke={
+                      portfolioValue >= STARTING_BALANCE ? "var(--color-bull)" : "var(--color-bear)"
+                    }
                     strokeWidth={2}
                     dot={false}
                     isAnimationActive={false}
@@ -931,11 +1068,21 @@ function App() {
                   const uplPct = (upl / cost) * 100;
                   return (
                     <tr key={c.id} className="border-b border-border last:border-0">
-                      <Td><span className="font-medium">{c.symbol}</span></Td>
-                      <Td right mono>{pos.amount.toFixed(6)}</Td>
-                      <Td right mono>{fmtUSD(pos.avgEntry)}</Td>
-                      <Td right mono>{fmtUSD(mark)}</Td>
-                      <Td right mono>{fmtUSD(value)}</Td>
+                      <Td>
+                        <span className="font-medium">{c.symbol}</span>
+                      </Td>
+                      <Td right mono>
+                        {pos.amount.toFixed(6)}
+                      </Td>
+                      <Td right mono>
+                        {fmtUSD(pos.avgEntry)}
+                      </Td>
+                      <Td right mono>
+                        {fmtUSD(mark)}
+                      </Td>
+                      <Td right mono>
+                        {fmtUSD(value)}
+                      </Td>
                       <Td right>
                         <span className={`tabular ${upl >= 0 ? "text-bull" : "text-bear"}`}>
                           {fmtUSD(upl)} ({fmtPct(uplPct)})
@@ -947,7 +1094,10 @@ function App() {
                 {COINS.every((c) => !positions[c.id]) && (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
-                      No open positions. {botRunning && !haltReason ? "Bot is scanning the market…" : "Start the bot to begin trading."}
+                      No open positions.{" "}
+                      {botRunning && !haltReason
+                        ? "Bot is scanning the market…"
+                        : "Start the bot to begin trading."}
                     </td>
                   </tr>
                 )}
@@ -992,12 +1142,20 @@ function App() {
                       </span>
                     </Td>
                     <Td>{coinMeta(t.coin).symbol}</Td>
-                    <Td right mono>{fmtUSD(t.price)}</Td>
-                    <Td right mono>{t.amount.toFixed(6)}</Td>
-                    <Td right mono>{fmtUSD(t.usd)}</Td>
+                    <Td right mono>
+                      {fmtUSD(t.price)}
+                    </Td>
+                    <Td right mono>
+                      {t.amount.toFixed(6)}
+                    </Td>
+                    <Td right mono>
+                      {fmtUSD(t.usd)}
+                    </Td>
                     <Td right>
                       {t.realizedPnl != null ? (
-                        <span className={`tabular ${t.realizedPnl >= 0 ? "text-bull" : "text-bear"}`}>
+                        <span
+                          className={`tabular ${t.realizedPnl >= 0 ? "text-bull" : "text-bear"}`}
+                        >
                           {fmtUSD(t.realizedPnl)} ({fmtPct(t.realizedPct ?? 0)})
                         </span>
                       ) : (
@@ -1020,7 +1178,8 @@ function App() {
         </section>
 
         <footer className="text-center text-[11px] text-muted-foreground pt-2 pb-6">
-          Paper trading simulator · Virtual money only · No real funds involved · Prices via CoinGecko
+          Paper trading simulator · Virtual money only · No real funds involved · Prices via
+          CoinGecko
         </footer>
       </main>
     </div>
@@ -1028,10 +1187,19 @@ function App() {
 }
 
 function MetricCard({
-  label, value, sub, tone, icon, big,
+  label,
+  value,
+  sub,
+  tone,
+  icon,
+  big,
 }: {
-  label: string; value: string; sub?: string;
-  tone?: "bull" | "bear"; icon?: React.ReactNode; big?: boolean;
+  label: string;
+  value: string;
+  sub?: string;
+  tone?: "bull" | "bear";
+  icon?: React.ReactNode;
+  big?: boolean;
 }) {
   const toneClass = tone === "bull" ? "text-bull" : tone === "bear" ? "text-bear" : "";
   return (
@@ -1043,16 +1211,46 @@ function MetricCard({
       <div className={`mt-2 tabular ${big ? "text-3xl" : "text-xl"} font-semibold ${toneClass}`}>
         {value}
       </div>
-      {sub && <div className={`mt-0.5 text-xs tabular ${toneClass || "text-muted-foreground"}`}>{sub}</div>}
+      {sub && (
+        <div className={`mt-0.5 text-xs tabular ${toneClass || "text-muted-foreground"}`}>
+          {sub}
+        </div>
+      )}
     </div>
   );
 }
 
-function RiskCard({ level, haltReason }: { level: "green" | "yellow" | "red"; haltReason: HaltReason }) {
+function RiskCard({
+  level,
+  haltReason,
+}: {
+  level: "green" | "yellow" | "red";
+  haltReason: HaltReason;
+}) {
   const cfg =
-    level === "green" ? { label: "GREEN", text: "text-bull", bg: "bg-bull/10", border: "border-bull/40", note: "All systems normal" }
-    : level === "yellow" ? { label: "YELLOW", text: "text-amber-400", bg: "bg-amber-400/10", border: "border-amber-400/40", note: "Elevated risk — caution" }
-    : { label: "RED", text: "text-bear", bg: "bg-bear/10", border: "border-bear/40", note: haltReason ? "Bot halted" : "Critical risk" };
+    level === "green"
+      ? {
+          label: "GREEN",
+          text: "text-bull",
+          bg: "bg-bull/10",
+          border: "border-bull/40",
+          note: "All systems normal",
+        }
+      : level === "yellow"
+        ? {
+            label: "YELLOW",
+            text: "text-amber-400",
+            bg: "bg-amber-400/10",
+            border: "border-amber-400/40",
+            note: "Elevated risk — caution",
+          }
+        : {
+            label: "RED",
+            text: "text-bear",
+            bg: "bg-bear/10",
+            border: "border-bear/40",
+            note: haltReason ? "Bot halted" : "Critical risk",
+          };
 
   return (
     <div className={`rounded-lg border ${cfg.border} ${cfg.bg} p-4`}>
@@ -1066,12 +1264,23 @@ function RiskCard({ level, haltReason }: { level: "green" | "yellow" | "red"; ha
   );
 }
 
-function ChangeBadge({ value, suffix, compact }: { value: number | null; suffix?: string; compact?: boolean }) {
+function ChangeBadge({
+  value,
+  suffix,
+  compact,
+}: {
+  value: number | null;
+  suffix?: string;
+  compact?: boolean;
+}) {
   if (value == null) return <span className="text-[11px] text-muted-foreground">—</span>;
   const up = value >= 0;
   return (
-    <span className={`tabular text-[11px] ${up ? "text-bull" : "text-bear"} ${compact ? "" : "inline-flex items-center gap-1"}`}>
-      {fmtPct(value)} {suffix && !compact ? <span className="text-muted-foreground">/ {suffix}</span> : null}
+    <span
+      className={`tabular text-[11px] ${up ? "text-bull" : "text-bear"} ${compact ? "" : "inline-flex items-center gap-1"}`}
+    >
+      {fmtPct(value)}{" "}
+      {suffix && !compact ? <span className="text-muted-foreground">/ {suffix}</span> : null}
     </span>
   );
 }
@@ -1083,9 +1292,15 @@ function Th({ children, right }: { children: React.ReactNode; right?: boolean })
 }
 
 function Td({
-  children, right, mono, className = "",
+  children,
+  right,
+  mono,
+  className = "",
 }: {
-  children: React.ReactNode; right?: boolean; mono?: boolean; className?: string;
+  children: React.ReactNode;
+  right?: boolean;
+  mono?: boolean;
+  className?: string;
 }) {
   return (
     <td className={`px-4 py-2 ${right ? "text-right" : ""} ${mono ? "tabular" : ""} ${className}`}>

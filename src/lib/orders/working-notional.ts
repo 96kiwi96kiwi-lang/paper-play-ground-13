@@ -12,8 +12,7 @@ export type WorkingNotionalOrder = {
 };
 
 function remainingAmount(order: WorkingNotionalOrder): number {
-  const remaining =
-    order.remaining ?? Math.max(0, (order.amount ?? 0) - (order.filled ?? 0));
+  const remaining = order.remaining ?? Math.max(0, (order.amount ?? 0) - (order.filled ?? 0));
   return remaining > 0 && Number.isFinite(remaining) ? remaining : 0;
 }
 

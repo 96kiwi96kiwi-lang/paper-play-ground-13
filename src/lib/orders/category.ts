@@ -16,7 +16,10 @@ function present(value: unknown): boolean {
 }
 
 function isSpotLabel(value: unknown): boolean {
-  const raw = String(value).trim().toUpperCase().replace(/[\s-]+/g, "_");
+  const raw = String(value)
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
   return raw === "SPOT" || raw === "CASH";
 }
 

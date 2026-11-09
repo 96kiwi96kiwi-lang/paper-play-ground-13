@@ -17,8 +17,7 @@ export function workingSellReservedAmount(
     if (order.side !== "sell") continue;
     const status = String(order.status ?? "");
     if (status !== "open" && status !== "partially_filled" && status !== "pending") continue;
-    const remaining =
-      order.remaining ?? Math.max(0, (order.amount ?? 0) - (order.filled ?? 0));
+    const remaining = order.remaining ?? Math.max(0, (order.amount ?? 0) - (order.filled ?? 0));
     if (remaining > 0) reserved += remaining;
   }
   return reserved;

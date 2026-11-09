@@ -31,7 +31,9 @@ test("live order guard remains closed without operator token", () => {
 });
 
 test("paper remains available without confirmation", async () => {
-  await expect(setRuntimeMode("paper", { confirmed: false })).resolves.toMatchObject({ mode: "paper" });
+  await expect(setRuntimeMode("paper", { confirmed: false })).resolves.toMatchObject({
+    mode: "paper",
+  });
 });
 
 test("matching operator token plus confirmation reaches the key audit", async () => {

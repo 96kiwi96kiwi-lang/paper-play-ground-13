@@ -5,13 +5,7 @@
  */
 
 import * as kucoin from "./kucoin";
-import type {
-  ExchangeAdapter,
-  Side,
-  UnifiedBalance,
-  UnifiedOrder,
-  UnifiedTicker,
-} from "./types";
+import type { ExchangeAdapter, Side, UnifiedBalance, UnifiedOrder, UnifiedTicker } from "./types";
 import { getRuntimeMode } from "@/lib/server/trading-mode";
 
 function mapOrder(raw: kucoin.OrderResult, clientOrderId?: string): UnifiedOrder {
