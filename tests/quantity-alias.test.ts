@@ -17,7 +17,5 @@ test("present quantity aliases are refused and do not halt", () => {
   expect(quantityAliasReason(undefined, undefined, "0.5")).toBe(
     "Base quantity alias is not supported; the adapter reads amount",
   );
-  expect(quantityAliasReason(0)).toBe(
-    "Quantity alias is not supported; the adapter reads amount",
-  );
+  expect(quantityAliasReason(0)).toBe("Quantity alias is not supported; the adapter reads amount");
 });

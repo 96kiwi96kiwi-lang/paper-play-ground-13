@@ -17,11 +17,15 @@ describe("orderProvenanceReason", () => {
   });
 
   it("refuses a present orderProvenance alias", () => {
-    expect(orderProvenanceReason(undefined, "api")).toMatch(/Order provenance alias is not supported/);
+    expect(orderProvenanceReason(undefined, "api")).toMatch(
+      /Order provenance alias is not supported/,
+    );
     expect(orderProvenanceReason(undefined, 0)).toMatch(/Order provenance alias is not supported/);
   });
 
   it("refuses a present clientProvenance alias", () => {
-    expect(orderProvenanceReason(undefined, undefined, "mobile")).toMatch(/Client provenance alias is not supported/);
+    expect(orderProvenanceReason(undefined, undefined, "mobile")).toMatch(
+      /Client provenance alias is not supported/,
+    );
   });
 });

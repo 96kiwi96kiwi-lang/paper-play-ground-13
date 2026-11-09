@@ -23,9 +23,9 @@ export const TRADING_CONFIG = {
 
   // Risk limits (shared between paper & live)
   risk: {
-    tradeSizePct: 0.15,          // 15 % of portfolio per trade
-    maxPositionPct: 0.20,        // max 20 % in one coin
-    stopLossPct: -4,             // tighter than original
+    tradeSizePct: 0.15, // 15 % of portfolio per trade
+    maxPositionPct: 0.2, // max 20 % in one coin
+    stopLossPct: -4, // tighter than original
     takeProfitPct: 6,
     dailyLossLimitPct: -10,
     maxDrawdownPct: -18,

@@ -14,11 +14,7 @@ function present(value: unknown): boolean {
   return true;
 }
 
-export function orderIdReason(
-  id: unknown,
-  orderId?: unknown,
-  clientId?: unknown,
-): string | null {
+export function orderIdReason(id: unknown, orderId?: unknown, clientId?: unknown): string | null {
   if (present(id)) {
     return "Id is not supported; the adapter would place a plain spot order";
   }

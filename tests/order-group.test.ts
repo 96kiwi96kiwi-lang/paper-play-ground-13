@@ -22,6 +22,8 @@ describe("orderGroupReason", () => {
   });
 
   it("refuses a present clientGroup alias", () => {
-    expect(orderGroupReason(undefined, undefined, "desk")).toMatch(/Client group alias is not supported/);
+    expect(orderGroupReason(undefined, undefined, "desk")).toMatch(
+      /Client group alias is not supported/,
+    );
   });
 });

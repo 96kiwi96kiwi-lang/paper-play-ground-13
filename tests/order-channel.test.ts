@@ -22,6 +22,8 @@ describe("orderChannelReason", () => {
   });
 
   it("refuses a present origin alias", () => {
-    expect(orderChannelReason(undefined, undefined, "mobile")).toMatch(/Origin alias is not supported/);
+    expect(orderChannelReason(undefined, undefined, "mobile")).toMatch(
+      /Origin alias is not supported/,
+    );
   });
 });

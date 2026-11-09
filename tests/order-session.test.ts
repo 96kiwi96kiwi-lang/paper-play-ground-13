@@ -22,6 +22,8 @@ describe("orderSessionReason", () => {
   });
 
   it("refuses a present clientSession alias", () => {
-    expect(orderSessionReason(undefined, undefined, "sess-1")).toMatch(/Client session alias is not supported/);
+    expect(orderSessionReason(undefined, undefined, "sess-1")).toMatch(
+      /Client session alias is not supported/,
+    );
   });
 });

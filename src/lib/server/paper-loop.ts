@@ -116,9 +116,10 @@ export function runPaperHousekeepingTick(now = Date.now()): PaperLoopStatus {
   recordBotHeartbeat({ at: now, action: "hold", symbol: "loop" });
   ticks += 1;
   lastTickAt = now;
-  lastReason = sweep.canceled > 0
-    ? `housekeeping canceled ${sweep.canceled} stale working order(s)`
-    : "housekeeping";
+  lastReason =
+    sweep.canceled > 0
+      ? `housekeeping canceled ${sweep.canceled} stale working order(s)`
+      : "housekeeping";
   return describePaperLoop(now);
 }
 
@@ -168,7 +169,12 @@ export async function runPaperMarketTick(now = Date.now()): Promise<PaperLoopSta
       );
       decisions += 1;
       if (result.submit?.ok) orders += 1;
-      recordBotHeartbeat({ at: now, action: result.tick.action, symbol, hardStopped: result.tick.hardStopped });
+      recordBotHeartbeat({
+        at: now,
+        action: result.tick.action,
+        symbol,
+        hardStopped: result.tick.hardStopped,
+      });
       console.info(
         `[paper-loop] tick symbol=${symbol} price=${ticker.last} action=${result.tick.action}` +
           ` execute=${result.tick.shouldExecute} submit=${result.submit?.ok ?? false}` +

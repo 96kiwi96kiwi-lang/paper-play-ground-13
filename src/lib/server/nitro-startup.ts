@@ -6,5 +6,7 @@ import { stopPaperServerLoop } from "./paper-loop";
 // the first HTTP request, including when this service has no public domain.
 export default definePlugin((app) => {
   registerHardStopMonitoring();
-  app.hooks.hook("close", () => { stopPaperServerLoop("server shutdown"); });
+  app.hooks.hook("close", () => {
+    stopPaperServerLoop("server shutdown");
+  });
 });

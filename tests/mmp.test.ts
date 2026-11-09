@@ -9,9 +9,7 @@ test("omitted, blank, and false pass", () => {
 });
 
 test("a present market-maker protection is refused and does not halt", () => {
-  expect(mmpReason(true)).toBe(
-    "MMP is not supported; the adapter would place a normal spot order",
-  );
+  expect(mmpReason(true)).toBe("MMP is not supported; the adapter would place a normal spot order");
   expect(mmpReason("enabled")).toBe(
     "MMP is not supported; the adapter would place a normal spot order",
   );

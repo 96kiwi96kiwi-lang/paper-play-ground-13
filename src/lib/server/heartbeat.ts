@@ -18,7 +18,9 @@ export type BotHeartbeat = {
 
 let lastAlertAt = 0;
 
-export function recordBotHeartbeat(partial: Omit<BotHeartbeat, "at"> & { at?: number }): BotHeartbeat {
+export function recordBotHeartbeat(
+  partial: Omit<BotHeartbeat, "at"> & { at?: number },
+): BotHeartbeat {
   const beat: BotHeartbeat = {
     at: partial.at ?? Date.now(),
     symbol: partial.symbol,

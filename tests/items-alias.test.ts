@@ -8,16 +8,12 @@ test("omitted, null, and blank items aliases pass", () => {
 });
 
 test("present items aliases are refused and do not halt", () => {
-  expect(itemsAliasReason(1.5)).toBe(
-    "Items alias is not supported; the adapter reads amount",
-  );
+  expect(itemsAliasReason(1.5)).toBe("Items alias is not supported; the adapter reads amount");
   expect(itemsAliasReason(undefined, "0.1")).toBe(
     "Order items alias is not supported; the adapter reads amount",
   );
   expect(itemsAliasReason(undefined, undefined, 100)).toBe(
     "Base items alias is not supported; the adapter reads amount",
   );
-  expect(itemsAliasReason(0)).toBe(
-    "Items alias is not supported; the adapter reads amount",
-  );
+  expect(itemsAliasReason(0)).toBe("Items alias is not supported; the adapter reads amount");
 });

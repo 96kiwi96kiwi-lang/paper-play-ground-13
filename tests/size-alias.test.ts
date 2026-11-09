@@ -8,16 +8,12 @@ test("omitted, null, and blank size aliases pass", () => {
 });
 
 test("present size aliases are refused and do not halt", () => {
-  expect(sizeAliasReason(1.5)).toBe(
-    "Qty alias is not supported; the adapter reads amount",
-  );
+  expect(sizeAliasReason(1.5)).toBe("Qty alias is not supported; the adapter reads amount");
   expect(sizeAliasReason(undefined, "0.1")).toBe(
     "Size alias is not supported; the adapter reads amount",
   );
   expect(sizeAliasReason(undefined, undefined, 100)).toBe(
     "Quantity alias is not supported; the adapter reads amount",
   );
-  expect(sizeAliasReason(0)).toBe(
-    "Qty alias is not supported; the adapter reads amount",
-  );
+  expect(sizeAliasReason(0)).toBe("Qty alias is not supported; the adapter reads amount");
 });

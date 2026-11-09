@@ -39,7 +39,11 @@ export async function fetchCoinGeckoMarketSnapshot(now = Date.now()): Promise<Ma
     if (!(price > 0) || !Number.isFinite(price)) {
       throw new Error(`CoinGecko missing valid ${coin.id} USD quote`);
     }
-    if (!(timestamp > 0) || timestamp > now || now - timestamp > TRADING_CONFIG.orders.maxPriceAgeMs) {
+    if (
+      !(timestamp > 0) ||
+      timestamp > now ||
+      now - timestamp > TRADING_CONFIG.orders.maxPriceAgeMs
+    ) {
       throw new Error(`CoinGecko stale ${coin.id} quote`);
     }
     const symbol = SYMBOL_BY_ID[coin.id];

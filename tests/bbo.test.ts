@@ -9,9 +9,7 @@ test("omitted, blank, and false pass", () => {
 });
 
 test("a present book price is refused and does not halt", () => {
-  expect(bboReason(true)).toBe(
-    "BBO is not supported; the adapter would place a normal spot order",
-  );
+  expect(bboReason(true)).toBe("BBO is not supported; the adapter would place a normal spot order");
   expect(bboReason("queue")).toBe(
     "BBO is not supported; the adapter would place a normal spot order",
   );

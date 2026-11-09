@@ -157,7 +157,6 @@ test("market runtime restores paper inventory after a process restart", async ()
   expect(loadSeenOrders()).toHaveLength(1);
 });
 
-
 test("standby startup resumes after the previous deployment lease expires", async () => {
   process.env.PAPER_SERVER_LOOP = "1";
   expect(acquireWorkerLease("previous-deployment").ok).toBe(true);

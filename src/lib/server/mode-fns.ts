@@ -11,9 +11,11 @@ import { assertOperatorToken } from "./operator-auth";
 
 registerHardStopMonitoring();
 
-export const fetchModeStatus = createServerFn({ method: "GET" }).handler(async (): Promise<ModeStatus> => {
-  return getModeStatus();
-});
+export const fetchModeStatus = createServerFn({ method: "GET" }).handler(
+  async (): Promise<ModeStatus> => {
+    return getModeStatus();
+  },
+);
 
 export const fetchExchangeHealth = createServerFn({ method: "GET" }).handler(async () => {
   const health = await getHealth();

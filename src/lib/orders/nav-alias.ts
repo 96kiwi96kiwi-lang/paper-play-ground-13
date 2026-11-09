@@ -12,11 +12,7 @@ function present(value: unknown): boolean {
   return true;
 }
 
-export function navAliasReason(
-  nav: unknown,
-  orderNav?: unknown,
-  baseNav?: unknown,
-): string | null {
+export function navAliasReason(nav: unknown, orderNav?: unknown, baseNav?: unknown): string | null {
   if (present(nav)) {
     return "Nav alias is not supported; the adapter reads amount";
   }
