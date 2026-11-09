@@ -17,7 +17,7 @@ See `SAFETY.md` for the full checklist.
 
 ## Current status
 
-**Hour (odd):** Wired order-strategy metadata floor into OrderManager. A present `strategy`, `strategyId`, or `clientStrategy` is refused before the paper or live path so a strategy intent cannot be silently ignored. Matches the existing order-algo, grid-id, order-origin, order-source, order-reference, order-related, order-list, order-link, order-group, order-chain, order-payload, order-child, order-root, order-sibling, and order-parent floors. Default remains paper. No secrets. No live without server-side owner credentials.
+**Hour (odd):** Wired order-tactic metadata floor into OrderManager. A present `tactic`, `tacticId`, or `clientTactic` is refused before the paper or live path so a tactic intent cannot be silently ignored. Matches the existing order-strategy, order-algo, grid-id, order-origin, order-source, order-reference, order-related, order-list, order-link, order-group, order-chain, order-payload, order-child, order-root, order-sibling, and order-parent floors. Default remains paper. No secrets. No live without server-side owner credentials.
 
 ## Run
 
