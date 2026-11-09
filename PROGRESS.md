@@ -1,5 +1,66 @@
 # Development progress
 
+## Datum a čas
+
+2026-11-09 21:58 UTC. Last substantive update of this branch: persistent OrderManager merged onto current main and covered by integration tests.
+
+## Aktuální stav
+
+Paper mode is the default. Live trading is disabled. No exchange credentials are in the tree.
+
+Verified at `e88d1bf7c4b92d01cfe99c657a4841ebac2e0d6b`, on top of merge `753e0404579f0ccdbecad486ebcafa9423f9cbee` (main `6059030d599fee0f77a74ddd40f8391515655597`). The persistent OrderManager restores cash, positions, seen orders, and the last submit time after a restart. A repeated client order id is refused before the adapter. A repeated exchange order id updates the same book row and does not apply the fill twice. A buy that would leave cash under `minCashReserveUsd` is refused. Cancel goes through the adapter and does not change inventory, including when one cancel throws. An adapter exception or an unsupported order type fails closed and does not record a seen order or set a halt. Main's contract floors through the order-memo floor stay on that runtime.
+
+## Dokončené změny
+
+- `753e0404579f0ccdbecad486ebcafa9423f9cbee` — merge commit. Parents `32bba44538242d96bf8a653e6940897273a4bba2` and `6059030d599fee0f77a74ddd40f8391515655597`. Kept the persistent OrderManager and took main's contract floors, helper updates, and formatting.
+- `e88d1bf7c4b92d01cfe99c657a4841ebac2e0d6b` — fill delta for an exchange id already on the book; `tests/order-manager-persistence.integration.test.ts` (5 tests); runtime regression extended through text, kind, leg, note, comment, memo, and position-index aliases.
+
+## Rozpracované funkce
+
+- PR #13 (this branch) is the persistent OrderManager. Ready for review on the VM record below. Not merged.
+- Draft PR #14 (`a84c155b2b9f733508c7c979e7b2fd146b3ee925`, base was the old PR #13 head) still contains the fail-closed public quote fallback. Not superseded. Not retargeted in this run.
+- Draft PR #11 restores an older OrderManager. Every helper import on that runtime is already in this branch, and this branch has the later floors. The OrderManager work is superseded by main plus PR #13. Left open.
+- PR #12 refuses `batch`, `batchId`, and `batchOrders` in `src/lib/orders/batch.ts`. This tree refuses `batch`, `orderBatch`, and `clientBatch` in `order-batch.ts` and does not implement `batchId` or `batchOrders`. Not fully superseded. Left open.
+- Draft PR #8 is the earlier public quote fallback (CoinGecko, then a complete Bybit snapshot). That fallback is not on main or on this branch. Not superseded. Left open.
+- PR #17 (npm audit) and PR #22 (format unit tests), and issue #19, are unrelated. Not changed.
+
+## Testování
+
+Tested SHA: `e88d1bf7c4b92d01cfe99c657a4841ebac2e0d6b`.
+
+Node v22.23.4 (`.nvmrc` asks for 22.14.0). Working tree of that commit. `npm ci` used `package-lock.json`. No exchange credentials and no network orders.
+
+| Command | Exit | Result |
+| --- | ---: | --- |
+| `npm ci` | 0 | PASS — 524 packages added, 525 audited |
+| `npm test` | 0 | PASS — 626 passed, 0 failed (233 files) |
+| `npm run typecheck` | 0 | PASS |
+| `npm run lint` | 0 | PASS — 0 errors, 6 warnings |
+| `npm run build` | 0 | PASS |
+| `npm run test:smoke` | 0 | PASS — production server renders home with no exchange credentials |
+| `npm run test:worker` | 0 | PASS — worker starts, evaluates quotes and persists history without any browser request |
+
+The 6 warnings are pre-existing `react-refresh/only-export-components` in `src/components/ui/badge.tsx`, `button.tsx`, `form.tsx`, `navigation-menu.tsx`, `sidebar.tsx`, and `toggle.tsx`.
+
+`tests/order-manager-persistence.integration.test.ts`: 5 passed (restart, duplicate exchange id, insufficient capital, safe cancel, adapter error and unsupported type).
+
+NOT RUN: there is no `format:check` script. `npm run dev`, `build:dev`, `start`, and `preview` are servers, not checks.
+
+GitHub Actions: BLOCKED by the account billing lock. A workflow that fails with no runner steps is not a PASS or a FAIL of this suite.
+
+`npm run build` regenerated `src/routeTree.gen.ts`. That generated diff was discarded and is not in the commit.
+
+This status commit changes only this file. The same commands are repeated on the status commit and reported on PR #13.
+
+## Blokace
+
+GitHub Actions cannot start a runner because of the account billing lock. Live trading stays off until the owner approves it after a separate security review. Whether to add PR #12's `batchId` and `batchOrders` aliases, or to retarget PR #14 onto this head, is an owner decision. This run did not close PRs, merge, or push to main.
+
+## Další priorita
+
+Review and merge PR #13. After that, put the fail-closed public quote fallback from PR #14 onto this head without a force-push, and decide what to do with the overlapping `batchId` / `batchOrders` floor in PR #12.
+
+
 ## Historical record from main (PR #18)
 
 ## 2026-11-09 21:58 CET
