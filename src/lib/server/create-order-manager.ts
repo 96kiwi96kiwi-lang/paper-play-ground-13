@@ -54,7 +54,7 @@ export function createServerOrderManager(adapter: ExchangeAdapter): OrderManager
     if (!result.ok) {
       persistLastReject({
         at: Date.now(),
-        reason: result.reason,
+        reason: result.reason ?? "Order rejected",
         symbol: intent.symbol,
         side: intent.side,
       });
