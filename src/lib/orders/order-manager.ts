@@ -1,7 +1,7 @@
 /**
  * OrderManager – single gate for paper and live submits.
  * Applies hard-stops, notional/reserve/trade-cap floors, and metadata floors
- * (child/root/sibling/parent/payload/chain/group/link/list/related/reference/source/origin/grid/algo/strategy/tactic/template/text/kind/leg/note/position-index
+ * (child/root/sibling/parent/payload/chain/group/link/list/related/reference/source/origin/grid/algo/strategy/tactic/template/text/kind/leg/note/comment/position-index
  * and amount aliases) before any adapter call.
  * Seen orders are persisted UnifiedOrder records. Cancel of stale or working orders
  * goes through the adapter and does not flatten positions.
@@ -33,6 +33,7 @@ import { orderTextReason } from "./order-text";
 import { orderKindReason } from "./order-kind";
 import { orderLegReason } from "./order-leg";
 import { orderNoteReason } from "./order-note";
+import { orderCommentReason } from "./order-comment";
 import { positionIdxReason } from "./position-idx";
 import { positionsAliasReason } from "./positions-alias";
 import { portfolioAliasReason } from "./portfolio-alias";
@@ -121,6 +122,9 @@ export interface OrderIntent {
   note?: unknown;
   orderNote?: unknown;
   clientNote?: unknown;
+  comment?: unknown;
+  orderComment?: unknown;
+  clientComment?: unknown;
   positionIdx?: unknown;
   posIdx?: unknown;
   hedgeIdx?: unknown;
@@ -258,7 +262,7 @@ export class OrderManager {
       return this.refuse(`Hard-stop active: ${riskState.haltReason}`);
     }
 
-    // Metadata floors – refuse unsupported parent/child/root/sibling/payload/chain/group/link/list/related/reference/source/origin/grid/algo/strategy/tactic/template/text/kind/leg/note/position-index and amount-alias intent
+    // Metadata floors – refuse unsupported parent/child/root/sibling/payload/chain/group/link/list/related/reference/source/origin/grid/algo/strategy/tactic/template/text/kind/leg/note/comment/position-index and amount-alias intent
     const child = orderChildReason(intent.childId, intent.orderChild, intent.clientChild);
     if (child) return this.refuse(child);
     const root = orderRootReason(intent.rootId, intent.orderRoot, intent.clientRoot);
@@ -314,6 +318,8 @@ export class OrderManager {
     if (leg) return this.refuse(leg);
     const note = orderNoteReason(intent.note, intent.orderNote, intent.clientNote);
     if (note) return this.refuse(note);
+    const comment = orderCommentReason(intent.comment, intent.orderComment, intent.clientComment);
+    if (comment) return this.refuse(comment);
     const positionIndex = positionIdxReason(intent.positionIdx, intent.posIdx, intent.hedgeIdx);
     if (positionIndex) return this.refuse(positionIndex);
     const positionsAlias = positionsAliasReason(
