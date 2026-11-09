@@ -10,7 +10,7 @@ import { createServerOrderManager } from "./create-order-manager";
 import { recordBotHeartbeat } from "./heartbeat";
 import {
   appendMarketHistory,
-  fetchCoinGeckoMarketSnapshot,
+  fetchPublicMarketSnapshot,
   type MarketQuoteSource,
 } from "./market-quotes";
 import {
@@ -47,7 +47,7 @@ let lastReason = "idle";
 let lastStaleCanceled = 0;
 let lastDecisions = 0;
 let lastOrders = 0;
-let quoteSource: MarketQuoteSource = fetchCoinGeckoMarketSnapshot;
+let quoteSource: MarketQuoteSource = fetchPublicMarketSnapshot;
 let manager: OrderManager | null = null;
 let paper: PaperExchange | null = null;
 let history = loadMarketHistory();
@@ -245,7 +245,7 @@ export function stopPaperServerLoop(reason = "stopped"): PaperLoopStatus {
 }
 
 export function setPaperQuoteSourceForTests(source: MarketQuoteSource | null): void {
-  quoteSource = source ?? fetchCoinGeckoMarketSnapshot;
+  quoteSource = source ?? fetchPublicMarketSnapshot;
 }
 
 export function resetPaperMarketRuntimeForTests(): void {

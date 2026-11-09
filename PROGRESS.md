@@ -1,5 +1,13 @@
 # Development progress
 
+## 2026-11-09 01:10 CET
+
+- **Verified state:** `main` remained `e2358c8f1342eb846bb2640141e52079a2d3e7b9`; PR #13 remained synchronized at `02ef3b0788d1263bbe9dc79c7cdfdd0dc64ef697`. PR #11, PR #8, and PR #12 remained open and stale; there were no open issues or actionable TODO/FIXME markers. CI #634 still failed before all steps with no runner log because of the GitHub billing lock.
+- **Completed change:** created a clean dependent branch from PR #13 and restored the fail-closed public quote fallback without modifying PR #8. CoinGecko remains primary; fallback accepts only one complete, fresh, positive, non-crossed Bybit BTC/ETH/SOL/BNB snapshot. Providers are never mixed, and the paper loop uses the composite public source by default.
+- **Verification:** TypeScript passed; targeted quote/paper-loop/OrderManager/lease tests passed (26/26); full Vitest passed (616/616 across 231 files); production Vite/SSR/Nitro build, built-server smoke, and worker smoke passed. Tests stub all quote requests and use no exchange credentials or network-backed trading.
+- **Open problem:** GitHub Actions billing still prevents a real runner from executing. This dependent branch must not be merged, retargeted to `main`, or deployed before PR #13 and this exact final SHA receive successful CI.
+- **Next priority:** publish the verified dependent branch and draft PR based on `fix/restore-order-manager-main-20261108`, inspect its exact-head CI, and keep PR #8 unchanged for historical comparison.
+
 ## 2026-11-09 01:00 CET
 
 - **Verified state:** `main` advanced to `e2358c8f1342eb846bb2640141e52079a2d3e7b9` with reference/source/origin metadata-floor wiring. PR #13 remained open at `4e68e8fa8f1e2aafec438f5cd655fe0694d1d39a`; PR #11 and PR #8 remained open and stale. There were no open issues or actionable TODO/FIXME markers.

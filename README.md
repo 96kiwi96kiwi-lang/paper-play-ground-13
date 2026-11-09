@@ -17,7 +17,7 @@ See `SAFETY.md` for the full checklist.
 
 ## Current status
 
-**Hour (odd):** Restored the complete persistent `OrderManager` and synchronized it with the current chain/list/link/related/reference/source/origin floor commits. The runtime contract includes constructor state, snapshot/inventory, risk-gated submit, persistence callbacks, restart recovery, and cancel helpers. All documented metadata floors—including canonical and client aliases—fail closed in `OrderManager.submit()` before any adapter call. Default remains paper. No secrets.
+**Hour (odd):** Restored the complete persistent `OrderManager`, synchronized all current metadata floors, and restored the missing fail-closed public quote fallback. CoinGecko remains primary; a failure can fall back only to one complete, fresh, positive, non-crossed Bybit BTC/ETH/SOL/BNB snapshot. Providers are never mixed. Default remains paper. No secrets.
 
 ## Run
 
