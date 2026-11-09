@@ -1,6 +1,9 @@
 import { expect, test } from "vitest";
 import { TRADING_CONFIG } from "@/config/trading";
-import { duplicateClientOrderIdReason, invalidClientOrderIdReason } from "@/lib/orders/client-order-id";
+import {
+  duplicateClientOrderIdReason,
+  invalidClientOrderIdReason,
+} from "@/lib/orders/client-order-id";
 
 test("missing or blank clientOrderId is allowed", () => {
   const seen = [{ id: "ex-1", clientOrderId: "cid-a" }];
@@ -36,7 +39,9 @@ test("a KuCoin-shaped clientOrderId still passes", () => {
 
 test("an overlong or punctuated clientOrderId is refused", () => {
   expect(invalidClientOrderIdReason("a".repeat(maxLen + 1), maxLen)).toMatch(/Bad clientOrderId/);
-  expect(invalidClientOrderIdReason("cid with space", maxLen)).toMatch(/letters, digits, or hyphens/);
+  expect(invalidClientOrderIdReason("cid with space", maxLen)).toMatch(
+    /letters, digits, or hyphens/,
+  );
   expect(invalidClientOrderIdReason("cid_under", maxLen)).toMatch(/Bad clientOrderId/);
   expect(invalidClientOrderIdReason("ok-id", 0)).toBeNull();
 });

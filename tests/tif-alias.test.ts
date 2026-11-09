@@ -9,9 +9,7 @@ test("omitted, null, and blank tif aliases pass", () => {
 });
 
 test("present tif aliases are refused and do not halt", () => {
-  expect(tifAliasReason("IOC")).toBe(
-    "Tif alias is not supported; the adapter reads timeInForce",
-  );
+  expect(tifAliasReason("IOC")).toBe("Tif alias is not supported; the adapter reads timeInForce");
   expect(tifAliasReason(undefined, "FOK")).toBe(
     "Order tif alias is not supported; the adapter reads timeInForce",
   );
@@ -24,7 +22,5 @@ test("present tif aliases are refused and do not halt", () => {
   expect(tifAliasReason(undefined, undefined, undefined, undefined, true)).toBe(
     "Fill or kill is not supported; the adapter reads timeInForce",
   );
-  expect(tifAliasReason(0)).toBe(
-    "Tif alias is not supported; the adapter reads timeInForce",
-  );
+  expect(tifAliasReason(0)).toBe("Tif alias is not supported; the adapter reads timeInForce");
 });

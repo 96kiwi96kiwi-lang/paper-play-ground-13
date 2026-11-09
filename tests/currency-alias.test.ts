@@ -17,7 +17,5 @@ test("present currency aliases are refused and do not halt", () => {
   expect(currencyAliasReason(undefined, undefined, 100)).toBe(
     "Base currency alias is not supported; the adapter reads amount",
   );
-  expect(currencyAliasReason(0)).toBe(
-    "Currency alias is not supported; the adapter reads amount",
-  );
+  expect(currencyAliasReason(0)).toBe("Currency alias is not supported; the adapter reads amount");
 });

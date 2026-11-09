@@ -22,6 +22,8 @@ describe("orderRemarkReason", () => {
   });
 
   it("refuses a present clientRemark alias", () => {
-    expect(orderRemarkReason(undefined, undefined, "desk")).toMatch(/Client remark alias is not supported/);
+    expect(orderRemarkReason(undefined, undefined, "desk")).toMatch(
+      /Client remark alias is not supported/,
+    );
   });
 });

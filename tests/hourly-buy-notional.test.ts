@@ -32,7 +32,13 @@ test("unknown notional is refused only when the cap is already booked", () => {
 });
 
 test("per-symbol buy that would pass that pair's rolling cap is refused", () => {
-  const reason = hourlyBuyNotionalPerSymbolReason("buy", "ETH/USDT", 200, perSymbol - 50, perSymbol);
+  const reason = hourlyBuyNotionalPerSymbolReason(
+    "buy",
+    "ETH/USDT",
+    200,
+    perSymbol - 50,
+    perSymbol,
+  );
   expect(reason).toMatch(/ETH\/USDT/);
   expect(reason).toMatch(/exceed/);
 });
@@ -74,7 +80,15 @@ test("per-symbol sum ignores other pairs inside the same window", () => {
   const rows = [
     { side: "buy", symbol: "BTC/USDT", status: "closed", timestamp: inside, cost: 400 },
     { side: "buy", symbol: "ETH/USDT", status: "closed", timestamp: inside, cost: 900 },
-    { side: "buy", symbol: "BTC/USDT", status: "open", timestamp: inside, amount: 1, remaining: 1, price: 100 },
+    {
+      side: "buy",
+      symbol: "BTC/USDT",
+      status: "open",
+      timestamp: inside,
+      amount: 1,
+      remaining: 1,
+      price: 100,
+    },
     { side: "buy", symbol: "BTC/USDT", status: "rejected", timestamp: inside, cost: 9_999 },
     { side: "buy", symbol: "BTC/USDT", status: "closed", timestamp: outside, cost: 9_999 },
   ];

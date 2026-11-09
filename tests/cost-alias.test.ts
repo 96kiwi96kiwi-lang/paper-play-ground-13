@@ -8,16 +8,12 @@ test("omitted, null, and blank cost aliases pass", () => {
 });
 
 test("present cost aliases are refused and do not halt", () => {
-  expect(costAliasReason(1.5)).toBe(
-    "Cost alias is not supported; the adapter reads amount",
-  );
+  expect(costAliasReason(1.5)).toBe("Cost alias is not supported; the adapter reads amount");
   expect(costAliasReason(undefined, 2)).toBe(
     "Order cost alias is not supported; the adapter reads amount",
   );
   expect(costAliasReason(undefined, undefined, "0.5")).toBe(
     "Base cost alias is not supported; the adapter reads amount",
   );
-  expect(costAliasReason(0)).toBe(
-    "Cost alias is not supported; the adapter reads amount",
-  );
+  expect(costAliasReason(0)).toBe("Cost alias is not supported; the adapter reads amount");
 });

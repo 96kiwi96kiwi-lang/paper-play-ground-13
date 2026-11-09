@@ -22,7 +22,6 @@ test("a present position index field is refused and does not halt", () => {
   );
 });
 
-
 import { vi } from "vitest";
 import type { ExchangeAdapter } from "@/lib/exchange/types";
 import { OrderManager } from "@/lib/orders/order-manager";

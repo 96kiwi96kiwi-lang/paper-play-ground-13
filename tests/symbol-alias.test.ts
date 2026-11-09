@@ -17,7 +17,5 @@ test("present symbol aliases are refused and do not halt", () => {
   expect(symbolAliasReason(undefined, undefined, "ETHUSDT")).toBe(
     "Instrument is not supported; the adapter reads symbol",
   );
-  expect(symbolAliasReason(0)).toBe(
-    "Pair alias is not supported; the adapter reads symbol",
-  );
+  expect(symbolAliasReason(0)).toBe("Pair alias is not supported; the adapter reads symbol");
 });

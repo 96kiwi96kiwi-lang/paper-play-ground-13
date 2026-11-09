@@ -24,7 +24,14 @@ test("working sell remaining size is reserved per symbol", () => {
     { symbol: "ETH/USDT", side: "buy", status: "open", amount: 2, remaining: 2 },
     { symbol: "BTC/USDT", side: "sell", status: "open", amount: 9, remaining: 9 },
     { symbol: "ETH/USDT", side: "sell", status: "filled", amount: 0.3, filled: 0.3, remaining: 0 },
-    { symbol: "ETH/USDT", side: "sell", status: "partially_filled", amount: 0.5, filled: 0.2, remaining: 0.3 },
+    {
+      symbol: "ETH/USDT",
+      side: "sell",
+      status: "partially_filled",
+      amount: 0.5,
+      filled: 0.2,
+      remaining: 0.3,
+    },
   ]);
   expect(reserved).toBeCloseTo(0.7);
 });

@@ -17,7 +17,5 @@ test("present balances aliases are refused and do not halt", () => {
   expect(balancesAliasReason(undefined, undefined, 100)).toBe(
     "Base balances alias is not supported; the adapter reads amount",
   );
-  expect(balancesAliasReason(0)).toBe(
-    "Balances alias is not supported; the adapter reads amount",
-  );
+  expect(balancesAliasReason(0)).toBe("Balances alias is not supported; the adapter reads amount");
 });

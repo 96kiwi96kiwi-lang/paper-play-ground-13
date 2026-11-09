@@ -74,5 +74,7 @@ test("per-symbol unknown notional is refused only when that symbol sleeve is ful
   expect(workingNotionalPerSymbolReason("BNB/USDT", symbolCap, undefined, symbolCap)).toMatch(
     /already at max/,
   );
-  expect(workingNotionalPerSymbolReason("BNB/USDT", symbolCap - 1, undefined, symbolCap)).toBeNull();
+  expect(
+    workingNotionalPerSymbolReason("BNB/USDT", symbolCap - 1, undefined, symbolCap),
+  ).toBeNull();
 });

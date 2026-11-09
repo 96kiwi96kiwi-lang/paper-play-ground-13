@@ -17,7 +17,5 @@ test("present holdings aliases are refused and do not halt", () => {
   expect(holdingsAliasReason(undefined, undefined, 100)).toBe(
     "Base holdings alias is not supported; the adapter reads amount",
   );
-  expect(holdingsAliasReason(0)).toBe(
-    "Holdings alias is not supported; the adapter reads amount",
-  );
+  expect(holdingsAliasReason(0)).toBe("Holdings alias is not supported; the adapter reads amount");
 });

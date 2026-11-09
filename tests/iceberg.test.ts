@@ -54,9 +54,9 @@ test("display size aliases are refused and do not halt", () => {
   expect(icebergReason(false, undefined, undefined, undefined, undefined, 0.05)).toBe(
     "Display size is not supported; the adapter would show the full size",
   );
-  expect(icebergReason(undefined, undefined, undefined, undefined, undefined, undefined, "0.1")).toBe(
-    "Visible qty is not supported; the adapter would show the full size",
-  );
+  expect(
+    icebergReason(undefined, undefined, undefined, undefined, undefined, undefined, "0.1"),
+  ).toBe("Visible qty is not supported; the adapter would show the full size");
   expect(icebergReason(false, null, null, null, null, null, null, 0)).toBe(
     "Iceberg size is not supported; the adapter would show the full size",
   );

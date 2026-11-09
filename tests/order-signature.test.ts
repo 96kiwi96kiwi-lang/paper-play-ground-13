@@ -17,11 +17,15 @@ describe("orderSignatureReason", () => {
   });
 
   it("refuses a present orderSignature alias", () => {
-    expect(orderSignatureReason(undefined, "bot")).toMatch(/Order signature alias is not supported/);
+    expect(orderSignatureReason(undefined, "bot")).toMatch(
+      /Order signature alias is not supported/,
+    );
     expect(orderSignatureReason(undefined, 0)).toMatch(/Order signature alias is not supported/);
   });
 
   it("refuses a present clientSignature alias", () => {
-    expect(orderSignatureReason(undefined, undefined, "desk")).toMatch(/Client signature alias is not supported/);
+    expect(orderSignatureReason(undefined, undefined, "desk")).toMatch(
+      /Client signature alias is not supported/,
+    );
   });
 });

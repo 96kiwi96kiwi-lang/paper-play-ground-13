@@ -1,7 +1,10 @@
 /**
  * OrderManager – single gate for paper and live submits.
  * Applies hard-stops, notional/reserve/trade-cap floors, and metadata floors
- * (child/root/sibling/parent/payload/chain/group/link/list/related/reference/source/origin/grid/algo/strategy/tactic/template/text/kind/leg/note/comment/memo) before any adapter call.
+ * (child/root/sibling/parent/payload/chain/group/link/list/related/reference/source/origin/grid/algo/strategy/tactic/template/text/kind/leg/note/comment/memo/position-index
+ * and amount aliases) before any adapter call.
+ * Seen orders are persisted UnifiedOrder records. Cancel of stale or working orders
+ * goes through the adapter and does not flatten positions.
  * Default path is paper. No secrets. No live without server-side keys.
  */
 
@@ -32,6 +35,14 @@ import { orderLegReason } from "./order-leg";
 import { orderNoteReason } from "./order-note";
 import { orderCommentReason } from "./order-comment";
 import { orderMemoReason } from "./order-memo";
+import { positionIdxReason } from "./position-idx";
+import { positionsAliasReason } from "./positions-alias";
+import { portfolioAliasReason } from "./portfolio-alias";
+import { equityAliasReason } from "./equity-alias";
+import { navAliasReason } from "./nav-alias";
+import { assetsAliasReason } from "./assets-alias";
+import { holdingsAliasReason } from "./holdings-alias";
+import { selectStaleOpenOrders, selectWorkingOrders } from "./stale-open";
 
 export interface OrderIntent {
   symbol: string;
@@ -118,6 +129,27 @@ export interface OrderIntent {
   memo?: unknown;
   orderMemo?: unknown;
   clientMemo?: unknown;
+  positionIdx?: unknown;
+  posIdx?: unknown;
+  hedgeIdx?: unknown;
+  positions?: unknown;
+  orderPositions?: unknown;
+  basePositions?: unknown;
+  portfolio?: unknown;
+  orderPortfolio?: unknown;
+  basePortfolio?: unknown;
+  equity?: unknown;
+  orderEquity?: unknown;
+  baseEquity?: unknown;
+  nav?: unknown;
+  orderNav?: unknown;
+  baseNav?: unknown;
+  assets?: unknown;
+  orderAssets?: unknown;
+  baseAssets?: unknown;
+  holdings?: unknown;
+  orderHoldings?: unknown;
+  baseHoldings?: unknown;
 }
 
 export interface SubmitResult {
@@ -131,31 +163,36 @@ export interface PortfolioSnapshot {
   positions: Record<string, { amount: number; avgEntry: number }>;
 }
 
+export interface CancelOrdersResult {
+  canceled: number;
+  failed: number;
+}
+
 export interface OrderManagerOptions {
   startingCash?: number;
   startingPositions?: Record<string, { amount: number; avgEntry: number }>;
-  seenOrders?: Set<string> | string[];
+  seenOrders?: UnifiedOrder[];
   lastSubmitAt?: number;
   onPortfolioChange?: (portfolio: PortfolioSnapshot) => void;
-  onSeenOrdersChange?: (seen: string[]) => void;
+  onSeenOrdersChange?: (seen: UnifiedOrder[]) => void;
   onLastSubmitAtChange?: (ts: number) => void;
 }
 
 export class OrderManager {
   private cash: number;
   private positions: Record<string, { amount: number; avgEntry: number }>;
-  private seen = new Set<string>();
+  private orders: UnifiedOrder[] = [];
   private lastSubmitAt = 0;
+  private readonly options: OrderManagerOptions;
 
   constructor(
     private adapter: ExchangeAdapter,
     opts: OrderManagerOptions = {},
   ) {
+    this.options = opts;
     this.cash = opts.startingCash ?? TRADING_CONFIG.paperStartingBalance;
     this.positions = { ...(opts.startingPositions ?? {}) };
-    if (opts.seenOrders) {
-      for (const id of opts.seenOrders) this.seen.add(id);
-    }
+    this.orders = (opts.seenOrders ?? []).map((order) => ({ ...order }));
     this.lastSubmitAt = opts.lastSubmitAt ?? 0;
   }
 
@@ -167,17 +204,61 @@ export class OrderManager {
     return { cash: this.cash, positions: { ...this.positions } };
   }
 
-  async cancelStaleOpenOrders(): Promise<void> {
-    // Stale-open floor lives in adapter / separate module; no-op here keeps the call site safe.
-    // Full cancel path can be wired in a later hour without changing this signature.
+  seenOrders(): UnifiedOrder[] {
+    return this.orders.map((order) => ({ ...order }));
+  }
+
+  async cancelStaleOpenOrders(now = Date.now()): Promise<CancelOrdersResult> {
+    const stale = selectStaleOpenOrders(this.orders, now, TRADING_CONFIG.orders.staleOpenOrderMs);
+    return this.cancelSelected(stale);
+  }
+
+  async cancelAllWorkingOrders(): Promise<CancelOrdersResult> {
+    return this.cancelSelected(selectWorkingOrders(this.orders));
+  }
+
+  private async cancelSelected(selected: UnifiedOrder[]): Promise<CancelOrdersResult> {
+    let canceled = 0;
+    let failed = 0;
+    const canceledIds = new Set<string>();
+    for (const order of selected) {
+      try {
+        await this.adapter.cancelOrder(order.id, order.symbol);
+        canceled += 1;
+        canceledIds.add(order.id);
+      } catch {
+        failed += 1;
+      }
+    }
+    if (canceledIds.size > 0) {
+      this.orders = this.orders.map((order) => {
+        if (!canceledIds.has(order.id)) return order;
+        const filled = order.filled ?? 0;
+        return {
+          ...order,
+          status: "canceled",
+          remaining: order.remaining ?? Math.max(0, order.amount - filled),
+        };
+      });
+      this.options.onSeenOrdersChange?.(this.seenOrders());
+    }
+    return { canceled, failed };
   }
 
   private refuse(reason: string): SubmitResult {
     return { ok: false, reason };
   }
 
-  private notifyPortfolio(opts: OrderManagerOptions) {
-    opts.onPortfolioChange?.(this.snapshot());
+  private remember(order: UnifiedOrder): void {
+    const next = { ...order };
+    const index = this.orders.findIndex((existing) => existing.id === next.id);
+    if (index >= 0) this.orders[index] = next;
+    else this.orders.push(next);
+    this.options.onSeenOrdersChange?.(this.seenOrders());
+  }
+
+  private publishPortfolio(): void {
+    this.options.onPortfolioChange?.(this.snapshot());
   }
 
   async submit(intent: OrderIntent, riskState: RiskState): Promise<SubmitResult> {
@@ -185,7 +266,7 @@ export class OrderManager {
       return this.refuse(`Hard-stop active: ${riskState.haltReason}`);
     }
 
-    // Metadata floors – refuse unsupported parent/child/root/sibling/payload/chain/group/link/list/related/reference/source/origin/grid/algo/strategy/tactic/template/text/kind/leg/note/comment/memo intent
+    // Metadata floors – refuse unsupported parent/child/root/sibling/payload/chain/group/link/list/related/reference/source/origin/grid/algo/strategy/tactic/template/text/kind/leg/note/comment/memo/position-index and amount-alias intent
     const child = orderChildReason(intent.childId, intent.orderChild, intent.clientChild);
     if (child) return this.refuse(child);
     const root = orderRootReason(intent.rootId, intent.orderRoot, intent.clientRoot);
@@ -213,7 +294,11 @@ export class OrderManager {
     if (list) return this.refuse(list);
     const related = orderRelatedReason(intent.relatedId, intent.orderRelated, intent.clientRelated);
     if (related) return this.refuse(related);
-    const reference = orderReferenceReason(intent.reference, intent.orderReference, intent.clientReference);
+    const reference = orderReferenceReason(
+      intent.reference,
+      intent.orderReference,
+      intent.clientReference,
+    );
     if (reference) return this.refuse(reference);
     const source = orderSourceReason(intent.source, intent.orderSource, intent.clientSource);
     if (source) return this.refuse(source);
@@ -241,6 +326,32 @@ export class OrderManager {
     if (comment) return this.refuse(comment);
     const memo = orderMemoReason(intent.memo, intent.orderMemo, intent.clientMemo);
     if (memo) return this.refuse(memo);
+    const positionIndex = positionIdxReason(intent.positionIdx, intent.posIdx, intent.hedgeIdx);
+    if (positionIndex) return this.refuse(positionIndex);
+    const positionsAlias = positionsAliasReason(
+      intent.positions,
+      intent.orderPositions,
+      intent.basePositions,
+    );
+    if (positionsAlias) return this.refuse(positionsAlias);
+    const portfolioAlias = portfolioAliasReason(
+      intent.portfolio,
+      intent.orderPortfolio,
+      intent.basePortfolio,
+    );
+    if (portfolioAlias) return this.refuse(portfolioAlias);
+    const equityAlias = equityAliasReason(intent.equity, intent.orderEquity, intent.baseEquity);
+    if (equityAlias) return this.refuse(equityAlias);
+    const navAlias = navAliasReason(intent.nav, intent.orderNav, intent.baseNav);
+    if (navAlias) return this.refuse(navAlias);
+    const assetsAlias = assetsAliasReason(intent.assets, intent.orderAssets, intent.baseAssets);
+    if (assetsAlias) return this.refuse(assetsAlias);
+    const holdingsAlias = holdingsAliasReason(
+      intent.holdings,
+      intent.orderHoldings,
+      intent.baseHoldings,
+    );
+    if (holdingsAlias) return this.refuse(holdingsAlias);
 
     if (!TRADING_CONFIG.pairs.includes(intent.symbol as never)) {
       return this.refuse(`Unsupported symbol ${intent.symbol}`);
@@ -273,7 +384,10 @@ export class OrderManager {
 
     // Daily trade cap (refuse, not halt)
     const dayKey = new Date().toISOString().slice(0, 10);
-    if (riskState.tradesDayKey === dayKey && (riskState.tradesToday ?? 0) >= TRADING_CONFIG.risk.maxDailyTrades) {
+    if (
+      riskState.tradesDayKey === dayKey &&
+      (riskState.tradesToday ?? 0) >= TRADING_CONFIG.risk.maxDailyTrades
+    ) {
       return this.refuse("Daily trade cap reached");
     }
 
@@ -310,7 +424,10 @@ export class OrderManager {
           const totalCost = existing.amount * existing.avgEntry + notional;
           this.positions[intent.symbol] = { amount: totalAmt, avgEntry: totalCost / totalAmt };
         } else {
-          this.positions[intent.symbol] = { amount: intent.amount, avgEntry: price || notional / intent.amount };
+          this.positions[intent.symbol] = {
+            amount: intent.amount,
+            avgEntry: price || notional / intent.amount,
+          };
         }
       } else {
         this.cash += notional;
@@ -322,8 +439,10 @@ export class OrderManager {
         }
       }
 
-      if (intent.clientOrderId) this.seen.add(intent.clientOrderId);
+      this.remember(order);
       this.lastSubmitAt = Date.now();
+      this.options.onLastSubmitAtChange?.(this.lastSubmitAt);
+      this.publishPortfolio();
       return { ok: true, order };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

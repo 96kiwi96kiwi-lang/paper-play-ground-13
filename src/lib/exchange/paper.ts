@@ -4,13 +4,7 @@
  * Prices still come from CoinGecko (passed in from outside).
  */
 
-import type {
-  ExchangeAdapter,
-  UnifiedBalance,
-  UnifiedOrder,
-  UnifiedTicker,
-  Side,
-} from "./types";
+import type { ExchangeAdapter, UnifiedBalance, UnifiedOrder, UnifiedTicker, Side } from "./types";
 
 export class PaperExchange implements ExchangeAdapter {
   name = "paper" as const;
@@ -70,11 +64,27 @@ export class PaperExchange implements ExchangeAdapter {
 
     const ticker = this.latestTickers[symbol];
     if (!ticker || ticker.last <= 0) {
-      return this.rejectOrder(symbol, side, "market", amount, undefined, clientOrderId, `No price available for ${symbol}`);
+      return this.rejectOrder(
+        symbol,
+        side,
+        "market",
+        amount,
+        undefined,
+        clientOrderId,
+        `No price available for ${symbol}`,
+      );
     }
 
     if (amount <= 0) {
-      return this.rejectOrder(symbol, side, "market", amount, ticker.last, clientOrderId, "Amount must be positive");
+      return this.rejectOrder(
+        symbol,
+        side,
+        "market",
+        amount,
+        ticker.last,
+        clientOrderId,
+        "Amount must be positive",
+      );
     }
 
     const price = ticker.last;
@@ -82,7 +92,15 @@ export class PaperExchange implements ExchangeAdapter {
 
     if (side === "buy") {
       if (cost > this.cash) {
-        return this.rejectOrder(symbol, side, "market", amount, price, clientOrderId, "Insufficient paper balance");
+        return this.rejectOrder(
+          symbol,
+          side,
+          "market",
+          amount,
+          price,
+          clientOrderId,
+          "Insufficient paper balance",
+        );
       }
       this.cash -= cost;
       const existing = this.positions[symbol];
@@ -99,7 +117,15 @@ export class PaperExchange implements ExchangeAdapter {
     } else {
       const pos = this.positions[symbol];
       if (!pos || pos.amount < amount) {
-        return this.rejectOrder(symbol, side, "market", amount, price, clientOrderId, "Insufficient position to sell");
+        return this.rejectOrder(
+          symbol,
+          side,
+          "market",
+          amount,
+          price,
+          clientOrderId,
+          "Insufficient position to sell",
+        );
       }
       this.cash += cost;
       pos.amount -= amount;

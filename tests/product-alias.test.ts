@@ -17,7 +17,5 @@ test("present product aliases are refused and do not halt", () => {
   expect(productAliasReason(undefined, undefined, "BTCUSDT")).toBe(
     "Ticker alias is not supported; the adapter reads symbol",
   );
-  expect(productAliasReason(0)).toBe(
-    "Product alias is not supported; the adapter reads symbol",
-  );
+  expect(productAliasReason(0)).toBe("Product alias is not supported; the adapter reads symbol");
 });

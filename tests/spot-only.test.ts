@@ -10,12 +10,8 @@ test("omitted, blank, false, and spot trade types pass", () => {
 });
 
 test("a present leverage or margin flag is refused and does not halt", () => {
-  expect(spotOnlyReason(5)).toBe(
-    "Leverage is not supported; the adapter would place a spot order",
-  );
-  expect(spotOnlyReason(1)).toBe(
-    "Leverage is not supported; the adapter would place a spot order",
-  );
+  expect(spotOnlyReason(5)).toBe("Leverage is not supported; the adapter would place a spot order");
+  expect(spotOnlyReason(1)).toBe("Leverage is not supported; the adapter would place a spot order");
   expect(spotOnlyReason(undefined, "isolated")).toBe(
     "Margin mode is not supported; the adapter would place a spot order",
   );
