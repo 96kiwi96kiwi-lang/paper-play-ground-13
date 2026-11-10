@@ -10,6 +10,7 @@ import type { ExchangeAdapter, UnifiedOrder } from "@/lib/exchange/types";
 import type { RiskState } from "@/lib/risk";
 import { orderStyleReason } from "./order-style";
 import { orderAnnotationReason } from "./order-annotation";
+import { orderThemeReason } from "./order-theme";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -36,6 +37,15 @@ export class OrderManager {
     );
     if (annotationReason) {
       return { ok: false, reason: annotationReason };
+    }
+
+    const themeReason = orderThemeReason(
+      intent.theme,
+      intent.orderTheme,
+      intent.clientTheme,
+    );
+    if (themeReason) {
+      return { ok: false, reason: themeReason };
     }
 
     // Additional floors would be checked here in the full implementation.
