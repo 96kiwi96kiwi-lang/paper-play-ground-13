@@ -11,6 +11,7 @@ import type { RiskState } from "@/lib/risk";
 import { orderStyleReason } from "./order-style";
 import { orderAnnotationReason } from "./order-annotation";
 import { orderThemeReason } from "./order-theme";
+import { orderUrgencyReason } from "./order-urgency";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -46,6 +47,15 @@ export class OrderManager {
     );
     if (themeReason) {
       return { ok: false, reason: themeReason };
+    }
+
+    const urgencyReason = orderUrgencyReason(
+      intent.urgency,
+      intent.orderUrgency,
+      intent.clientUrgency,
+    );
+    if (urgencyReason) {
+      return { ok: false, reason: urgencyReason };
     }
 
     // Additional floors would be checked here in the full implementation.
