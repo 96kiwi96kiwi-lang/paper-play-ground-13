@@ -2,20 +2,20 @@
 
 ## Datum a čas
 
-2026-11-10 05:15 CET (odd hour). Order-annotation metadata floor wired into OrderManager.
+2026-11-10 15:28 CET (odd hour). Order-theme metadata floor wired into OrderManager.
 
 ## Aktuální stav
 
 Paper mode is the default. Live trading is disabled. No exchange credentials are in the tree.
 
-**Hour (odd):** Wired `orderAnnotationReason` into the persistent OrderManager so a present `annotation`, `orderAnnotation`, or `clientAnnotation` is refused before any adapter call, matching the order-style / order-theme pattern. Tests cover the helper and the submit path. Default remains paper. No secrets. No live without server-side owner credentials.
+**Hour (odd):** Wired `orderThemeReason` into the persistent OrderManager so a present `theme`, `orderTheme`, or `clientTheme` is refused before any adapter call, matching the order-annotation / order-style pattern. Tests cover the helper and the submit path. Default remains paper. No secrets. No live without server-side owner credentials.
 
 Previous verified state remains as below.
 
 ## Dokončené změny
 
-- Updated `src/lib/orders/order-manager.ts` to call `orderAnnotationReason` in `submit`.
-- Extended `tests/order-annotation.test.ts` with OrderManager submit regressions.
-- Updated README current status and SAFETY checklist to include the order-annotation floor.
+- Updated `src/lib/orders/order-manager.ts` to call `orderThemeReason` in `submit`.
+- Existing `tests/order-theme.test.ts` already covers OrderManager submit regressions.
+- Updated README current status and SAFETY checklist to include the order-theme floor.
 
 (Full historical record follows from prior PROGRESS.md content.)
