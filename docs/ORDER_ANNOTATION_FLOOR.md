@@ -1,11 +1,7 @@
 # Order annotation floor
 
-A submit is refused when `annotation`, `orderAnnotation`, or `clientAnnotation` is present (`Order annotation is not supported` / `Order annotation alias is not supported` / `Client annotation alias is not supported`).
+Spot adapters place a plain spot order. They do not honor an `annotation`, `orderAnnotation`, or `clientAnnotation` field.
 
-Paper and KuCoin adapters place one plain spot order and do not set an order annotation, so an annotation intent would be ignored and the base size would rest or fill as a plain spot order.
+A present value is refused by `orderAnnotationReason` before any adapter call. Omitted, null, false, and blank values pass. This is a metadata floor, not a hard-stop. It does not flatten positions or require an operator token.
 
-Omitted, null, false, and blank still pass. Zero is present and is refused.
-
-`OrderManager.submit` calls `orderAnnotationReason` before the adapter, so a refuse does not burn `maxRejectsInWindow`. This is a metadata floor, not a halt, and does not flatten positions.
-
-Vitest: `tests/order-annotation.test.ts` (no exchange, no secrets).
+See `src/lib/orders/order-annotation.ts` and the call in `OrderManager.submit`.
