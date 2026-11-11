@@ -14,6 +14,7 @@ import { orderThemeReason } from "./order-theme";
 import { orderUrgencyReason } from "./order-urgency";
 import { orderUserReason } from "./order-user";
 import { orderPriorityReason } from "./order-priority";
+import { orderRankReason } from "./order-rank";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -76,6 +77,15 @@ export class OrderManager {
     );
     if (priorityReason) {
       return { ok: false, reason: priorityReason };
+    }
+
+    const rankReason = orderRankReason(
+      intent.rank,
+      intent.orderRank,
+      intent.clientRank,
+    );
+    if (rankReason) {
+      return { ok: false, reason: rankReason };
     }
 
     // Additional floors would be checked here in the full implementation.
