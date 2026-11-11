@@ -8,4 +8,6 @@ Omitted, null, false, and blank still pass. Zero is present and is refused.
 
 `OrderManager.submit` calls `orderUserReason` before the adapter, so a refuse does not burn `maxRejectsInWindow`. This is a metadata floor, not a halt, and does not flatten positions.
 
+Wired into OrderManager.submit. Default remains paper. No secrets.
+
 Vitest: `tests/order-user.test.ts` (no exchange, no secrets).

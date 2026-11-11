@@ -12,6 +12,7 @@ import { orderStyleReason } from "./order-style";
 import { orderAnnotationReason } from "./order-annotation";
 import { orderThemeReason } from "./order-theme";
 import { orderUrgencyReason } from "./order-urgency";
+import { orderUserReason } from "./order-user";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -56,6 +57,15 @@ export class OrderManager {
     );
     if (urgencyReason) {
       return { ok: false, reason: urgencyReason };
+    }
+
+    const userReason = orderUserReason(
+      intent.user,
+      intent.orderUser,
+      intent.clientUser,
+    );
+    if (userReason) {
+      return { ok: false, reason: userReason };
     }
 
     // Additional floors would be checked here in the full implementation.
