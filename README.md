@@ -10,14 +10,14 @@ Paper trading bot (default) with an optional live path on KuCoin spot.
 - The frontend never receives keys or secrets.
 - Withdraw permission is refused; the key must be Trade-only.
 - Hard-stops (daily loss, max drawdown, losing streak, price gap, network errors) halt the bot until an operator clears them.
-- OrderManager applies cash-reserve, daily-trade-cap, notional, precision, alias, and metadata floors (including order-rating, order-score, order-rank, order-priority, order-user, order-urgency, order-theme, order-annotation, order-style, order-memo, order-comment, order-note, order-leg, order-kind, order-text, order-template, order-tactic, order-strategy, order-algo, grid-id, and earlier metadata floors) before any adapter call.
+- OrderManager applies cash-reserve, daily-trade-cap, notional, precision, alias, and metadata floors (including order-grade, order-rating, order-score, order-rank, order-priority, order-user, order-urgency, order-theme, order-annotation, order-style, order-memo, order-comment, order-note, order-leg, order-kind, order-text, order-template, order-tactic, order-strategy, order-algo, grid-id, and earlier metadata floors) before any adapter call.
 - No live trading occurs without owner credentials present on the server.
 
 See `SAFETY.md` for the full checklist.
 
 ## Current status
 
-**Hour (odd):** Wired the order-rating metadata floor into the persistent OrderManager. A present `rating`, `orderRating`, or `clientRating` is refused before the adapter, together with the order-score, order-rank, order-priority, order-user, order-urgency, order-theme, order-annotation, and earlier metadata floors. The runtime keeps constructor state, snapshot/inventory, risk-gated submit, persistence callbacks, restart recovery, idempotent seen orders, duplicate-order protection, capital and risk checks, safe cancel, and fail-closed adapter errors. Default remains paper. No secrets. No live without server-side owner credentials.
+**Hour (odd):** Wired the order-grade metadata floor into the persistent OrderManager. A present `grade`, `orderGrade`, or `clientGrade` is refused before the adapter, together with the order-rating, order-score, order-rank, order-priority, order-user, order-urgency, order-theme, order-annotation, and earlier metadata floors. The runtime keeps constructor state, snapshot/inventory, risk-gated submit, persistence callbacks, restart recovery, idempotent seen orders, duplicate-order protection, capital and risk checks, safe cancel, and fail-closed adapter errors. Default remains paper. No secrets. No live without server-side owner credentials.
 
 ## Run
 
