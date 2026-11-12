@@ -1,11 +1,11 @@
 # Order summary floor
 
-A submit is refused when `summary`, `orderSummary`, or `clientSummary` is present (`Summary is not supported` / `Order summary is not supported` / `Client summary is not supported`).
+Refuse a present `summary`, `orderSummary`, or `clientSummary` on submit before the adapter.
 
-Paper and KuCoin adapters place one plain spot order and do not set an order summary, so a summary intent would be ignored and the base size would rest or fill as a plain spot order.
+- Omitted, null, false, and blank pass.
+- Zero is present and is refused.
+- This is a metadata floor, not a halt, and does not flatten positions.
+- Paper and KuCoin adapters place one plain spot order and do not set an order summary, so a summary-tracking intent would otherwise be dropped.
+- Does not burn `maxRejectsInWindow`.
 
-Omitted, null, false, and blank still pass. Zero is present and is refused.
-
-`OrderManager.submit` calls `orderSummaryReason` before the adapter, so a refuse does not burn `maxRejectsInWindow`. This is a metadata floor, not a halt, and does not flatten positions.
-
-Vitest: `tests/order-summary.test.ts` (no exchange, no secrets).
+See `src/lib/orders/order-summary.ts` and `tests/order-summary.test.ts`.

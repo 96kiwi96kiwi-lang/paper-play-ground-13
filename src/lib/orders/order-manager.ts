@@ -20,6 +20,7 @@ import { orderRatingReason } from "./order-rating";
 import { orderGradeReason } from "./order-grade";
 import { orderLevelReason } from "./order-level";
 import { orderOutlineReason } from "./order-outline";
+import { orderSummaryReason } from "./order-summary";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -136,6 +137,15 @@ export class OrderManager {
     );
     if (outlineReason) {
       return { ok: false, reason: outlineReason };
+    }
+
+    const summaryReason = orderSummaryReason(
+      intent.summary,
+      intent.orderSummary,
+      intent.clientSummary,
+    );
+    if (summaryReason) {
+      return { ok: false, reason: summaryReason };
     }
 
     // Additional floors would be checked here in the full implementation.
