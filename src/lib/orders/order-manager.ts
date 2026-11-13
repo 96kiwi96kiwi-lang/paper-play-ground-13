@@ -23,6 +23,7 @@ import { orderOutlineReason } from "./order-outline";
 import { orderSummaryReason } from "./order-summary";
 import { orderBriefReason } from "./order-brief";
 import { orderCaptionReason } from "./order-caption";
+import { orderDescriptionReason } from "./order-description";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -166,6 +167,15 @@ export class OrderManager {
     );
     if (captionReason) {
       return { ok: false, reason: captionReason };
+    }
+
+    const descriptionReason = orderDescriptionReason(
+      intent.description,
+      intent.orderDescription,
+      intent.clientDescription,
+    );
+    if (descriptionReason) {
+      return { ok: false, reason: descriptionReason };
     }
 
     // Additional floors would be checked here in the full implementation.
