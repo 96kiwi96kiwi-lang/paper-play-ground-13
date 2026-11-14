@@ -1,29 +1,74 @@
-import { describe, expect, it } from "vitest";
-import { orderSubjectReason } from "../src/lib/orders/order-subject";
+import { describe, expect, it, test, vi } from "vitest";
+import type { ExchangeAdapter } from "@/lib/exchange/types";
+import { orderSubjectReason } from "@/lib/orders/order-subject";
+import { OrderManager } from "@/lib/orders/order-manager";
+import type { RiskState } from "@/lib/risk";
 
-describe("orderSubjectReason", () => {
-  it("passes omitted, null, false, and blank", () => {
-    expect(orderSubjectReason()).toBeNull();
-    expect(orderSubjectReason(undefined, undefined, undefined)).toBeNull();
-    expect(orderSubjectReason(null, null, null)).toBeNull();
-    expect(orderSubjectReason(false, false, false)).toBeNull();
-    expect(orderSubjectReason("", "  ", "")).toBeNull();
-  });
+test("omitted, null, false, and blank subject aliases pass", () => {
+  expect(orderSubjectReason()).toBeNull();
+  expect(orderSubjectReason(undefined, undefined, undefined)).toBeNull();
+  expect(orderSubjectReason(null, null, null)).toBeNull();
+  expect(orderSubjectReason(false, false, false)).toBeNull();
+  expect(orderSubjectReason("", "  ", "")).toBeNull();
+});
 
-  it("refuses a present subject", () => {
-    expect(orderSubjectReason("grid-a")).toMatch(/Order subject is not supported/);
-    expect(orderSubjectReason(1)).toMatch(/Order subject is not supported/);
-    expect(orderSubjectReason(true)).toMatch(/Order subject is not supported/);
-  });
+test("a present subject alias is refused and does not halt", () => {
+  expect(orderSubjectReason("grid-a")).toBe(
+    "Order subject is not supported; the adapter would place a plain spot order",
+  );
+  expect(orderSubjectReason(1)).toBe(
+    "Order subject is not supported; the adapter would place a plain spot order",
+  );
+  expect(orderSubjectReason(undefined, "bot")).toBe(
+    "Order subject alias is not supported; the adapter would place a plain spot order",
+  );
+  expect(orderSubjectReason(undefined, undefined, "desk")).toBe(
+    "Client subject alias is not supported; the adapter would place a plain spot order",
+  );
+});
 
-  it("refuses a present orderSubject alias", () => {
-    expect(orderSubjectReason(undefined, "bot")).toMatch(/Order subject alias is not supported/);
-    expect(orderSubjectReason(undefined, 0)).toMatch(/Order subject alias is not supported/);
-  });
+describe("OrderManager order-subject floor", () => {
+  const riskState: RiskState = {
+    portfolioValue: 10_000,
+    cash: 10_000,
+    openPositionsCount: 0,
+    dailyPnlPct: 0,
+    drawdownPct: 0,
+    losingStreak: 0,
+    cooldownUntil: null,
+    haltReason: null,
+  };
 
-  it("refuses a present clientSubject alias", () => {
-    expect(orderSubjectReason(undefined, undefined, "desk")).toMatch(
-      /Client subject alias is not supported/,
+  it.each([
+    ["subject", "Order subject is not supported; the adapter would place a plain spot order"],
+    ["orderSubject", "Order subject alias is not supported; the adapter would place a plain spot order"],
+    ["clientSubject", "Client subject alias is not supported; the adapter would place a plain spot order"],
+  ] as const)("refuses a present %s before the adapter", async (field, reason) => {
+    const placeMarketOrder = vi.fn();
+    const placeLimitOrder = vi.fn();
+    const adapter = {
+      name: "paper",
+      placeMarketOrder,
+      placeLimitOrder,
+    } as unknown as ExchangeAdapter;
+    const manager = new OrderManager(adapter);
+
+    const result = await manager.submit(
+      {
+        symbol: "BTC/USDT",
+        side: "buy",
+        amount: 0.01,
+        type: "market",
+        [field]: "grid-a",
+      },
+      riskState,
     );
+
+    expect(result.ok).toBe(false);
+    expect(result.reason).toBe(reason);
+    expect(placeMarketOrder).not.toHaveBeenCalled();
+    expect(placeLimitOrder).not.toHaveBeenCalled();
+    expect(manager.seenOrders()).toEqual([]);
+    expect(riskState.haltReason).toBeNull();
   });
 });
