@@ -29,6 +29,7 @@ import { orderFooterReason } from "./order-footer";
 import { orderHeaderReason } from "./order-header";
 import { orderSubjectReason } from "./order-subject";
 import { orderTitleReason } from "./order-title";
+import { orderNameReason } from "./order-name";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -226,6 +227,15 @@ export class OrderManager {
     );
     if (titleReason) {
       return { ok: false, reason: titleReason };
+    }
+
+    const nameReason = orderNameReason(
+      intent.name,
+      intent.orderName,
+      intent.clientName,
+    );
+    if (nameReason) {
+      return { ok: false, reason: nameReason };
     }
 
     // Additional floors would be checked here in the full implementation.
