@@ -1,5 +1,5 @@
 import { describe, expect, it, test, vi } from "vitest";
-import type { ExchangeAdapter } from "@/lib/exchange/types";
+import type { ExchangeAdapter, UnifiedOrder } from "@/lib/exchange/types";
 import { orderAccountReason } from "@/lib/orders/order-account";
 import { OrderManager } from "@/lib/orders/order-manager";
 import type { RiskState } from "@/lib/risk";
@@ -67,7 +67,21 @@ describe("OrderManager order-account floor", () => {
   });
 
   it("passes when account aliases are absent and reaches the adapter", async () => {
-    const placeMarketOrder = vi.fn();
+    const now = Date.now();
+    const order: UnifiedOrder = {
+      id: "ex-account-1",
+      symbol: "BTC-USDT",
+      side: "buy",
+      type: "market",
+      amount: 0.01,
+      price: 2_000,
+      status: "closed",
+      filled: 0.01,
+      remaining: 0,
+      cost: 20,
+      timestamp: now,
+    };
+    const placeMarketOrder = vi.fn(async () => order);
     const placeLimitOrder = vi.fn();
     const adapter = {
       name: "paper",
@@ -81,10 +95,12 @@ describe("OrderManager order-account floor", () => {
       side: "buy",
       type: "market",
       amount: 0.01,
+      markPrice: 2_000,
+      quotedAt: now,
     };
 
     const result = await manager.submit(intent, riskState);
-    expect(result.ok).toBe(true);
+    expect(result.ok, JSON.stringify(result)).toBe(true);
     expect(placeMarketOrder).toHaveBeenCalledTimes(1);
     expect(placeLimitOrder).not.toHaveBeenCalled();
     expect(manager.seenOrders()).toHaveLength(1);
