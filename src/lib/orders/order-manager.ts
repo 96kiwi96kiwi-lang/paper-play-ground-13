@@ -8,6 +8,7 @@
 
 import type { ExchangeAdapter, UnifiedOrder } from "@/lib/exchange/types";
 import type { RiskState } from "@/lib/risk";
+import { orderTextReason } from "./order-text";
 import { orderStyleReason } from "./order-style";
 import { orderAnnotationReason } from "./order-annotation";
 import { orderThemeReason } from "./order-theme";
@@ -48,6 +49,15 @@ export class OrderManager {
   }
 
   async submit(intent: any, riskState: RiskState): Promise<{ ok: boolean; reason?: string }> {
+    const textReason = orderTextReason(
+      intent.text,
+      intent.orderText,
+      intent.clientText,
+    );
+    if (textReason) {
+      return { ok: false, reason: textReason };
+    }
+
     const styleReason = orderStyleReason(intent.style, intent.orderStyle, intent.clientStyle);
     if (styleReason) {
       return { ok: false, reason: styleReason };
