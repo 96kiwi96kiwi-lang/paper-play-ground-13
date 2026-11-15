@@ -10,6 +10,7 @@ import type { ExchangeAdapter, UnifiedOrder } from "@/lib/exchange/types";
 import type { RiskState } from "@/lib/risk";
 import { orderAccountReason } from "./order-account";
 import { orderAlgoReason } from "./order-algo";
+import { orderAudienceReason } from "./order-audience";
 import { orderTextReason } from "./order-text";
 import { orderStyleReason } from "./order-style";
 import { orderAnnotationReason } from "./order-annotation";
@@ -67,6 +68,15 @@ export class OrderManager {
     );
     if (algoReason) {
       return { ok: false, reason: algoReason };
+    }
+
+    const audienceReason = orderAudienceReason(
+      intent.audience,
+      intent.orderAudience,
+      intent.clientAudience,
+    );
+    if (audienceReason) {
+      return { ok: false, reason: audienceReason };
     }
 
     const textReason = orderTextReason(
