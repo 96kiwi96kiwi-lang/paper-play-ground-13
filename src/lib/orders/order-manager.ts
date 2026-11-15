@@ -33,6 +33,7 @@ import { orderNameReason } from "./order-name";
 import { orderAbstractReason } from "./order-abstract";
 import { orderLabelReason } from "./order-label";
 import { orderTagReason } from "./order-tag";
+import { orderTemplateReason } from "./order-template";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -266,6 +267,15 @@ export class OrderManager {
     );
     if (tagReason) {
       return { ok: false, reason: tagReason };
+    }
+
+    const templateReason = orderTemplateReason(
+      intent.template,
+      intent.templateId,
+      intent.clientTemplate,
+    );
+    if (templateReason) {
+      return { ok: false, reason: templateReason };
     }
 
     // Additional floors would be checked here in the full implementation.
