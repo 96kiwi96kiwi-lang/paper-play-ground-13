@@ -11,6 +11,7 @@ import type { RiskState } from "@/lib/risk";
 import { orderAccountReason } from "./order-account";
 import { orderAlgoReason } from "./order-algo";
 import { orderAudienceReason } from "./order-audience";
+import { orderPurposeReason } from "./order-purpose";
 import { orderTextReason } from "./order-text";
 import { orderStyleReason } from "./order-style";
 import { orderAnnotationReason } from "./order-annotation";
@@ -77,6 +78,15 @@ export class OrderManager {
     );
     if (audienceReason) {
       return { ok: false, reason: audienceReason };
+    }
+
+    const purposeReason = orderPurposeReason(
+      intent.purpose,
+      intent.orderPurpose,
+      intent.clientPurpose,
+    );
+    if (purposeReason) {
+      return { ok: false, reason: purposeReason };
     }
 
     const textReason = orderTextReason(
