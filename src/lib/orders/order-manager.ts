@@ -47,6 +47,7 @@ import { orderLabelReason } from "./order-label";
 import { orderTagReason } from "./order-tag";
 import { orderTemplateReason } from "./order-template";
 import { orderOverviewReason } from "./order-overview";
+import { orderSynopsisReason } from "./order-synopsis";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -406,6 +407,15 @@ export class OrderManager {
     );
     if (overviewReason) {
       return { ok: false, reason: overviewReason };
+    }
+
+    const synopsisReason = orderSynopsisReason(
+      intent.synopsis,
+      intent.orderSynopsis,
+      intent.clientSynopsis,
+    );
+    if (synopsisReason) {
+      return { ok: false, reason: synopsisReason };
     }
 
     // Additional floors would be checked here in the full implementation.
