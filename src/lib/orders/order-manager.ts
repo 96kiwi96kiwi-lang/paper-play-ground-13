@@ -214,6 +214,7 @@ import { orderPayloadReason } from "./order-payload";
 import { orderUrgencyReason } from "./order-urgency";
 import { orderVisibilityReason } from "./order-visibility";
 import { orderAudienceReason } from "./order-audience";
+import { orderPurposeReason } from "./order-purpose";
 import { orderScopeReason } from "./order-scope";
 import { orderCustomReason } from "./order-custom";
 import { orderAlgoReason } from "./order-algo";
@@ -972,6 +973,9 @@ export type OrderIntent = {
   audience?: unknown;
   orderAudience?: unknown;
   clientAudience?: unknown;
+  purpose?: unknown;
+  orderPurpose?: unknown;
+  clientPurpose?: unknown;
   scope?: unknown;
   orderScope?: unknown;
   clientScope?: unknown;
@@ -1317,6 +1321,15 @@ export class OrderManager {
     const sourceAlias = orderSourceReason(undefined, undefined, intent.src);
     if (sourceAlias) return this.fail(sourceAlias);
 
+    // `origin` overlaps with the legacy channel alias. Preserve the explicit
+    // order-origin contract before the compatibility check consumes it.
+    const orderOrigin = orderOriginReason(
+      intent.origin,
+      intent.orderOrigin,
+      intent.clientOrigin,
+    );
+    if (orderOrigin) return this.fail(orderOrigin);
+
     const channel = orderChannelReason(intent.channel, intent.orderChannel, intent.origin);
     if (channel) return this.fail(channel);
 
@@ -1367,6 +1380,13 @@ export class OrderManager {
       intent.clientAudience,
     );
     if (audience) return this.fail(audience);
+
+    const purpose = orderPurposeReason(
+      intent.purpose,
+      intent.orderPurpose,
+      intent.clientPurpose,
+    );
+    if (purpose) return this.fail(purpose);
 
     const scope = orderScopeReason(intent.scope, intent.orderScope, intent.clientScope);
     if (scope) return this.fail(scope);
@@ -1894,9 +1914,6 @@ export class OrderManager {
       intent.clientSignature,
     );
     if (sig) return this.fail(sig);
-
-    const org = orderOriginReason(intent.origin, intent.orderOrigin, intent.clientOrigin);
-    if (org) return this.fail(org);
 
     const prov = orderProvenanceReason(
       intent.provenance,

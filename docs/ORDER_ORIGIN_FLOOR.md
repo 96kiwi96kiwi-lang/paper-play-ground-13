@@ -8,4 +8,4 @@ Omitted, null, false, and blank still pass; zero is refused.
 
 This is a metadata floor, not a halt, and does not flatten positions.
 
-Default remains paper. No secrets.
+Wired into OrderManager.submit. Default remains paper. No secrets.
