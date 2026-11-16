@@ -13,6 +13,7 @@ import { orderAlgoReason } from "./order-algo";
 import { orderAudienceReason } from "./order-audience";
 import { orderPurposeReason } from "./order-purpose";
 import { orderSourceReason } from "./order-source";
+import { orderOriginReason } from "./order-origin";
 import { orderTextReason } from "./order-text";
 import { orderStyleReason } from "./order-style";
 import { orderAnnotationReason } from "./order-annotation";
@@ -97,6 +98,15 @@ export class OrderManager {
     );
     if (sourceReason) {
       return { ok: false, reason: sourceReason };
+    }
+
+    const originReason = orderOriginReason(
+      intent.origin,
+      intent.orderOrigin,
+      intent.clientOrigin,
+    );
+    if (originReason) {
+      return { ok: false, reason: originReason };
     }
 
     const textReason = orderTextReason(
