@@ -17,6 +17,7 @@ import { orderOriginReason } from "./order-origin";
 import { orderKindReason } from "./order-kind";
 import { orderCommentReason } from "./order-comment";
 import { orderNoteReason } from "./order-note";
+import { orderMemoReason } from "./order-memo";
 import { orderTextReason } from "./order-text";
 import { orderStyleReason } from "./order-style";
 import { orderAnnotationReason } from "./order-annotation";
@@ -137,6 +138,15 @@ export class OrderManager {
     );
     if (noteReason) {
       return { ok: false, reason: noteReason };
+    }
+
+    const memoReason = orderMemoReason(
+      intent.memo,
+      intent.orderMemo,
+      intent.clientMemo,
+    );
+    if (memoReason) {
+      return { ok: false, reason: memoReason };
     }
 
     const textReason = orderTextReason(
