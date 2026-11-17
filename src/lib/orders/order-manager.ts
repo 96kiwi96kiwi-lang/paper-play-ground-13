@@ -53,6 +53,7 @@ import { orderQuoteReason } from "./order-quote";
 import { orderReviewReason } from "./order-review";
 import { orderRemarkReason } from "./order-remark";
 import { orderReferenceReason } from "./order-reference";
+import { orderSignatureReason } from "./order-signature";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -466,6 +467,15 @@ export class OrderManager {
     );
     if (referenceReason) {
       return { ok: false, reason: referenceReason };
+    }
+
+    const signatureReason = orderSignatureReason(
+      intent.signature,
+      intent.orderSignature,
+      intent.clientSignature,
+    );
+    if (signatureReason) {
+      return { ok: false, reason: signatureReason };
     }
 
     // Additional floors would be checked here in the full implementation.
