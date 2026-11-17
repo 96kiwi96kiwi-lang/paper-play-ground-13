@@ -52,6 +52,7 @@ import { orderDigestReason } from "./order-digest";
 import { orderQuoteReason } from "./order-quote";
 import { orderReviewReason } from "./order-review";
 import { orderRemarkReason } from "./order-remark";
+import { orderReferenceReason } from "./order-reference";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -456,6 +457,15 @@ export class OrderManager {
     );
     if (remarkReason) {
       return { ok: false, reason: remarkReason };
+    }
+
+    const referenceReason = orderReferenceReason(
+      intent.reference,
+      intent.orderReference,
+      intent.clientReference,
+    );
+    if (referenceReason) {
+      return { ok: false, reason: referenceReason };
     }
 
     // Additional floors would be checked here in the full implementation.
