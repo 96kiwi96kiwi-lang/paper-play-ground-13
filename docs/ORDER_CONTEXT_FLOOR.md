@@ -6,6 +6,6 @@ Paper and KuCoin adapters place one plain spot order and do not attach a context
 
 Omitted, null, false, and blank still pass. Zero is present and is refused.
 
-`OrderManager.submit` calls `orderContextReason` before the adapter, so a refuse does not burn `maxRejectsInWindow`. This is a metadata floor, not a halt, and does not flatten positions.
+`OrderManager.submit` calls `orderContextReason` before the adapter (Hour odd 2026-11-17), so a refuse does not burn `maxRejectsInWindow`. This is a metadata floor, not a halt, and does not flatten positions.
 
 Vitest: `tests/order-context.test.ts` (no exchange, no secrets).

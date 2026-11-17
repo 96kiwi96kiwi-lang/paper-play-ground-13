@@ -58,6 +58,7 @@ import { orderHashReason } from "./order-hash";
 import { orderFingerprintReason } from "./order-fingerprint";
 import { orderAttributionReason } from "./order-attribution";
 import { orderCorrelationReason } from "./order-correlation";
+import { orderContextReason } from "./order-context";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -516,6 +517,15 @@ export class OrderManager {
     );
     if (correlationReason) {
       return { ok: false, reason: correlationReason };
+    }
+
+    const contextReason = orderContextReason(
+      intent.context,
+      intent.orderContext,
+      intent.clientContext,
+    );
+    if (contextReason) {
+      return { ok: false, reason: contextReason };
     }
 
     // Additional floors would be checked here in the full implementation.
