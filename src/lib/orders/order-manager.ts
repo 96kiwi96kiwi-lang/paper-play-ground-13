@@ -54,6 +54,7 @@ import { orderReviewReason } from "./order-review";
 import { orderRemarkReason } from "./order-remark";
 import { orderReferenceReason } from "./order-reference";
 import { orderSignatureReason } from "./order-signature";
+import { orderHashReason } from "./order-hash";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -476,6 +477,15 @@ export class OrderManager {
     );
     if (signatureReason) {
       return { ok: false, reason: signatureReason };
+    }
+
+    const hashReason = orderHashReason(
+      intent.hash,
+      intent.orderHash,
+      intent.clientHash,
+    );
+    if (hashReason) {
+      return { ok: false, reason: hashReason };
     }
 
     // Additional floors would be checked here in the full implementation.
