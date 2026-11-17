@@ -55,6 +55,7 @@ import { orderRemarkReason } from "./order-remark";
 import { orderReferenceReason } from "./order-reference";
 import { orderSignatureReason } from "./order-signature";
 import { orderHashReason } from "./order-hash";
+import { orderFingerprintReason } from "./order-fingerprint";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -486,6 +487,15 @@ export class OrderManager {
     );
     if (hashReason) {
       return { ok: false, reason: hashReason };
+    }
+
+    const fingerprintReason = orderFingerprintReason(
+      intent.fingerprint,
+      intent.orderFingerprint,
+      intent.clientFingerprint,
+    );
+    if (fingerprintReason) {
+      return { ok: false, reason: fingerprintReason };
     }
 
     // Additional floors would be checked here in the full implementation.
