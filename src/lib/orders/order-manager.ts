@@ -60,6 +60,7 @@ import { orderAttributionReason } from "./order-attribution";
 import { orderCorrelationReason } from "./order-correlation";
 import { orderContextReason } from "./order-context";
 import { orderChannelReason } from "./order-channel";
+import { orderSessionReason } from "./order-session";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -536,6 +537,15 @@ export class OrderManager {
     );
     if (channelReason) {
       return { ok: false, reason: channelReason };
+    }
+
+    const sessionReason = orderSessionReason(
+      intent.session,
+      intent.orderSession,
+      intent.clientSession,
+    );
+    if (sessionReason) {
+      return { ok: false, reason: sessionReason };
     }
 
     // Additional floors would be checked here in the full implementation.
