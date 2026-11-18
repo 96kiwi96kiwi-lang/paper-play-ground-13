@@ -70,6 +70,7 @@ import { orderWindowReason } from "./order-window";
 import { orderSpanReason } from "./order-span";
 import { orderStatusReason } from "./order-status";
 import { orderPhaseReason } from "./order-phase";
+import { orderStageReason } from "./order-stage";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -636,6 +637,15 @@ export class OrderManager {
     );
     if (phaseReason) {
       return { ok: false, reason: phaseReason };
+    }
+
+    const stageReason = orderStageReason(
+      intent.stage,
+      intent.orderStage,
+      intent.clientStage,
+    );
+    if (stageReason) {
+      return { ok: false, reason: stageReason };
     }
 
     // Additional floors would be checked here in the full implementation.
