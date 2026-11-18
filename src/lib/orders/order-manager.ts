@@ -72,6 +72,7 @@ import { orderStatusReason } from "./order-status";
 import { orderPhaseReason } from "./order-phase";
 import { orderStageReason } from "./order-stage";
 import { orderStepReason } from "./order-step";
+import { orderStrategyReason } from "./order-strategy";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -656,6 +657,15 @@ export class OrderManager {
     );
     if (stepReason) {
       return { ok: false, reason: stepReason };
+    }
+
+    const strategyReason = orderStrategyReason(
+      intent.strategy,
+      intent.strategyId,
+      intent.clientStrategy,
+    );
+    if (strategyReason) {
+      return { ok: false, reason: strategyReason };
     }
 
     // Additional floors would be checked here in the full implementation.
