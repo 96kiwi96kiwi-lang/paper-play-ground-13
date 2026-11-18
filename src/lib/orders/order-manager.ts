@@ -61,6 +61,7 @@ import { orderCorrelationReason } from "./order-correlation";
 import { orderContextReason } from "./order-context";
 import { orderChannelReason } from "./order-channel";
 import { orderSessionReason } from "./order-session";
+import { orderBatchReason } from "./order-batch";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -546,6 +547,15 @@ export class OrderManager {
     );
     if (sessionReason) {
       return { ok: false, reason: sessionReason };
+    }
+
+    const batchReason = orderBatchReason(
+      intent.batch,
+      intent.orderBatch,
+      intent.clientBatch,
+    );
+    if (batchReason) {
+      return { ok: false, reason: batchReason };
     }
 
     // Additional floors would be checked here in the full implementation.
