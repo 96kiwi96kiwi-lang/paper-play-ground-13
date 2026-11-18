@@ -2,21 +2,21 @@
 
 ## Datum a čas
 
-2026-11-18 01:28 CET (odd hour). Order-batch metadata floor wired into OrderManager.
+2026-11-18 03:18 CET (odd hour). Order-chain metadata floor wired into OrderManager.
 
 ## Aktuální stav
 
 Paper mode is the default. Live trading is disabled. No exchange credentials are in the tree.
 
-**Hour (odd):** Wired `orderBatchReason` into the persistent OrderManager so a present `batch`, `orderBatch`, or `clientBatch` is refused before any adapter call, matching the order-channel pattern. Tests cover the helper and the submit path. Default remains paper. No secrets. No live without server-side owner credentials.
+**Hour (odd):** Wired `orderChainReason` into the persistent OrderManager so a present `chainId`, `orderChain`, or `clientChain` is refused before any adapter call, matching the order-batch pattern. Tests cover the helper and the submit path. Default remains paper. No secrets. No live without server-side owner credentials.
 
 Previous verified state remains as below.
 
 ## Dokončené změny
 
-- Wired existing pattern into OrderManager.submit for order-batch.
-- Added coverage in `tests/order-batch.test.ts` with OrderManager integration.
+- Wired existing pattern into OrderManager.submit for order-chain.
+- Extended coverage in `tests/order-chain.test.ts` with OrderManager integration.
 - Updated README current status, SAFETY checklist, and PROGRESS.
-- Confirmed `docs/ORDER_BATCH_FLOOR.md`.
+- Confirmed `docs/ORDER_CHAIN_FLOOR.md`.
 
 (Full historical record follows from prior PROGRESS.md content.)
