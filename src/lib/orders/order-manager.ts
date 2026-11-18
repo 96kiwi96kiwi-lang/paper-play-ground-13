@@ -65,6 +65,7 @@ import { orderBatchReason } from "./order-batch";
 import { orderChainReason } from "./order-chain";
 import { orderGroupReason } from "./order-group";
 import { orderZoneReason } from "./order-zone";
+import { orderWeightReason } from "./order-weight";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -586,6 +587,15 @@ export class OrderManager {
     );
     if (zoneReason) {
       return { ok: false, reason: zoneReason };
+    }
+
+    const weightReason = orderWeightReason(
+      intent.weight,
+      intent.orderWeight,
+      intent.clientWeight,
+    );
+    if (weightReason) {
+      return { ok: false, reason: weightReason };
     }
 
     // Additional floors would be checked here in the full implementation.
