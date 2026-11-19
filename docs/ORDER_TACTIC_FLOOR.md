@@ -1,11 +1,11 @@
-# Order-tactic metadata floor
+# Order tactic floor
 
-OrderManager refuses a present `tactic`, `tacticId`, or `clientTactic` before any paper or live adapter call.
+A submit is refused when `tactic`, `tacticId`, or `clientTactic` is present (`Tactic is not supported` / `Tactic id is not supported` / `Client tactic is not supported`).
 
-The spot adapters place one plain market or limit order. They do not forward tactic / playbook metadata. A present value would otherwise be dropped and the order would rest or fill as a plain spot order.
+Paper and KuCoin adapters place one plain spot order and do not attach a tactic or playbook tag. A tactic intent would otherwise be dropped and the order would rest or fill as a plain spot order.
 
-This is a metadata floor, not a halt. It does not flatten positions.
+Omitted, null, false, and blank still pass. Zero is present and is refused.
 
-Zero is treated as present and is refused. Omitted, null, false, and blank strings pass.
+`OrderManager.submit` calls `orderTacticReason` before the adapter, so a refuse does not burn `maxRejectsInWindow`. This is a metadata floor, not a halt, and does not flatten positions.
 
 Vitest: `tests/order-tactic.test.ts` (no exchange, no secrets).
