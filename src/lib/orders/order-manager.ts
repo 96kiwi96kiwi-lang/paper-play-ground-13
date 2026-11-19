@@ -76,6 +76,7 @@ import { orderStrategyReason } from "./order-strategy";
 import { orderTacticReason } from "./order-tactic";
 import { orderPlayReason } from "./order-play";
 import { orderSchemeReason } from "./order-scheme";
+import { orderPlanReason } from "./order-plan";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -696,6 +697,15 @@ export class OrderManager {
     );
     if (schemeReason) {
       return { ok: false, reason: schemeReason };
+    }
+
+    const planReason = orderPlanReason(
+      intent.plan,
+      intent.planId,
+      intent.clientPlan,
+    );
+    if (planReason) {
+      return { ok: false, reason: planReason };
     }
 
     // Additional floors would be checked here in the full implementation.
