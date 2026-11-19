@@ -83,6 +83,7 @@ import { orderStoryReason } from "./order-story";
 import { orderNarrativeReason } from "./order-narrative";
 import { orderSagaReason } from "./order-saga";
 import { orderEpicReason } from "./order-epic";
+import { orderQuestReason } from "./order-quest";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -766,6 +767,15 @@ export class OrderManager {
     );
     if (epicReason) {
       return { ok: false, reason: epicReason };
+    }
+
+    const questReason = orderQuestReason(
+      intent.quest,
+      intent.questId,
+      intent.clientQuest,
+    );
+    if (questReason) {
+      return { ok: false, reason: questReason };
     }
 
     // Additional floors would be checked here in the full implementation.
