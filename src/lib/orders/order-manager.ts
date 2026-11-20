@@ -250,6 +250,30 @@ import { orderSiblingReason } from "./order-sibling";
 import { orderParentReason } from "./order-parent";
 import { orderChildReason } from "./order-child";
 import { orderRootReason } from "./order-root";
+import { orderQuoteReason } from "./order-quote";
+import { orderStatusReason } from "./order-status";
+import { orderPhaseReason } from "./order-phase";
+import { orderStageReason } from "./order-stage";
+import { orderStepReason } from "./order-step";
+import { orderPlayReason } from "./order-play";
+import { orderSchemeReason } from "./order-scheme";
+import { orderPlanReason } from "./order-plan";
+import { orderPlotReason } from "./order-plot";
+import { orderScenarioReason } from "./order-scenario";
+import { orderStoryReason } from "./order-story";
+import { orderNarrativeReason } from "./order-narrative";
+import { orderSagaReason } from "./order-saga";
+import { orderEpicReason } from "./order-epic";
+import { orderQuestReason } from "./order-quest";
+import { orderMissionReason } from "./order-mission";
+import { orderGoalReason } from "./order-goal";
+import { orderIntentReason } from "./order-intent";
+import { orderWillReason } from "./order-will";
+import { orderWishReason } from "./order-wish";
+import { orderDreamReason } from "./order-dream";
+import { orderVisionReason } from "./order-vision";
+import { orderAmbitionReason } from "./order-ambition";
+import { orderHopeReason } from "./order-hope";
 
 export type OrderIntent = {
   symbol: string;
@@ -1054,6 +1078,78 @@ export type OrderIntent = {
   orderRelated?: unknown;
   /** Client related-order alias. Adapters place one plain spot order, so a present value is refused. */
   clientRelated?: unknown;
+  quote?: unknown;
+  orderQuote?: unknown;
+  clientQuote?: unknown;
+  status?: unknown;
+  orderStatus?: unknown;
+  clientStatus?: unknown;
+  phase?: unknown;
+  orderPhase?: unknown;
+  clientPhase?: unknown;
+  stage?: unknown;
+  orderStage?: unknown;
+  clientStage?: unknown;
+  step?: unknown;
+  orderStep?: unknown;
+  clientStep?: unknown;
+  play?: unknown;
+  playId?: unknown;
+  clientPlay?: unknown;
+  scheme?: unknown;
+  schemeId?: unknown;
+  clientScheme?: unknown;
+  plan?: unknown;
+  planId?: unknown;
+  clientPlan?: unknown;
+  plot?: unknown;
+  plotId?: unknown;
+  clientPlot?: unknown;
+  scenario?: unknown;
+  scenarioId?: unknown;
+  clientScenario?: unknown;
+  story?: unknown;
+  storyId?: unknown;
+  clientStory?: unknown;
+  narrative?: unknown;
+  narrativeId?: unknown;
+  clientNarrative?: unknown;
+  saga?: unknown;
+  sagaId?: unknown;
+  clientSaga?: unknown;
+  epic?: unknown;
+  epicId?: unknown;
+  clientEpic?: unknown;
+  quest?: unknown;
+  questId?: unknown;
+  clientQuest?: unknown;
+  mission?: unknown;
+  missionId?: unknown;
+  clientMission?: unknown;
+  goal?: unknown;
+  goalId?: unknown;
+  clientGoal?: unknown;
+  intent?: unknown;
+  intentId?: unknown;
+  orderIntent?: unknown;
+  will?: unknown;
+  willId?: unknown;
+  orderWill?: unknown;
+  wish?: unknown;
+  wishId?: unknown;
+  orderWish?: unknown;
+  dream?: unknown;
+  dreamId?: unknown;
+  orderDream?: unknown;
+  vision?: unknown;
+  visionId?: unknown;
+  orderVision?: unknown;
+  ambition?: unknown;
+  ambitionId?: unknown;
+  orderAmbition?: unknown;
+  hope?: unknown;
+  hopeId?: unknown;
+  orderHope?: unknown;
 };
 
 /**
@@ -1167,6 +1263,225 @@ export class OrderManager {
   async submit(intent: OrderIntent, riskState: RiskState): Promise<SubmitResult> {
     const now = Date.now();
     const cfg = TRADING_CONFIG.orders;
+
+    const hopeReason = orderHopeReason(intent.hope, intent.hopeId, intent.orderHope);
+    if (hopeReason) return this.fail(hopeReason);
+
+    // Preserve the explicit order-signature floor ahead of the generic
+    // credential-body guard so callers receive the current contract reason.
+    const explicitSignature = orderSignatureReason(
+      intent.signature,
+      intent.orderSignature,
+      intent.clientSignature,
+    );
+    if (explicitSignature) return this.fail(explicitSignature);
+
+    const quoteReason = orderQuoteReason(
+      intent.quote,
+      intent.orderQuote,
+      intent.clientQuote,
+    );
+    if (quoteReason) {
+      return { ok: false, reason: quoteReason };
+    }
+
+    const statusReason = orderStatusReason(
+      intent.status,
+      intent.orderStatus,
+      intent.clientStatus,
+    );
+    if (statusReason) {
+      return { ok: false, reason: statusReason };
+    }
+
+    const phaseReason = orderPhaseReason(
+      intent.phase,
+      intent.orderPhase,
+      intent.clientPhase,
+    );
+    if (phaseReason) {
+      return { ok: false, reason: phaseReason };
+    }
+
+    const stageReason = orderStageReason(
+      intent.stage,
+      intent.orderStage,
+      intent.clientStage,
+    );
+    if (stageReason) {
+      return { ok: false, reason: stageReason };
+    }
+
+    const stepReason = orderStepReason(
+      intent.step,
+      intent.orderStep,
+      intent.clientStep,
+    );
+    if (stepReason) {
+      return { ok: false, reason: stepReason };
+    }
+
+    const playReason = orderPlayReason(
+      intent.play,
+      intent.playId,
+      intent.clientPlay,
+    );
+    if (playReason) {
+      return { ok: false, reason: playReason };
+    }
+
+    const schemeReason = orderSchemeReason(
+      intent.scheme,
+      intent.schemeId,
+      intent.clientScheme,
+    );
+    if (schemeReason) {
+      return { ok: false, reason: schemeReason };
+    }
+
+    const planReason = orderPlanReason(
+      intent.plan,
+      intent.planId,
+      intent.clientPlan,
+    );
+    if (planReason) {
+      return { ok: false, reason: planReason };
+    }
+
+    const plotReason = orderPlotReason(
+      intent.plot,
+      intent.plotId,
+      intent.clientPlot,
+    );
+    if (plotReason) {
+      return { ok: false, reason: plotReason };
+    }
+
+    const scenarioReason = orderScenarioReason(
+      intent.scenario,
+      intent.scenarioId,
+      intent.clientScenario,
+    );
+    if (scenarioReason) {
+      return { ok: false, reason: scenarioReason };
+    }
+
+    const storyReason = orderStoryReason(
+      intent.story,
+      intent.storyId,
+      intent.clientStory,
+    );
+    if (storyReason) {
+      return { ok: false, reason: storyReason };
+    }
+
+    const narrativeReason = orderNarrativeReason(
+      intent.narrative,
+      intent.narrativeId,
+      intent.clientNarrative,
+    );
+    if (narrativeReason) {
+      return { ok: false, reason: narrativeReason };
+    }
+
+    const sagaReason = orderSagaReason(
+      intent.saga,
+      intent.sagaId,
+      intent.clientSaga,
+    );
+    if (sagaReason) {
+      return { ok: false, reason: sagaReason };
+    }
+
+    const epicReason = orderEpicReason(
+      intent.epic,
+      intent.epicId,
+      intent.clientEpic,
+    );
+    if (epicReason) {
+      return { ok: false, reason: epicReason };
+    }
+
+    const questReason = orderQuestReason(
+      intent.quest,
+      intent.questId,
+      intent.clientQuest,
+    );
+    if (questReason) {
+      return { ok: false, reason: questReason };
+    }
+
+    const missionReason = orderMissionReason(
+      intent.mission,
+      intent.missionId,
+      intent.clientMission,
+    );
+    if (missionReason) {
+      return { ok: false, reason: missionReason };
+    }
+
+    const goalReason = orderGoalReason(
+      intent.goal,
+      intent.goalId,
+      intent.clientGoal,
+    );
+    if (goalReason) {
+      return { ok: false, reason: goalReason };
+    }
+
+    const intentReason = orderIntentReason(
+      intent.intent,
+      intent.intentId,
+      intent.orderIntent,
+    );
+    if (intentReason) {
+      return { ok: false, reason: intentReason };
+    }
+
+    const willReason = orderWillReason(
+      intent.will,
+      intent.willId,
+      intent.orderWill,
+    );
+    if (willReason) {
+      return { ok: false, reason: willReason };
+    }
+
+    const wishReason = orderWishReason(
+      intent.wish,
+      intent.wishId,
+      intent.orderWish,
+    );
+    if (wishReason) {
+      return { ok: false, reason: wishReason };
+    }
+
+    const dreamReason = orderDreamReason(
+      intent.dream,
+      intent.dreamId,
+      intent.orderDream,
+    );
+    if (dreamReason) {
+      return { ok: false, reason: dreamReason };
+    }
+
+    const visionReason = orderVisionReason(
+      intent.vision,
+      intent.visionId,
+      intent.orderVision,
+    );
+    if (visionReason) {
+      return { ok: false, reason: visionReason };
+    }
+
+    const ambitionReason = orderAmbitionReason(
+      intent.ambition,
+      intent.ambitionId,
+      intent.orderAmbition,
+    );
+    if (ambitionReason) {
+      return { ok: false, reason: ambitionReason };
+    }
 
     // Metadata floors run before quote/risk validation so unsupported intent
     // cannot be silently reinterpreted as a plain spot order.
@@ -1312,7 +1627,11 @@ export class OrderManager {
     const orderTag = orderTagReason(intent.tag, intent.orderTag, intent.clientTag);
     if (orderTag) return this.fail(orderTag);
 
-    const remark = orderRemarkReason(intent.remark, intent.tag, intent.clientTag);
+    const remark = orderRemarkReason(
+      intent.remark,
+      intent.orderRemark,
+      intent.clientRemark,
+    );
     if (remark) return this.fail(remark);
 
     const source = orderSourceReason(intent.source, intent.orderSource, intent.clientSource);

@@ -3,7 +3,7 @@
 /**
  * Omitted, null, false, and blank pass. A present session, orderSession, or
  * clientSession is refused: placeLimitOrder / placeMarketOrder do not set an
- * order session, so a session intent would be ignored and the order would
+ * order session tag, so a session intent would be ignored and the order would
  * rest or fill as a plain spot order. Zero is present and is refused.
  * This is a metadata floor, not a halt, and does not flatten positions.
  */
