@@ -91,6 +91,7 @@ import { orderIntentReason } from "./order-intent";
 import { orderWillReason } from "./order-will";
 import { orderWishReason } from "./order-wish";
 import { orderDreamReason } from "./order-dream";
+import { orderVisionReason } from "./order-vision";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -846,6 +847,15 @@ export class OrderManager {
     );
     if (dreamReason) {
       return { ok: false, reason: dreamReason };
+    }
+
+    const visionReason = orderVisionReason(
+      intent.vision,
+      intent.visionId,
+      intent.orderVision,
+    );
+    if (visionReason) {
+      return { ok: false, reason: visionReason };
     }
 
     // Additional floors would be checked here in the full implementation.
