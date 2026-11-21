@@ -94,6 +94,7 @@ import { orderDreamReason } from "./order-dream";
 import { orderVisionReason } from "./order-vision";
 import { orderAmbitionReason } from "./order-ambition";
 import { orderDestinyReason } from "./order-destiny";
+import { orderFateReason } from "./order-fate";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -691,7 +692,7 @@ export class OrderManager {
 
     const tacticReason = orderTacticReason(
       intent.tactic,
-      intent.tacticId,
+      intent.orderTactic,
       intent.clientTactic,
     );
     if (tacticReason) {
@@ -700,7 +701,7 @@ export class OrderManager {
 
     const playReason = orderPlayReason(
       intent.play,
-      intent.playId,
+      intent.orderPlay,
       intent.clientPlay,
     );
     if (playReason) {
@@ -709,7 +710,7 @@ export class OrderManager {
 
     const schemeReason = orderSchemeReason(
       intent.scheme,
-      intent.schemeId,
+      intent.orderScheme,
       intent.clientScheme,
     );
     if (schemeReason) {
@@ -718,7 +719,7 @@ export class OrderManager {
 
     const planReason = orderPlanReason(
       intent.plan,
-      intent.planId,
+      intent.orderPlan,
       intent.clientPlan,
     );
     if (planReason) {
@@ -727,7 +728,7 @@ export class OrderManager {
 
     const plotReason = orderPlotReason(
       intent.plot,
-      intent.plotId,
+      intent.orderPlot,
       intent.clientPlot,
     );
     if (plotReason) {
@@ -736,7 +737,7 @@ export class OrderManager {
 
     const scenarioReason = orderScenarioReason(
       intent.scenario,
-      intent.scenarioId,
+      intent.orderScenario,
       intent.clientScenario,
     );
     if (scenarioReason) {
@@ -745,7 +746,7 @@ export class OrderManager {
 
     const storyReason = orderStoryReason(
       intent.story,
-      intent.storyId,
+      intent.orderStory,
       intent.clientStory,
     );
     if (storyReason) {
@@ -754,7 +755,7 @@ export class OrderManager {
 
     const narrativeReason = orderNarrativeReason(
       intent.narrative,
-      intent.narrativeId,
+      intent.orderNarrative,
       intent.clientNarrative,
     );
     if (narrativeReason) {
@@ -763,7 +764,7 @@ export class OrderManager {
 
     const sagaReason = orderSagaReason(
       intent.saga,
-      intent.sagaId,
+      intent.orderSaga,
       intent.clientSaga,
     );
     if (sagaReason) {
@@ -772,7 +773,7 @@ export class OrderManager {
 
     const epicReason = orderEpicReason(
       intent.epic,
-      intent.epicId,
+      intent.orderEpic,
       intent.clientEpic,
     );
     if (epicReason) {
@@ -781,7 +782,7 @@ export class OrderManager {
 
     const questReason = orderQuestReason(
       intent.quest,
-      intent.questId,
+      intent.orderQuest,
       intent.clientQuest,
     );
     if (questReason) {
@@ -790,7 +791,7 @@ export class OrderManager {
 
     const missionReason = orderMissionReason(
       intent.mission,
-      intent.missionId,
+      intent.orderMission,
       intent.clientMission,
     );
     if (missionReason) {
@@ -876,6 +877,15 @@ export class OrderManager {
     );
     if (destinyReason) {
       return { ok: false, reason: destinyReason };
+    }
+
+    const fateReason = orderFateReason(
+      intent.fate,
+      intent.fateId,
+      intent.orderFate,
+    );
+    if (fateReason) {
+      return { ok: false, reason: fateReason };
     }
 
     // Additional floors would be checked here in the full implementation.
