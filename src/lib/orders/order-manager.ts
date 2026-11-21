@@ -278,6 +278,7 @@ import { orderDestinyReason } from "./order-destiny";
 import { orderFateReason } from "./order-fate";
 import { orderOptimismReason } from "./order-optimism";
 import { orderConfidenceReason } from "./order-confidence";
+import { orderAssuranceReason } from "./order-assurance";
 
 export type OrderIntent = {
   symbol: string;
@@ -1166,6 +1167,9 @@ export type OrderIntent = {
   confidence?: unknown;
   confidenceId?: unknown;
   orderConfidence?: unknown;
+  assurance?: unknown;
+  assuranceId?: unknown;
+  orderAssurance?: unknown;
 };
 
 /**
@@ -1529,6 +1533,15 @@ export class OrderManager {
     );
     if (confidenceReason) {
       return { ok: false, reason: confidenceReason };
+    }
+
+    const assuranceReason = orderAssuranceReason(
+      intent.assurance,
+      intent.assuranceId,
+      intent.orderAssurance,
+    );
+    if (assuranceReason) {
+      return { ok: false, reason: assuranceReason };
     }
 
     // Metadata floors run before quote/risk validation so unsupported intent
