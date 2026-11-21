@@ -102,6 +102,7 @@ import { orderAssuranceReason } from "./order-assurance";
 import { orderConvictionReason } from "./order-conviction";
 import { orderBeliefReason } from "./order-belief";
 import { orderFaithReason } from "./order-faith";
+import { orderTrustReason } from "./order-trust";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -956,6 +957,15 @@ export class OrderManager {
     );
     if (faithReason) {
       return { ok: false, reason: faithReason };
+    }
+
+    const trustReason = orderTrustReason(
+      intent.trust,
+      intent.trustId,
+      intent.orderTrust,
+    );
+    if (trustReason) {
+      return { ok: false, reason: trustReason };
     }
 
     // Additional floors would be checked here in the full implementation.
