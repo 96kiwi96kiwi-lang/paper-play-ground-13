@@ -274,6 +274,8 @@ import { orderDreamReason } from "./order-dream";
 import { orderVisionReason } from "./order-vision";
 import { orderAmbitionReason } from "./order-ambition";
 import { orderHopeReason } from "./order-hope";
+import { orderDestinyReason } from "./order-destiny";
+import { orderFateReason } from "./order-fate";
 
 export type OrderIntent = {
   symbol: string;
@@ -1150,6 +1152,12 @@ export type OrderIntent = {
   hope?: unknown;
   hopeId?: unknown;
   orderHope?: unknown;
+  destiny?: unknown;
+  destinyId?: unknown;
+  orderDestiny?: unknown;
+  fate?: unknown;
+  fateId?: unknown;
+  orderFate?: unknown;
 };
 
 /**
@@ -1481,6 +1489,20 @@ export class OrderManager {
     );
     if (ambitionReason) {
       return { ok: false, reason: ambitionReason };
+    }
+
+    const destinyReason = orderDestinyReason(
+      intent.destiny,
+      intent.destinyId,
+      intent.orderDestiny,
+    );
+    if (destinyReason) {
+      return { ok: false, reason: destinyReason };
+    }
+
+    const fateReason = orderFateReason(intent.fate, intent.fateId, intent.orderFate);
+    if (fateReason) {
+      return { ok: false, reason: fateReason };
     }
 
     // Metadata floors run before quote/risk validation so unsupported intent
