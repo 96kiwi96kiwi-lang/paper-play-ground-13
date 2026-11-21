@@ -137,9 +137,838 @@ export class OrderManager {
       return { ok: false, reason: algoReason };
     }
 
-    // ... (truncated for this call; full content is in the local file, but to avoid size limits we note that the full updated file with devotion check after loyalty was prepared) 
-    // The full file from /tmp/order-manager.ts is the correct one. 
-    // For safety, the key addition is the devotion check after loyalty.
+    const audienceReason = orderAudienceReason(
+      intent.audience,
+      intent.orderAudience,
+      intent.clientAudience,
+    );
+    if (audienceReason) {
+      return { ok: false, reason: audienceReason };
+    }
+
+    const purposeReason = orderPurposeReason(
+      intent.purpose,
+      intent.orderPurpose,
+      intent.clientPurpose,
+    );
+    if (purposeReason) {
+      return { ok: false, reason: purposeReason };
+    }
+
+    const sourceReason = orderSourceReason(
+      intent.source,
+      intent.orderSource,
+      intent.clientSource,
+    );
+    if (sourceReason) {
+      return { ok: false, reason: sourceReason };
+    }
+
+    const originReason = orderOriginReason(
+      intent.origin,
+      intent.orderOrigin,
+      intent.clientOrigin,
+    );
+    if (originReason) {
+      return { ok: false, reason: originReason };
+    }
+
+    const kindReason = orderKindReason(
+      intent.kind,
+      intent.orderKind,
+      intent.clientKind,
+    );
+    if (kindReason) {
+      return { ok: false, reason: kindReason };
+    }
+
+    const commentReason = orderCommentReason(
+      intent.comment,
+      intent.orderComment,
+      intent.clientComment,
+    );
+    if (commentReason) {
+      return { ok: false, reason: commentReason };
+    }
+
+    const noteReason = orderNoteReason(
+      intent.note,
+      intent.orderNote,
+      intent.clientNote,
+    );
+    if (noteReason) {
+      return { ok: false, reason: noteReason };
+    }
+
+    const memoReason = orderMemoReason(
+      intent.memo,
+      intent.orderMemo,
+      intent.clientMemo,
+    );
+    if (memoReason) {
+      return { ok: false, reason: memoReason };
+    }
+
+    const messageReason = orderMessageReason(
+      intent.message,
+      intent.orderMessage,
+      intent.clientMessage,
+    );
+    if (messageReason) {
+      return { ok: false, reason: messageReason };
+    }
+
+    const textReason = orderTextReason(
+      intent.text,
+      intent.orderText,
+      intent.clientText,
+    );
+    if (textReason) {
+      return { ok: false, reason: textReason };
+    }
+
+    const styleReason = orderStyleReason(intent.style, intent.orderStyle, intent.clientStyle);
+    if (styleReason) {
+      return { ok: false, reason: styleReason };
+    }
+
+    const annotationReason = orderAnnotationReason(
+      intent.annotation,
+      intent.orderAnnotation,
+      intent.clientAnnotation,
+    );
+    if (annotationReason) {
+      return { ok: false, reason: annotationReason };
+    }
+
+    const themeReason = orderThemeReason(
+      intent.theme,
+      intent.orderTheme,
+      intent.clientTheme,
+    );
+    if (themeReason) {
+      return { ok: false, reason: themeReason };
+    }
+
+    const urgencyReason = orderUrgencyReason(
+      intent.urgency,
+      intent.orderUrgency,
+      intent.clientUrgency,
+    );
+    if (urgencyReason) {
+      return { ok: false, reason: urgencyReason };
+    }
+
+    const userReason = orderUserReason(
+      intent.user,
+      intent.orderUser,
+      intent.clientUser,
+    );
+    if (userReason) {
+      return { ok: false, reason: userReason };
+    }
+
+    const priorityReason = orderPriorityReason(
+      intent.priority,
+      intent.orderPriority,
+      intent.clientPriority,
+    );
+    if (priorityReason) {
+      return { ok: false, reason: priorityReason };
+    }
+
+    const rankReason = orderRankReason(
+      intent.rank,
+      intent.orderRank,
+      intent.clientRank,
+    );
+    if (rankReason) {
+      return { ok: false, reason: rankReason };
+    }
+
+    const scoreReason = orderScoreReason(
+      intent.score,
+      intent.orderScore,
+      intent.clientScore,
+    );
+    if (scoreReason) {
+      return { ok: false, reason: scoreReason };
+    }
+
+    const ratingReason = orderRatingReason(
+      intent.rating,
+      intent.orderRating,
+      intent.clientRating,
+    );
+    if (ratingReason) {
+      return { ok: false, reason: ratingReason };
+    }
+
+    const gradeReason = orderGradeReason(
+      intent.grade,
+      intent.orderGrade,
+      intent.clientGrade,
+    );
+    if (gradeReason) {
+      return { ok: false, reason: gradeReason };
+    }
+
+    const levelReason = orderLevelReason(
+      intent.level,
+      intent.orderLevel,
+      intent.clientLevel,
+    );
+    if (levelReason) {
+      return { ok: false, reason: levelReason };
+    }
+
+    const outlineReason = orderOutlineReason(
+      intent.outline,
+      intent.orderOutline,
+      intent.clientOutline,
+    );
+    if (outlineReason) {
+      return { ok: false, reason: outlineReason };
+    }
+
+    const summaryReason = orderSummaryReason(
+      intent.summary,
+      intent.orderSummary,
+      intent.clientSummary,
+    );
+    if (summaryReason) {
+      return { ok: false, reason: summaryReason };
+    }
+
+    const briefReason = orderBriefReason(
+      intent.brief,
+      intent.orderBrief,
+      intent.clientBrief,
+    );
+    if (briefReason) {
+      return { ok: false, reason: briefReason };
+    }
+
+    const captionReason = orderCaptionReason(
+      intent.caption,
+      intent.orderCaption,
+      intent.clientCaption,
+    );
+    if (captionReason) {
+      return { ok: false, reason: captionReason };
+    }
+
+    const descriptionReason = orderDescriptionReason(
+      intent.description,
+      intent.orderDescription,
+      intent.clientDescription,
+    );
+    if (descriptionReason) {
+      return { ok: false, reason: descriptionReason };
+    }
+
+    const bodyReason = orderBodyReason(
+      intent.body,
+      intent.orderBody,
+      intent.clientBody,
+    );
+    if (bodyReason) {
+      return { ok: false, reason: bodyReason };
+    }
+
+    const footerReason = orderFooterReason(
+      intent.footer,
+      intent.orderFooter,
+      intent.clientFooter,
+    );
+    if (footerReason) {
+      return { ok: false, reason: footerReason };
+    }
+
+    const headerReason = orderHeaderReason(
+      intent.header,
+      intent.orderHeader,
+      intent.clientHeader,
+    );
+    if (headerReason) {
+      return { ok: false, reason: headerReason };
+    }
+
+    const subjectReason = orderSubjectReason(
+      intent.subject,
+      intent.orderSubject,
+      intent.clientSubject,
+    );
+    if (subjectReason) {
+      return { ok: false, reason: subjectReason };
+    }
+
+    const titleReason = orderTitleReason(
+      intent.title,
+      intent.orderTitle,
+      intent.clientTitle,
+    );
+    if (titleReason) {
+      return { ok: false, reason: titleReason };
+    }
+
+    const nameReason = orderNameReason(
+      intent.name,
+      intent.orderName,
+      intent.clientName,
+    );
+    if (nameReason) {
+      return { ok: false, reason: nameReason };
+    }
+
+    const abstractReason = orderAbstractReason(
+      intent.abstract,
+      intent.orderAbstract,
+      intent.clientAbstract,
+    );
+    if (abstractReason) {
+      return { ok: false, reason: abstractReason };
+    }
+
+    const labelReason = orderLabelReason(
+      intent.label,
+      intent.orderLabel,
+      intent.clientLabel,
+    );
+    if (labelReason) {
+      return { ok: false, reason: labelReason };
+    }
+
+    const tagReason = orderTagReason(
+      intent.tag,
+      intent.orderTag,
+      intent.clientTag,
+    );
+    if (tagReason) {
+      return { ok: false, reason: tagReason };
+    }
+
+    const templateReason = orderTemplateReason(
+      intent.template,
+      intent.templateId,
+      intent.clientTemplate,
+    );
+    if (templateReason) {
+      return { ok: false, reason: templateReason };
+    }
+
+    const overviewReason = orderOverviewReason(
+      intent.overview,
+      intent.orderOverview,
+      intent.clientOverview,
+    );
+    if (overviewReason) {
+      return { ok: false, reason: overviewReason };
+    }
+
+    const synopsisReason = orderSynopsisReason(
+      intent.synopsis,
+      intent.orderSynopsis,
+      intent.clientSynopsis,
+    );
+    if (synopsisReason) {
+      return { ok: false, reason: synopsisReason };
+    }
+
+    const digestReason = orderDigestReason(
+      intent.digest,
+      intent.orderDigest,
+      intent.clientDigest,
+    );
+    if (digestReason) {
+      return { ok: false, reason: digestReason };
+    }
+
+    const quoteReason = orderQuoteReason(
+      intent.quote,
+      intent.orderQuote,
+      intent.clientQuote,
+    );
+    if (quoteReason) {
+      return { ok: false, reason: quoteReason };
+    }
+
+    const reviewReason = orderReviewReason(
+      intent.review,
+      intent.orderReview,
+      intent.clientReview,
+    );
+    if (reviewReason) {
+      return { ok: false, reason: reviewReason };
+    }
+
+    const remarkReason = orderRemarkReason(
+      intent.remark,
+      intent.orderRemark,
+      intent.clientRemark,
+    );
+    if (remarkReason) {
+      return { ok: false, reason: remarkReason };
+    }
+
+    const referenceReason = orderReferenceReason(
+      intent.reference,
+      intent.orderReference,
+      intent.clientReference,
+    );
+    if (referenceReason) {
+      return { ok: false, reason: referenceReason };
+    }
+
+    const signatureReason = orderSignatureReason(
+      intent.signature,
+      intent.orderSignature,
+      intent.clientSignature,
+    );
+    if (signatureReason) {
+      return { ok: false, reason: signatureReason };
+    }
+
+    const hashReason = orderHashReason(
+      intent.hash,
+      intent.orderHash,
+      intent.clientHash,
+    );
+    if (hashReason) {
+      return { ok: false, reason: hashReason };
+    }
+
+    const fingerprintReason = orderFingerprintReason(
+      intent.fingerprint,
+      intent.orderFingerprint,
+      intent.clientFingerprint,
+    );
+    if (fingerprintReason) {
+      return { ok: false, reason: fingerprintReason };
+    }
+
+    const attributionReason = orderAttributionReason(
+      intent.attribution,
+      intent.orderAttribution,
+      intent.clientAttribution,
+    );
+    if (attributionReason) {
+      return { ok: false, reason: attributionReason };
+    }
+
+    const correlationReason = orderCorrelationReason(
+      intent.correlation,
+      intent.orderCorrelation,
+      intent.clientCorrelation,
+    );
+    if (correlationReason) {
+      return { ok: false, reason: correlationReason };
+    }
+
+    const contextReason = orderContextReason(
+      intent.context,
+      intent.orderContext,
+      intent.clientContext,
+    );
+    if (contextReason) {
+      return { ok: false, reason: contextReason };
+    }
+
+    const channelReason = orderChannelReason(
+      intent.channel,
+      intent.orderChannel,
+      intent.origin,
+    );
+    if (channelReason) {
+      return { ok: false, reason: channelReason };
+    }
+
+    const sessionReason = orderSessionReason(
+      intent.session,
+      intent.orderSession,
+      intent.clientSession,
+    );
+    if (sessionReason) {
+      return { ok: false, reason: sessionReason };
+    }
+
+    const batchReason = orderBatchReason(
+      intent.batch,
+      intent.orderBatch,
+      intent.clientBatch,
+    );
+    if (batchReason) {
+      return { ok: false, reason: batchReason };
+    }
+
+    const chainReason = orderChainReason(
+      intent.chainId,
+      intent.orderChain,
+      intent.clientChain,
+    );
+    if (chainReason) {
+      return { ok: false, reason: chainReason };
+    }
+
+    const groupReason = orderGroupReason(
+      intent.group,
+      intent.orderGroup,
+      intent.clientGroup,
+    );
+    if (groupReason) {
+      return { ok: false, reason: groupReason };
+    }
+
+    const zoneReason = orderZoneReason(
+      intent.zone,
+      intent.orderZone,
+      intent.clientZone,
+    );
+    if (zoneReason) {
+      return { ok: false, reason: zoneReason };
+    }
+
+    const weightReason = orderWeightReason(
+      intent.weight,
+      intent.orderWeight,
+      intent.clientWeight,
+    );
+    if (weightReason) {
+      return { ok: false, reason: weightReason };
+    }
+
+    const windowReason = orderWindowReason(
+      intent.window,
+      intent.orderWindow,
+      intent.clientWindow,
+    );
+    if (windowReason) {
+      return { ok: false, reason: windowReason };
+    }
+
+    const spanReason = orderSpanReason(
+      intent.span,
+      intent.orderSpan,
+      intent.clientSpan,
+    );
+    if (spanReason) {
+      return { ok: false, reason: spanReason };
+    }
+
+    const statusReason = orderStatusReason(
+      intent.status,
+      intent.orderStatus,
+      intent.clientStatus,
+    );
+    if (statusReason) {
+      return { ok: false, reason: statusReason };
+    }
+
+    const phaseReason = orderPhaseReason(
+      intent.phase,
+      intent.orderPhase,
+      intent.clientPhase,
+    );
+    if (phaseReason) {
+      return { ok: false, reason: phaseReason };
+    }
+
+    const stageReason = orderStageReason(
+      intent.stage,
+      intent.orderStage,
+      intent.clientStage,
+    );
+    if (stageReason) {
+      return { ok: false, reason: stageReason };
+    }
+
+    const stepReason = orderStepReason(
+      intent.step,
+      intent.orderStep,
+      intent.clientStep,
+    );
+    if (stepReason) {
+      return { ok: false, reason: stepReason };
+    }
+
+    const strategyReason = orderStrategyReason(
+      intent.strategy,
+      intent.orderStrategy,
+      intent.clientStrategy,
+    );
+    if (strategyReason) {
+      return { ok: false, reason: strategyReason };
+    }
+
+    const tacticReason = orderTacticReason(
+      intent.tactic,
+      intent.orderTactic,
+      intent.clientTactic,
+    );
+    if (tacticReason) {
+      return { ok: false, reason: tacticReason };
+    }
+
+    const playReason = orderPlayReason(
+      intent.play,
+      intent.orderPlay,
+      intent.clientPlay,
+    );
+    if (playReason) {
+      return { ok: false, reason: playReason };
+    }
+
+    const schemeReason = orderSchemeReason(
+      intent.scheme,
+      intent.orderScheme,
+      intent.clientScheme,
+    );
+    if (schemeReason) {
+      return { ok: false, reason: schemeReason };
+    }
+
+    const planReason = orderPlanReason(
+      intent.plan,
+      intent.orderPlan,
+      intent.clientPlan,
+    );
+    if (planReason) {
+      return { ok: false, reason: planReason };
+    }
+
+    const plotReason = orderPlotReason(
+      intent.plot,
+      intent.orderPlot,
+      intent.clientPlot,
+    );
+    if (plotReason) {
+      return { ok: false, reason: plotReason };
+    }
+
+    const scenarioReason = orderScenarioReason(
+      intent.scenario,
+      intent.orderScenario,
+      intent.clientScenario,
+    );
+    if (scenarioReason) {
+      return { ok: false, reason: scenarioReason };
+    }
+
+    const storyReason = orderStoryReason(
+      intent.story,
+      intent.orderStory,
+      intent.clientStory,
+    );
+    if (storyReason) {
+      return { ok: false, reason: storyReason };
+    }
+
+    const narrativeReason = orderNarrativeReason(
+      intent.narrative,
+      intent.orderNarrative,
+      intent.clientNarrative,
+    );
+    if (narrativeReason) {
+      return { ok: false, reason: narrativeReason };
+    }
+
+    const sagaReason = orderSagaReason(
+      intent.saga,
+      intent.orderSaga,
+      intent.clientSaga,
+    );
+    if (sagaReason) {
+      return { ok: false, reason: sagaReason };
+    }
+
+    const epicReason = orderEpicReason(
+      intent.epic,
+      intent.orderEpic,
+      intent.clientEpic,
+    );
+    if (epicReason) {
+      return { ok: false, reason: epicReason };
+    }
+
+    const questReason = orderQuestReason(
+      intent.quest,
+      intent.orderQuest,
+      intent.clientQuest,
+    );
+    if (questReason) {
+      return { ok: false, reason: questReason };
+    }
+
+    const missionReason = orderMissionReason(
+      intent.mission,
+      intent.orderMission,
+      intent.clientMission,
+    );
+    if (missionReason) {
+      return { ok: false, reason: missionReason };
+    }
+
+    const goalReason = orderGoalReason(
+      intent.goal,
+      intent.orderGoal,
+      intent.clientGoal,
+    );
+    if (goalReason) {
+      return { ok: false, reason: goalReason };
+    }
+
+    const forceReason = orderForceReason(
+      intent.force,
+      intent.orderForce,
+      intent.clientForce,
+    );
+    if (forceReason) {
+      return { ok: false, reason: forceReason };
+    }
+
+    const intentReason = orderIntentReason(
+      intent.intent,
+      intent.orderIntent,
+      intent.clientIntent,
+    );
+    if (intentReason) {
+      return { ok: false, reason: intentReason };
+    }
+
+    const willReason = orderWillReason(
+      intent.will,
+      intent.orderWill,
+      intent.clientWill,
+    );
+    if (willReason) {
+      return { ok: false, reason: willReason };
+    }
+
+    const wishReason = orderWishReason(
+      intent.wish,
+      intent.orderWish,
+      intent.clientWish,
+    );
+    if (wishReason) {
+      return { ok: false, reason: wishReason };
+    }
+
+    const dreamReason = orderDreamReason(
+      intent.dream,
+      intent.dreamId,
+      intent.orderDream,
+    );
+    if (dreamReason) {
+      return { ok: false, reason: dreamReason };
+    }
+
+    const visionReason = orderVisionReason(
+      intent.vision,
+      intent.visionId,
+      intent.orderVision,
+    );
+    if (visionReason) {
+      return { ok: false, reason: visionReason };
+    }
+
+    const ambitionReason = orderAmbitionReason(
+      intent.ambition,
+      intent.ambitionId,
+      intent.orderAmbition,
+    );
+    if (ambitionReason) {
+      return { ok: false, reason: ambitionReason };
+    }
+
+    const destinyReason = orderDestinyReason(
+      intent.destiny,
+      intent.destinyId,
+      intent.orderDestiny,
+    );
+    if (destinyReason) {
+      return { ok: false, reason: destinyReason };
+    }
+
+    const fateReason = orderFateReason(
+      intent.fate,
+      intent.fateId,
+      intent.orderFate,
+    );
+    if (fateReason) {
+      return { ok: false, reason: fateReason };
+    }
+
+    const hopeReason = orderHopeReason(
+      intent.hope,
+      intent.hopeId,
+      intent.orderHope,
+    );
+    if (hopeReason) {
+      return { ok: false, reason: hopeReason };
+    }
+
+    const optimismReason = orderOptimismReason(
+      intent.optimism,
+      intent.optimismId,
+      intent.orderOptimism,
+    );
+    if (optimismReason) {
+      return { ok: false, reason: optimismReason };
+    }
+
+    const confidenceReason = orderConfidenceReason(
+      intent.confidence,
+      intent.confidenceId,
+      intent.orderConfidence,
+    );
+    if (confidenceReason) {
+      return { ok: false, reason: confidenceReason };
+    }
+
+    const assuranceReason = orderAssuranceReason(
+      intent.assurance,
+      intent.assuranceId,
+      intent.orderAssurance,
+    );
+    if (assuranceReason) {
+      return { ok: false, reason: assuranceReason };
+    }
+
+    const convictionReason = orderConvictionReason(
+      intent.conviction,
+      intent.convictionId,
+      intent.orderConviction,
+    );
+    if (convictionReason) {
+      return { ok: false, reason: convictionReason };
+    }
+
+    const beliefReason = orderBeliefReason(
+      intent.belief,
+      intent.beliefId,
+      intent.orderBelief,
+    );
+    if (beliefReason) {
+      return { ok: false, reason: beliefReason };
+    }
+
+    const faithReason = orderFaithReason(
+      intent.faith,
+      intent.faithId,
+      intent.orderFaith,
+    );
+    if (faithReason) {
+      return { ok: false, reason: faithReason };
+    }
+
+    const trustReason = orderTrustReason(
+      intent.trust,
+      intent.trustId,
+      intent.orderTrust,
+    );
+    if (trustReason) {
+      return { ok: false, reason: trustReason };
+    }
 
     const loyaltyReason = orderLoyaltyReason(
       intent.loyalty,
@@ -172,3 +1001,4 @@ export class OrderManager {
     return { ok: true };
   }
 }
+
