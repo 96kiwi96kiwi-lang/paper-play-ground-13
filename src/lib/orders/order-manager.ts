@@ -99,6 +99,7 @@ import { orderHopeReason } from "./order-hope";
 import { orderOptimismReason } from "./order-optimism";
 import { orderConfidenceReason } from "./order-confidence";
 import { orderAssuranceReason } from "./order-assurance";
+import { orderConvictionReason } from "./order-conviction";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -822,8 +823,8 @@ export class OrderManager {
 
     const intentReason = orderIntentReason(
       intent.intent,
-      intent.intentId,
       intent.orderIntent,
+      intent.clientIntent,
     );
     if (intentReason) {
       return { ok: false, reason: intentReason };
@@ -926,6 +927,15 @@ export class OrderManager {
     );
     if (assuranceReason) {
       return { ok: false, reason: assuranceReason };
+    }
+
+    const convictionReason = orderConvictionReason(
+      intent.conviction,
+      intent.convictionId,
+      intent.orderConviction,
+    );
+    if (convictionReason) {
+      return { ok: false, reason: convictionReason };
     }
 
     // Additional floors would be checked here in the full implementation.
