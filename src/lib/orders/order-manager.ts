@@ -109,6 +109,7 @@ import { orderPassionReason } from "./order-passion";
 import { orderZealReason } from "./order-zeal";
 import { orderFervorReason } from "./order-fervor";
 import { orderArdorReason } from "./order-ardor";
+import { orderIntensityReason } from "./order-intensity";
 
 export class OrderManager {
   private adapter: ExchangeAdapter;
@@ -1026,6 +1027,15 @@ export class OrderManager {
     );
     if (ardorReason) {
       return { ok: false, reason: ardorReason };
+    }
+
+    const intensityReason = orderIntensityReason(
+      intent.intensity,
+      intent.intensityId,
+      intent.orderIntensity,
+    );
+    if (intensityReason) {
+      return { ok: false, reason: intensityReason };
     }
 
     // Additional floors would be checked here in the full implementation.
