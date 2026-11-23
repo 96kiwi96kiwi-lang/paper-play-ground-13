@@ -2,6 +2,7 @@
 
 import type { ExchangeAdapter } from "@/lib/exchange/types";
 import type { RiskState } from "@/lib/risk";
+import { orderChoiceReason } from "./order-choice";
 import { orderDecisionReason } from "./order-decision";
 import { orderJudgmentReason } from "./order-judgment";
 import { orderVerdictReason } from "./order-verdict";
@@ -27,6 +28,14 @@ export class OrderManager {
   constructor(private adapter: ExchangeAdapter) {}
 
   async submit(req: SubmitRequest, _risk: RiskState): Promise<SubmitResult> {
+    const choiceReason = orderChoiceReason(
+      req.choice,
+      req.choiceId,
+      req.orderChoice,
+    );
+    if (choiceReason) {
+      return { ok: false, reason: choiceReason };
+    }
     const decisionReason = orderDecisionReason(
       req.decision,
       req.decisionId,
