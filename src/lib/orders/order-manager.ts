@@ -10,7 +10,8 @@ import { orderDecisionReason } from "./order-decision";
 import { orderJudgmentReason } from "./order-judgment";
 import { orderVerdictReason } from "./order-verdict";
 import { orderConclusionReason } from "./order-conclusion";
-// Prior floors (order-outcome, order-result, etc.) follow the same pattern.
+import { orderOutcomeReason } from "./order-outcome";
+// Prior floors (order-result, etc.) follow the same pattern.
 
 export interface SubmitRequest {
   symbol: string;
@@ -95,7 +96,15 @@ export class OrderManager {
     if (conclusionReason) {
       return { ok: false, reason: conclusionReason };
     }
-    // Other floors (outcome, result, ...) are checked similarly before the adapter.
+    const outcomeReason = orderOutcomeReason(
+      req.outcome,
+      req.outcomeId,
+      req.orderOutcome,
+    );
+    if (outcomeReason) {
+      return { ok: false, reason: outcomeReason };
+    }
+    // Other floors (result, ...) are checked similarly before the adapter.
     // Paper/KuCoin path continues here in the full implementation.
     return { ok: true };
   }

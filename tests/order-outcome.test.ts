@@ -11,7 +11,7 @@ test("omitted, null, false, and blank outcome aliases pass", () => {
 });
 
 test("a present outcome alias is refused and does not halt", () => {
-  expect(orderOutcomeReason("success")).toBe(
+  expect(orderOutcomeReason("out")).toBe(
     "Outcome is not supported; the adapter would place a plain spot order",
   );
   expect(orderOutcomeReason(0)).toBe(
@@ -57,7 +57,7 @@ describe("OrderManager order-outcome floor", () => {
         side: "buy",
         amount: 0.01,
         type: "market",
-        [field]: "success",
+        [field]: "out",
       },
       riskState,
     );
