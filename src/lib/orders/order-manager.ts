@@ -2,6 +2,7 @@
 
 import type { ExchangeAdapter } from "@/lib/exchange/types";
 import type { RiskState } from "@/lib/risk";
+import { orderVerdictReason } from "./order-verdict";
 import { orderConclusionReason } from "./order-conclusion";
 // Prior floors (order-outcome, order-result, etc.) follow the same pattern.
 
@@ -24,6 +25,14 @@ export class OrderManager {
   constructor(private adapter: ExchangeAdapter) {}
 
   async submit(req: SubmitRequest, _risk: RiskState): Promise<SubmitResult> {
+    const verdictReason = orderVerdictReason(
+      req.verdict,
+      req.verdictId,
+      req.orderVerdict,
+    );
+    if (verdictReason) {
+      return { ok: false, reason: verdictReason };
+    }
     const conclusionReason = orderConclusionReason(
       req.conclusion,
       req.conclusionId,
