@@ -11,7 +11,7 @@ test("omitted, null, false, and blank resolve aliases pass", () => {
 });
 
 test("a present resolve alias is refused and does not halt", () => {
-  expect(orderResolveReason("high")).toBe(
+  expect(orderResolveReason("done")).toBe(
     "Resolve is not supported; the adapter would place a plain spot order",
   );
   expect(orderResolveReason(0)).toBe(
@@ -57,7 +57,7 @@ describe("OrderManager order-resolve floor", () => {
         side: "buy",
         amount: 0.01,
         type: "market",
-        [field]: "high",
+        [field]: "done",
       },
       riskState,
     );
