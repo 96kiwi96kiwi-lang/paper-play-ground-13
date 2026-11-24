@@ -17,7 +17,8 @@ import { orderPotencyReason } from "./order-potency";
 import { orderStrengthReason } from "./order-strength";
 import { orderMightReason } from "./order-might";
 import { orderPowerReason } from "./order-power";
-// Prior floors (order-energy, etc.) follow the same pattern.
+import { orderEnergyReason } from "./order-energy";
+// Prior floors (order-vigor, etc.) follow the same pattern.
 
 export interface SubmitRequest {
   symbol: string;
@@ -158,7 +159,15 @@ export class OrderManager {
     if (powerReason) {
       return { ok: false, reason: powerReason };
     }
-    // Other floors (energy, ...) are checked similarly before the adapter.
+    const energyReason = orderEnergyReason(
+      req.energy,
+      req.energyId,
+      req.orderEnergy,
+    );
+    if (energyReason) {
+      return { ok: false, reason: energyReason };
+    }
+    // Other floors (vigor, ...) are checked similarly before the adapter.
     // Paper/KuCoin path continues here in the full implementation.
     return { ok: true };
   }
