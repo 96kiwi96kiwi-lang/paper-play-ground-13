@@ -20,6 +20,7 @@ import { orderPowerReason } from "./order-power";
 import { orderEnergyReason } from "./order-energy";
 import { orderVigorReason } from "./order-vigor";
 import { orderIntensityReason } from "./order-intensity";
+import { orderFervorReason } from "./order-fervor";
 // Prior floors (order-ardor, etc.) follow the same pattern.
 
 export interface SubmitRequest {
@@ -184,6 +185,14 @@ export class OrderManager {
     );
     if (intensityReason) {
       return { ok: false, reason: intensityReason };
+    }
+    const fervorReason = orderFervorReason(
+      req.fervor,
+      req.fervorId,
+      req.orderFervor,
+    );
+    if (fervorReason) {
+      return { ok: false, reason: fervorReason };
     }
     // Other floors (ardor, ...) are checked similarly before the adapter.
     // Paper/KuCoin path continues here in the full implementation.
