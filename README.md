@@ -17,7 +17,7 @@ See `SAFETY.md` for the full checklist.
 
 ## Current status
 
-**Hour (odd):** Wired the order-might metadata floor into the persistent OrderManager. A present `might`, `mightId`, or `orderMight` is refused before the adapter, together with the order-option, order-preference, order-selection, order-choice, order-decision, order-judgment, order-verdict, order-conclusion, order-outcome, order-result, order-resolve, order-potency, order-strength, and earlier metadata floors. The runtime keeps constructor state, snapshot/inventory, risk-gated submit, persistence callbacks, restart recovery, idempotent seen orders, duplicate-order protection, capital and risk checks, safe cancel, and fail-closed adapter errors. Default remains paper. No secrets. No live without server-side owner credentials.
+**Hour (odd):** Wired the order-power metadata floor into the persistent OrderManager. A present `power`, `powerId`, or `orderPower` is refused before the adapter, together with the order-might, order-strength, order-potency, and earlier metadata floors. The runtime keeps constructor state, snapshot/inventory, risk-gated submit, persistence callbacks, restart recovery, idempotent seen orders, duplicate-order protection, capital and risk checks, safe cancel, and fail-closed adapter errors. Default remains paper. No secrets. No live without server-side owner credentials.
 
 ## Run
 
