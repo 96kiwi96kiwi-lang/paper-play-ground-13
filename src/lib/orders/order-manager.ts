@@ -22,7 +22,8 @@ import { orderVigorReason } from "./order-vigor";
 import { orderIntensityReason } from "./order-intensity";
 import { orderFervorReason } from "./order-fervor";
 import { orderZealReason } from "./order-zeal";
-// Prior floors (order-ardor, order-passion, etc.) follow the same pattern.
+import { orderArdorReason } from "./order-ardor";
+// Prior floors (order-passion, etc.) follow the same pattern.
 
 export interface SubmitRequest {
   symbol: string;
@@ -203,7 +204,15 @@ export class OrderManager {
     if (zealReason) {
       return { ok: false, reason: zealReason };
     }
-    // Other floors (ardor, passion, ...) are checked similarly before the adapter.
+    const ardorReason = orderArdorReason(
+      req.ardor,
+      req.ardorId,
+      req.orderArdor,
+    );
+    if (ardorReason) {
+      return { ok: false, reason: ardorReason };
+    }
+    // Other floors (passion, ...) are checked similarly before the adapter.
     // Paper/KuCoin path continues here in the full implementation.
     return { ok: true };
   }
