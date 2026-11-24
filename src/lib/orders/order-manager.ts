@@ -13,7 +13,8 @@ import { orderConclusionReason } from "./order-conclusion";
 import { orderOutcomeReason } from "./order-outcome";
 import { orderResultReason } from "./order-result";
 import { orderResolveReason } from "./order-resolve";
-// Prior floors (order-potency, etc.) follow the same pattern.
+import { orderPotencyReason } from "./order-potency";
+// Prior floors (order-strength, etc.) follow the same pattern.
 
 export interface SubmitRequest {
   symbol: string;
@@ -122,7 +123,15 @@ export class OrderManager {
     if (resolveReason) {
       return { ok: false, reason: resolveReason };
     }
-    // Other floors (potency, ...) are checked similarly before the adapter.
+    const potencyReason = orderPotencyReason(
+      req.potency,
+      req.potencyId,
+      req.orderPotency,
+    );
+    if (potencyReason) {
+      return { ok: false, reason: potencyReason };
+    }
+    // Other floors (strength, ...) are checked similarly before the adapter.
     // Paper/KuCoin path continues here in the full implementation.
     return { ok: true };
   }
