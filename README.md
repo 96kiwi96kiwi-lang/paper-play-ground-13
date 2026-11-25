@@ -17,7 +17,7 @@ See `SAFETY.md` for the full checklist.
 
 ## Current status
 
-**Hour (odd):** Wired the order-devotion metadata floor into the persistent OrderManager. A present `devotion`, `devotionId`, or `orderDevotion` is refused before the adapter, together with the order-passion, order-ardor, order-zeal, order-fervor, order-intensity, order-vigor, order-energy, order-power, order-might, order-strength, order-potency, and earlier metadata floors. The runtime keeps constructor state, snapshot/inventory, risk-gated submit, persistence callbacks, restart recovery, idempotent seen orders, duplicate-order protection, capital and risk checks, safe cancel, and fail-closed adapter errors. Default remains paper. No secrets. No live without server-side owner credentials.
+**Hour (odd):** Wired the order-loyalty metadata floor into the persistent OrderManager. A present `loyalty`, `loyaltyId`, or `orderLoyalty` is refused before the adapter, together with the order-devotion, order-passion, order-ardor, order-zeal, order-fervor, order-intensity, order-vigor, order-energy, order-power, order-might, order-strength, order-potency, and earlier metadata floors. The runtime keeps constructor state, snapshot/inventory, risk-gated submit, persistence callbacks, restart recovery, idempotent seen orders, duplicate-order protection, capital and risk checks, safe cancel, and fail-closed adapter errors. Default remains paper. No secrets. No live without server-side owner credentials.
 
 ## Run
 
