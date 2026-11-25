@@ -2,6 +2,29 @@
 
 ## Datum a čas
 
+2026-11-25 07:16 CET (odd hour). Order-faith metadata floor wired into OrderManager.
+
+## Aktuální stav
+
+Paper mode is the default. Live trading is disabled. No exchange credentials are in the tree.
+
+**Hour (odd):** Wired `orderFaithReason` into the persistent OrderManager so a present `faith`, `faithId`, or `orderFaith` is refused before any adapter call, matching the order-trust pattern. Tests cover the helper and the submit path. Default remains paper. No secrets. No live without server-side owner credentials.
+
+Previous verified state remains as below.
+
+## Dokončené změny
+
+- Wired existing pattern into OrderManager.submit for order-faith.
+- Coverage present in `tests/order-faith.test.ts` with OrderManager integration.
+- Updated README current status, SAFETY checklist (already listed), PROGRESS, and corrected docs call order.
+- Docs in `docs/ORDER_FAITH_FLOOR.md`.
+
+(Full historical record follows from prior PROGRESS.md content.)
+
+# Development progress
+
+## Datum a čas
+
 2026-11-25 05:14 CET (odd hour). Order-trust metadata floor wired into OrderManager.
 
 ## Aktuální stav
