@@ -27,7 +27,8 @@ import { orderPassionReason } from "./order-passion";
 import { orderDevotionReason } from "./order-devotion";
 import { orderLoyaltyReason } from "./order-loyalty";
 import { orderAllegianceReason } from "./order-allegiance";
-// Prior floors (order-trust, etc.) follow the same pattern.
+import { orderTrustReason } from "./order-trust";
+// Prior floors (order-faith, etc.) follow the same pattern.
 
 export interface SubmitRequest {
   symbol: string;
@@ -248,7 +249,15 @@ export class OrderManager {
     if (allegianceReason) {
       return { ok: false, reason: allegianceReason };
     }
-    // Other floors (trust, ...) are checked similarly before the adapter.
+    const trustReason = orderTrustReason(
+      req.trust,
+      req.trustId,
+      req.orderTrust,
+    );
+    if (trustReason) {
+      return { ok: false, reason: trustReason };
+    }
+    // Other floors (faith, ...) are checked similarly before the adapter.
     // Paper/KuCoin path continues here in the full implementation.
     return { ok: true };
   }
