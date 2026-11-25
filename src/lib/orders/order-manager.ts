@@ -30,6 +30,7 @@ import { orderAllegianceReason } from "./order-allegiance";
 import { orderTrustReason } from "./order-trust";
 import { orderFaithReason } from "./order-faith";
 import { orderBeliefReason } from "./order-belief";
+import { orderOptimismReason } from "./order-optimism";
 // Prior floors (order-conviction, etc.) follow the same pattern.
 
 export interface SubmitRequest {
@@ -274,6 +275,14 @@ export class OrderManager {
     );
     if (beliefReason) {
       return { ok: false, reason: beliefReason };
+    }
+    const optimismReason = orderOptimismReason(
+      req.optimism,
+      req.optimismId,
+      req.orderOptimism,
+    );
+    if (optimismReason) {
+      return { ok: false, reason: optimismReason };
     }
     // Other floors (conviction, ...) are checked similarly before the adapter.
     // Paper/KuCoin path continues here in the full implementation.
