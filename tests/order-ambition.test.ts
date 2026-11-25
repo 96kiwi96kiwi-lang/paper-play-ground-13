@@ -11,7 +11,7 @@ test("omitted, null, false, and blank ambition aliases pass", () => {
 });
 
 test("a present ambition alias is refused and does not halt", () => {
-  expect(orderAmbitionReason("grow")).toBe(
+  expect(orderAmbitionReason("vision")).toBe(
     "Ambition is not supported; the adapter would place a plain spot order",
   );
   expect(orderAmbitionReason(0)).toBe(
@@ -57,7 +57,7 @@ describe("OrderManager order-ambition floor", () => {
         side: "buy",
         amount: 0.01,
         type: "market",
-        [field]: "grow",
+        [field]: "vision",
       },
       riskState,
     );

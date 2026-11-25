@@ -35,6 +35,7 @@ import { orderHopeReason } from "./order-hope";
 import { orderWishReason } from "./order-wish";
 import { orderFateReason } from "./order-fate";
 import { orderDestinyReason } from "./order-destiny";
+import { orderAmbitionReason } from "./order-ambition";
 // Prior floors (order-conviction, etc.) follow the same pattern.
 
 export interface SubmitRequest {
@@ -320,7 +321,15 @@ export class OrderManager {
     if (destinyReason) {
       return { ok: false, reason: destinyReason };
     }
-    // Other floors (ambition, ...) are checked similarly before the adapter.
+    const ambitionReason = orderAmbitionReason(
+      req.ambition,
+      req.ambitionId,
+      req.orderAmbition,
+    );
+    if (ambitionReason) {
+      return { ok: false, reason: ambitionReason };
+    }
+    // Other floors (vision, ...) are checked similarly before the adapter.
     // Paper/KuCoin path continues here in the full implementation.
     return { ok: true };
   }
