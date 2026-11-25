@@ -6,4 +6,4 @@ Omitted, null, false, and blank pass. Zero is present and is refused.
 
 This is a metadata floor, not a halt, and does not flatten positions. Vitest: `tests/order-fate.test.ts` (no exchange, no secrets).
 
-`OrderManager.submit` calls `orderFateReason` after the destiny floor and before the adapter, so a refuse does not burn `maxRejectsInWindow`. A submit cannot carry these fields past the manager. No secrets.
+`OrderManager.submit` calls `orderFateReason` after the wish floor and before the adapter, so a refuse does not burn `maxRejectsInWindow`. A submit cannot carry these fields past the manager. No secrets.
