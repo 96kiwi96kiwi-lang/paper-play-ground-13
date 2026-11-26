@@ -1,5 +1,17 @@
 # Progress
 
+## Hour 19 (odd, 2026-11-26): order-narrative metadata floor
+
+Wired `orderNarrativeReason` into the persistent OrderManager so a present `narrative`, `narrativeId`, or `clientNarrative` is refused before any adapter call, matching the order-saga pattern.
+
+- Helper in `src/lib/orders/order-narrative.ts`.
+- Tests in `tests/order-narrative.test.ts` cover the helper and the submit path.
+- Updated README current status, docs/ORDER_NARRATIVE_FLOOR.md, and this progress note.
+
+Default remains paper. No secrets. No live trading without server-side owner credentials.
+
+Previous floors (order-saga, order-epic, etc.) remain in place.
+
 ## Hour 17 (odd, 2026-11-26): order-saga metadata floor
 
 Wired `orderSagaReason` into the persistent OrderManager so a present `saga`, `sagaId`, or `clientSaga` is refused before any adapter call, matching the order-epic pattern.
