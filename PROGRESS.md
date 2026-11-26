@@ -1,5 +1,17 @@
 # Progress
 
+## Hour 9 (odd, 2026-11-26): order-goal metadata floor
+
+Wired `orderGoalReason` into the persistent OrderManager so a present `goal`, `goalId`, or `clientGoal` is refused before any adapter call, matching the order-force pattern.
+
+- Helper already existed in `src/lib/orders/order-goal.ts`.
+- Tests already covered the helper and the submit path in `tests/order-goal.test.ts`.
+- Updated README current status, docs/ORDER_GOAL_FLOOR.md (already accurate), and this progress note.
+
+Default remains paper. No secrets. No live trading without server-side owner credentials.
+
+Previous floors (order-force, order-intent, etc.) remain in place.
+
 ## Hour 7 (odd, 2026-11-26): order-force metadata floor
 
 Wired `orderForceReason` into the persistent OrderManager so a present `force`, `forceType`, or `orderForce` is refused before any adapter call, matching the order-intent pattern.
