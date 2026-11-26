@@ -42,6 +42,7 @@ import { orderWillReason } from "./order-will";
 import { orderIntentReason } from "./order-intent";
 import { orderForceReason } from "./order-force";
 import { orderGoalReason } from "./order-goal";
+import { orderMissionReason } from "./order-mission";
 // Prior floors (order-conviction, etc.) follow the same pattern.
 
 export interface SubmitRequest {
@@ -382,6 +383,14 @@ export class OrderManager {
     );
     if (goalReason) {
       return { ok: false, reason: goalReason };
+    }
+    const missionReason = orderMissionReason(
+      req.mission,
+      req.missionId,
+      req.clientMission,
+    );
+    if (missionReason) {
+      return { ok: false, reason: missionReason };
     }
     // Other floors are checked similarly before the adapter.
     // Paper/KuCoin path continues here in the full implementation.
