@@ -47,6 +47,7 @@ import { orderQuestReason } from "./order-quest";
 import { orderEpicReason } from "./order-epic";
 import { orderSagaReason } from "./order-saga";
 import { orderNarrativeReason } from "./order-narrative";
+import { orderStoryReason } from "./order-story";
 // Prior floors (order-conviction, etc.) follow the same pattern.
 
 export interface SubmitRequest {
@@ -427,6 +428,14 @@ export class OrderManager {
     );
     if (narrativeReason) {
       return { ok: false, reason: narrativeReason };
+    }
+    const storyReason = orderStoryReason(
+      req.story,
+      req.storyId,
+      req.clientStory,
+    );
+    if (storyReason) {
+      return { ok: false, reason: storyReason };
     }
     // Other floors are checked similarly before the adapter.
     // Paper/KuCoin path continues here in the full implementation.
