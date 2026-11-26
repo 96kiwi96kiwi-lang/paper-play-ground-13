@@ -45,6 +45,7 @@ import { orderGoalReason } from "./order-goal";
 import { orderMissionReason } from "./order-mission";
 import { orderQuestReason } from "./order-quest";
 import { orderEpicReason } from "./order-epic";
+import { orderSagaReason } from "./order-saga";
 // Prior floors (order-conviction, etc.) follow the same pattern.
 
 export interface SubmitRequest {
@@ -409,6 +410,14 @@ export class OrderManager {
     );
     if (epicReason) {
       return { ok: false, reason: epicReason };
+    }
+    const sagaReason = orderSagaReason(
+      req.saga,
+      req.sagaId,
+      req.clientSaga,
+    );
+    if (sagaReason) {
+      return { ok: false, reason: sagaReason };
     }
     // Other floors are checked similarly before the adapter.
     // Paper/KuCoin path continues here in the full implementation.
