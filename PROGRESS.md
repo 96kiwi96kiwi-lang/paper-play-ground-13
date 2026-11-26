@@ -1,5 +1,17 @@
 # Progress
 
+## Hour 23 (odd, 2026-11-26): order-scenario metadata floor
+
+Wired `orderScenarioReason` into the persistent OrderManager so a present `scenario`, `scenarioId`, or `clientScenario` is refused before any adapter call, matching the order-story pattern.
+
+- Helper in `src/lib/orders/order-scenario.ts`.
+- Tests in `tests/order-scenario.test.ts` cover the helper and the submit path.
+- Updated README current status, docs/ORDER_SCENARIO_FLOOR.md, and this progress note.
+
+Default remains paper. No secrets. No live trading without server-side owner credentials.
+
+Previous floors (order-story, order-narrative, etc.) remain in place.
+
 ## Hour 21 (odd, 2026-11-26): order-story metadata floor
 
 Wired `orderStoryReason` into the persistent OrderManager so a present `story`, `storyId`, or `clientStory` is refused before any adapter call, matching the order-narrative pattern.
