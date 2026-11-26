@@ -1,5 +1,17 @@
 # Progress
 
+## Hour 17 (odd, 2026-11-26): order-saga metadata floor
+
+Wired `orderSagaReason` into the persistent OrderManager so a present `saga`, `sagaId`, or `clientSaga` is refused before any adapter call, matching the order-epic pattern.
+
+- Helper already existed in `src/lib/orders/order-saga.ts`.
+- Tests already covered the helper and the submit path in `tests/order-saga.test.ts`.
+- Updated README current status, docs/ORDER_SAGA_FLOOR.md (already accurate), and this progress note.
+
+Default remains paper. No secrets. No live trading without server-side owner credentials.
+
+Previous floors (order-epic, order-quest, etc.) remain in place.
+
 ## Hour 15 (odd, 2026-11-26): order-epic metadata floor
 
 Wired `orderEpicReason` into the persistent OrderManager so a present `epic`, `epicId`, or `clientEpic` is refused before any adapter call, matching the order-quest pattern.
