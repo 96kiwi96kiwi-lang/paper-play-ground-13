@@ -1,5 +1,17 @@
 # Progress
 
+## Hour 13 (odd, 2026-11-26): order-quest metadata floor
+
+Wired `orderQuestReason` into the persistent OrderManager so a present `quest`, `questId`, or `clientQuest` is refused before any adapter call, matching the order-mission pattern.
+
+- Helper already existed in `src/lib/orders/order-quest.ts`.
+- Tests already covered the helper and the submit path in `tests/order-quest.test.ts`.
+- Updated README current status, docs/ORDER_QUEST_FLOOR.md (already accurate), and this progress note.
+
+Default remains paper. No secrets. No live trading without server-side owner credentials.
+
+Previous floors (order-mission, order-goal, etc.) remain in place.
+
 ## Hour 11 (odd, 2026-11-26): order-mission metadata floor
 
 Wired `orderMissionReason` into the persistent OrderManager so a present `mission`, `missionId`, or `clientMission` is refused before any adapter call, matching the order-goal pattern.
