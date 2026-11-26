@@ -40,6 +40,7 @@ import { orderVisionReason } from "./order-vision";
 import { orderDreamReason } from "./order-dream";
 import { orderWillReason } from "./order-will";
 import { orderIntentReason } from "./order-intent";
+import { orderForceReason } from "./order-force";
 // Prior floors (order-conviction, etc.) follow the same pattern.
 
 export interface SubmitRequest {
@@ -365,7 +366,15 @@ export class OrderManager {
     if (intentReason) {
       return { ok: false, reason: intentReason };
     }
-    // Other floors (force, ...) are checked similarly before the adapter.
+    const forceReason = orderForceReason(
+      req.force,
+      req.forceType,
+      req.orderForce,
+    );
+    if (forceReason) {
+      return { ok: false, reason: forceReason };
+    }
+    // Other floors (goal, ...) are checked similarly before the adapter.
     // Paper/KuCoin path continues here in the full implementation.
     return { ok: true };
   }
