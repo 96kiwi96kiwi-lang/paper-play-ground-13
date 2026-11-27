@@ -1,5 +1,17 @@
 # Progress
 
+## Hour 7 (odd, 2026-11-27): order-play metadata floor
+
+Wired `orderPlayReason` into the persistent OrderManager so a present `play`, `playId`, or `clientPlay` is refused before any adapter call, matching the order-scheme pattern.
+
+- Helper already existed in `src/lib/orders/order-play.ts`.
+- Tests already covered the helper and the submit path in `tests/order-play.test.ts`.
+- Updated README current status, docs/ORDER_PLAY_FLOOR.md (already accurate), and this progress note.
+
+Default remains paper. No secrets. No live trading without server-side owner credentials.
+
+Previous floors (order-scheme, order-plan, etc.) remain in place.
+
 ## Hour 5 (odd, 2026-11-27): order-scheme metadata floor
 
 Wired `orderSchemeReason` into the persistent OrderManager so a present `scheme`, `schemeId`, or `clientScheme` is refused before any adapter call, matching the order-plan pattern.
