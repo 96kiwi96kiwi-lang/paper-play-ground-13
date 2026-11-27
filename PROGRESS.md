@@ -1,5 +1,17 @@
 # Progress
 
+## Hour 19 (odd, 2026-11-27): order-status metadata floor
+
+Wired `orderStatusReason` into the persistent OrderManager so a present `status`, `orderStatus`, or `clientStatus` is refused before any adapter call, matching the order-phase pattern.
+
+- Helper already existed in `src/lib/orders/order-status.ts`.
+- Tests already covered the helper and the submit path in `tests/order-status.test.ts`.
+- Updated README current status, docs/ORDER_STATUS_FLOOR.md (already accurate), and this progress note.
+
+Default remains paper. No secrets. No live trading without server-side owner credentials.
+
+Previous floors (order-phase, order-stage, etc.) remain in place.
+
 ## Hour 17 (odd, 2026-11-27): order-phase metadata floor
 
 Wired `orderPhaseReason` into the persistent OrderManager so a present `phase`, `orderPhase`, or `clientPhase` is refused before any adapter call, matching the order-stage pattern.
