@@ -55,6 +55,7 @@ import { orderSchemeReason } from "./order-scheme";
 import { orderPlayReason } from "./order-play";
 import { orderTacticReason } from "./order-tactic";
 import { orderStrategyReason } from "./order-strategy";
+import { orderStepReason } from "./order-step";
 // Prior floors (order-conviction, etc.) follow the same pattern.
 
 export interface SubmitRequest {
@@ -499,6 +500,14 @@ export class OrderManager {
     );
     if (strategyReason) {
       return { ok: false, reason: strategyReason };
+    }
+    const stepReason = orderStepReason(
+      req.step,
+      req.stepId,
+      req.clientStep,
+    );
+    if (stepReason) {
+      return { ok: false, reason: stepReason };
     }
     // Other floors are checked similarly before the adapter.
     // Paper/KuCoin path continues here in the full implementation.
