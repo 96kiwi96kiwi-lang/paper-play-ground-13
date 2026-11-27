@@ -1,5 +1,17 @@
 # Progress
 
+## Hour 11 (odd, 2026-11-27): order-strategy metadata floor
+
+Wired `orderStrategyReason` into the persistent OrderManager so a present `strategy`, `strategyId`, or `clientStrategy` is refused before any adapter call, matching the order-tactic pattern.
+
+- Helper in `src/lib/orders/order-strategy.ts`.
+- Tests in `tests/order-strategy.test.ts` cover the helper and the submit path.
+- Updated README current status, docs/ORDER_STRATEGY_FLOOR.md, and this progress note.
+
+Default remains paper. No secrets. No live trading without server-side owner credentials.
+
+Previous floors (order-tactic, order-play, etc.) remain in place.
+
 ## Hour 9 (odd, 2026-11-27): order-tactic metadata floor
 
 Wired `orderTacticReason` into the persistent OrderManager so a present `tactic`, `tacticId`, or `clientTactic` is refused before any adapter call, matching the order-play pattern.
