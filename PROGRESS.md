@@ -1,5 +1,17 @@
 # Progress
 
+## Hour 15 (odd, 2026-11-27): order-stage metadata floor
+
+Wired `orderStageReason` into the persistent OrderManager so a present `stage`, `orderStage`, or `clientStage` is refused before any adapter call, matching the order-step pattern.
+
+- Helper already existed in `src/lib/orders/order-stage.ts`.
+- Tests already covered the helper and the submit path in `tests/order-stage.test.ts`.
+- Updated README current status, docs/ORDER_STAGE_FLOOR.md (already accurate), and this progress note.
+
+Default remains paper. No secrets. No live trading without server-side owner credentials.
+
+Previous floors (order-step, order-strategy, etc.) remain in place.
+
 ## Hour 13 (odd, 2026-11-27): order-step metadata floor
 
 Wired `orderStepReason` into the persistent OrderManager so a present `step`, `stepId`, or `clientStep` is refused before any adapter call, matching the order-strategy pattern.
