@@ -1,5 +1,17 @@
 # Progress
 
+## Hour 21 (odd, 2026-11-27): order-style metadata floor
+
+Wired `orderStyleReason` into the persistent OrderManager so a present `style`, `orderStyle`, or `clientStyle` is refused before any adapter call, matching the order-status pattern.
+
+- Helper already existed in `src/lib/orders/order-style.ts`.
+- Tests already covered the helper and the submit path in `tests/order-style.test.ts`.
+- Updated README current status, docs/ORDER_STYLE_FLOOR.md (already accurate), and this progress note.
+
+Default remains paper. No secrets. No live trading without server-side owner credentials.
+
+Previous floors (order-status, order-phase, etc.) remain in place.
+
 ## Hour 19 (odd, 2026-11-27): order-status metadata floor
 
 Wired `orderStatusReason` into the persistent OrderManager so a present `status`, `orderStatus`, or `clientStatus` is refused before any adapter call, matching the order-phase pattern.
