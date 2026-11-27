@@ -1,5 +1,17 @@
 # Progress
 
+## Hour 1 (odd, 2026-11-27): order-plot metadata floor
+
+Wired `orderPlotReason` into the persistent OrderManager so a present `plot`, `plotId`, or `clientPlot` is refused before any adapter call, matching the order-scenario pattern.
+
+- Helper already existed in `src/lib/orders/order-plot.ts`.
+- Tests already covered the helper and the submit path in `tests/order-plot.test.ts`.
+- Updated README current status, docs/ORDER_PLOT_FLOOR.md (already accurate), and this progress note.
+
+Default remains paper. No secrets. No live trading without server-side owner credentials.
+
+Previous floors (order-scenario, order-story, etc.) remain in place.
+
 ## Hour 23 (odd, 2026-11-26): order-scenario metadata floor
 
 Wired `orderScenarioReason` into the persistent OrderManager so a present `scenario`, `scenarioId`, or `clientScenario` is refused before any adapter call, matching the order-story pattern.

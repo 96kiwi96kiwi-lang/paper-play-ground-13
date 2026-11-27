@@ -49,6 +49,7 @@ import { orderSagaReason } from "./order-saga";
 import { orderNarrativeReason } from "./order-narrative";
 import { orderStoryReason } from "./order-story";
 import { orderScenarioReason } from "./order-scenario";
+import { orderPlotReason } from "./order-plot";
 // Prior floors (order-conviction, etc.) follow the same pattern.
 
 export interface SubmitRequest {
@@ -445,6 +446,14 @@ export class OrderManager {
     );
     if (scenarioReason) {
       return { ok: false, reason: scenarioReason };
+    }
+    const plotReason = orderPlotReason(
+      req.plot,
+      req.plotId,
+      req.clientPlot,
+    );
+    if (plotReason) {
+      return { ok: false, reason: plotReason };
     }
     // Other floors are checked similarly before the adapter.
     // Paper/KuCoin path continues here in the full implementation.
