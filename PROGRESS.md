@@ -1,5 +1,17 @@
 # Progress
 
+## Hour 5 (odd, 2026-11-27): order-scheme metadata floor
+
+Wired `orderSchemeReason` into the persistent OrderManager so a present `scheme`, `schemeId`, or `clientScheme` is refused before any adapter call, matching the order-plan pattern.
+
+- Helper in `src/lib/orders/order-scheme.ts`.
+- Tests in `tests/order-scheme.test.ts` cover the helper and the submit path.
+- Updated README current status, docs/ORDER_SCHEME_FLOOR.md, and this progress note.
+
+Default remains paper. No secrets. No live trading without server-side owner credentials.
+
+Previous floors (order-plan, order-plot, etc.) remain in place.
+
 ## Hour 3 (odd, 2026-11-27): order-plan metadata floor
 
 Wired `orderPlanReason` into the persistent OrderManager so a present `plan`, `planId`, or `clientPlan` is refused before any adapter call, matching the order-plot pattern.
