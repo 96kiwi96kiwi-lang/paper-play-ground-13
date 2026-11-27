@@ -3,7 +3,7 @@
 /**
  * Omitted, null, false, and blank pass. A present tactic, tacticId, or
  * clientTactic is refused: placeLimitOrder / placeMarketOrder place one
- * plain spot order and do not attach a tactic or playbook tag. A tactic intent
+ * plain spot order and do not attach a tactic or tactics tag. A tactic intent
  * would otherwise be dropped and the order would rest or fill as a plain spot
  * order. Zero is present and is refused. This is a metadata floor, not a
  * halt, and does not flatten positions.
