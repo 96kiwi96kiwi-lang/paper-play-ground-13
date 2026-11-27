@@ -1,5 +1,17 @@
 # Progress
 
+## Hour 23 (odd, 2026-11-27): order-subject metadata floor
+
+Wired `orderSubjectReason` into the persistent OrderManager so a present `subject`, `orderSubject`, or `clientSubject` is refused before any adapter call, matching the order-style pattern.
+
+- Helper already existed in `src/lib/orders/order-subject.ts`.
+- Tests already covered the helper and the submit path in `tests/order-subject.test.ts`.
+- Updated README current status, docs/ORDER_SUBJECT_FLOOR.md (already accurate), and this progress note.
+
+Default remains paper. No secrets. No live trading without server-side owner credentials.
+
+Previous floors (order-style, order-status, etc.) remain in place.
+
 ## Hour 21 (odd, 2026-11-27): order-style metadata floor
 
 Wired `orderStyleReason` into the persistent OrderManager so a present `style`, `orderStyle`, or `clientStyle` is refused before any adapter call, matching the order-status pattern.
