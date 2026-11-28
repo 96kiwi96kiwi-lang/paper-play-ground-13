@@ -1,5 +1,17 @@
 # Progress
 
+## Hour 1 (odd, 2026-11-28): order-theme metadata floor
+
+Wired `orderThemeReason` into the persistent OrderManager so a present `theme`, `orderTheme`, or `clientTheme` is refused before any adapter call, matching the order-subject pattern.
+
+- Helper in `src/lib/orders/order-theme.ts`.
+- Tests in `tests/order-theme.test.ts` cover the helper and the submit path.
+- Updated README current status, docs/ORDER_THEME_FLOOR.md, and this progress note.
+
+Default remains paper. No secrets. No live trading without server-side owner credentials.
+
+Previous floors (order-subject, order-style, etc.) remain in place.
+
 ## Hour 23 (odd, 2026-11-27): order-subject metadata floor
 
 Wired `orderSubjectReason` into the persistent OrderManager so a present `subject`, `orderSubject`, or `clientSubject` is refused before any adapter call, matching the order-style pattern.
