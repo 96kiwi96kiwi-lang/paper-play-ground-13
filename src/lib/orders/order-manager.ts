@@ -232,6 +232,9 @@ import { orderScoreReason } from "./order-score";
 import { orderStyleReason } from "./order-style";
 import { orderThemeReason } from "./order-theme";
 import { orderMotifReason } from "./order-motif";
+import { orderPatternReason } from "./order-pattern";
+import { orderFormReason } from "./order-form";
+import { orderShapeReason } from "./order-shape";
 import { orderUserReason } from "./order-user";
 import { orderKindReason } from "./order-kind";
 import { orderLegReason } from "./order-leg";
@@ -628,6 +631,15 @@ export type OrderIntent = {
   motif?: unknown;
   orderMotif?: unknown;
   clientMotif?: unknown;
+  pattern?: unknown;
+  orderPattern?: unknown;
+  clientPattern?: unknown;
+  form?: unknown;
+  orderForm?: unknown;
+  clientForm?: unknown;
+  shape?: unknown;
+  orderShape?: unknown;
+  clientShape?: unknown;
   user?: unknown;
   orderUser?: unknown;
   clientUser?: unknown;
@@ -1730,6 +1742,15 @@ export class OrderManager {
 
     const motif = orderMotifReason(intent.motif, intent.orderMotif, intent.clientMotif);
     if (motif) return this.fail(motif);
+
+    const pattern = orderPatternReason(intent.pattern, intent.orderPattern, intent.clientPattern);
+    if (pattern) return this.fail(pattern);
+
+    const form = orderFormReason(intent.form, intent.orderForm, intent.clientForm);
+    if (form) return this.fail(form);
+
+    const shape = orderShapeReason(intent.shape, intent.orderShape, intent.clientShape);
+    if (shape) return this.fail(shape);
 
     const user = orderUserReason(intent.user, intent.orderUser, intent.clientUser);
     if (user) return this.fail(user);
