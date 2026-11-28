@@ -85,23 +85,130 @@ export class OrderManager {
   constructor(private adapter: ExchangeAdapter) {}
 
   async submit(req: SubmitRequest, _risk: RiskState): Promise<SubmitResult> {
-    const optionReason = orderOptionReason(
-      req.option,
-      req.optionId,
-      req.orderOption,
-    );
-    if (optionReason) {
-      return { ok: false, reason: optionReason };
-    }
-    // ... (truncated for brevity in this example, but in real I need full)
-    const patternReason = orderPatternReason(
-      req.pattern,
-      req.orderPattern,
-      req.clientPattern,
-    );
-    if (patternReason) {
-      return { ok: false, reason: patternReason };
-    }
+    const optionReason = orderOptionReason(req.option, req.optionId, req.orderOption);
+    if (optionReason) return { ok: false, reason: optionReason };
+    const preferenceReason = orderPreferenceReason(req.preference, req.preferenceId, req.orderPreference);
+    if (preferenceReason) return { ok: false, reason: preferenceReason };
+    const selectionReason = orderSelectionReason(req.selection, req.selectionId, req.orderSelection);
+    if (selectionReason) return { ok: false, reason: selectionReason };
+    const choiceReason = orderChoiceReason(req.choice, req.choiceId, req.orderChoice);
+    if (choiceReason) return { ok: false, reason: choiceReason };
+    const decisionReason = orderDecisionReason(req.decision, req.decisionId, req.orderDecision);
+    if (decisionReason) return { ok: false, reason: decisionReason };
+    const judgmentReason = orderJudgmentReason(req.judgment, req.judgmentId, req.orderJudgment);
+    if (judgmentReason) return { ok: false, reason: judgmentReason };
+    const verdictReason = orderVerdictReason(req.verdict, req.verdictId, req.orderVerdict);
+    if (verdictReason) return { ok: false, reason: verdictReason };
+    const conclusionReason = orderConclusionReason(req.conclusion, req.conclusionId, req.orderConclusion);
+    if (conclusionReason) return { ok: false, reason: conclusionReason };
+    const outcomeReason = orderOutcomeReason(req.outcome, req.outcomeId, req.orderOutcome);
+    if (outcomeReason) return { ok: false, reason: outcomeReason };
+    const resultReason = orderResultReason(req.result, req.resultId, req.orderResult);
+    if (resultReason) return { ok: false, reason: resultReason };
+    const resolveReason = orderResolveReason(req.resolve, req.resolveId, req.orderResolve);
+    if (resolveReason) return { ok: false, reason: resolveReason };
+    const potencyReason = orderPotencyReason(req.potency, req.potencyId, req.orderPotency);
+    if (potencyReason) return { ok: false, reason: potencyReason };
+    const strengthReason = orderStrengthReason(req.strength, req.strengthId, req.orderStrength);
+    if (strengthReason) return { ok: false, reason: strengthReason };
+    const mightReason = orderMightReason(req.might, req.mightId, req.orderMight);
+    if (mightReason) return { ok: false, reason: mightReason };
+    const powerReason = orderPowerReason(req.power, req.powerId, req.orderPower);
+    if (powerReason) return { ok: false, reason: powerReason };
+    const energyReason = orderEnergyReason(req.energy, req.energyId, req.orderEnergy);
+    if (energyReason) return { ok: false, reason: energyReason };
+    const vigorReason = orderVigorReason(req.vigor, req.vigorId, req.orderVigor);
+    if (vigorReason) return { ok: false, reason: vigorReason };
+    const intensityReason = orderIntensityReason(req.intensity, req.intensityId, req.orderIntensity);
+    if (intensityReason) return { ok: false, reason: intensityReason };
+    const fervorReason = orderFervorReason(req.fervor, req.fervorId, req.orderFervor);
+    if (fervorReason) return { ok: false, reason: fervorReason };
+    const zealReason = orderZealReason(req.zeal, req.zealId, req.orderZeal);
+    if (zealReason) return { ok: false, reason: zealReason };
+    const ardorReason = orderArdorReason(req.ardor, req.ardorId, req.orderArdor);
+    if (ardorReason) return { ok: false, reason: ardorReason };
+    const passionReason = orderPassionReason(req.passion, req.passionId, req.orderPassion);
+    if (passionReason) return { ok: false, reason: passionReason };
+    const devotionReason = orderDevotionReason(req.devotion, req.devotionId, req.orderDevotion);
+    if (devotionReason) return { ok: false, reason: devotionReason };
+    const loyaltyReason = orderLoyaltyReason(req.loyalty, req.loyaltyId, req.orderLoyalty);
+    if (loyaltyReason) return { ok: false, reason: loyaltyReason };
+    const allegianceReason = orderAllegianceReason(req.allegiance, req.allegianceId, req.orderAllegiance);
+    if (allegianceReason) return { ok: false, reason: allegianceReason };
+    const trustReason = orderTrustReason(req.trust, req.trustId, req.orderTrust);
+    if (trustReason) return { ok: false, reason: trustReason };
+    const faithReason = orderFaithReason(req.faith, req.faithId, req.orderFaith);
+    if (faithReason) return { ok: false, reason: faithReason };
+    const beliefReason = orderBeliefReason(req.belief, req.beliefId, req.orderBelief);
+    if (beliefReason) return { ok: false, reason: beliefReason };
+    const optimismReason = orderOptimismReason(req.optimism, req.optimismId, req.orderOptimism);
+    if (optimismReason) return { ok: false, reason: optimismReason };
+    const hopeReason = orderHopeReason(req.hope, req.hopeId, req.orderHope);
+    if (hopeReason) return { ok: false, reason: hopeReason };
+    const wishReason = orderWishReason(req.wish, req.wishId, req.orderWish);
+    if (wishReason) return { ok: false, reason: wishReason };
+    const fateReason = orderFateReason(req.fate, req.fateId, req.orderFate);
+    if (fateReason) return { ok: false, reason: fateReason };
+    const destinyReason = orderDestinyReason(req.destiny, req.destinyId, req.orderDestiny);
+    if (destinyReason) return { ok: false, reason: destinyReason };
+    const ambitionReason = orderAmbitionReason(req.ambition, req.ambitionId, req.orderAmbition);
+    if (ambitionReason) return { ok: false, reason: ambitionReason };
+    const visionReason = orderVisionReason(req.vision, req.visionId, req.orderVision);
+    if (visionReason) return { ok: false, reason: visionReason };
+    const dreamReason = orderDreamReason(req.dream, req.dreamId, req.orderDream);
+    if (dreamReason) return { ok: false, reason: dreamReason };
+    const willReason = orderWillReason(req.will, req.willId, req.orderWill);
+    if (willReason) return { ok: false, reason: willReason };
+    const intentReason = orderIntentReason(req.intent, req.intentId, req.orderIntent);
+    if (intentReason) return { ok: false, reason: intentReason };
+    const forceReason = orderForceReason(req.force, req.forceType, req.orderForce);
+    if (forceReason) return { ok: false, reason: forceReason };
+    const goalReason = orderGoalReason(req.goal, req.goalId, req.clientGoal);
+    if (goalReason) return { ok: false, reason: goalReason };
+    const missionReason = orderMissionReason(req.mission, req.missionId, req.clientMission);
+    if (missionReason) return { ok: false, reason: missionReason };
+    const questReason = orderQuestReason(req.quest, req.questId, req.clientQuest);
+    if (questReason) return { ok: false, reason: questReason };
+    const epicReason = orderEpicReason(req.epic, req.epicId, req.clientEpic);
+    if (epicReason) return { ok: false, reason: epicReason };
+    const sagaReason = orderSagaReason(req.saga, req.sagaId, req.clientSaga);
+    if (sagaReason) return { ok: false, reason: sagaReason };
+    const narrativeReason = orderNarrativeReason(req.narrative, req.narrativeId, req.clientNarrative);
+    if (narrativeReason) return { ok: false, reason: narrativeReason };
+    const storyReason = orderStoryReason(req.story, req.storyId, req.clientStory);
+    if (storyReason) return { ok: false, reason: storyReason };
+    const scenarioReason = orderScenarioReason(req.scenario, req.scenarioId, req.clientScenario);
+    if (scenarioReason) return { ok: false, reason: scenarioReason };
+    const plotReason = orderPlotReason(req.plot, req.plotId, req.clientPlot);
+    if (plotReason) return { ok: false, reason: plotReason };
+    const planReason = orderPlanReason(req.plan, req.planId, req.clientPlan);
+    if (planReason) return { ok: false, reason: planReason };
+    const schemeReason = orderSchemeReason(req.scheme, req.schemeId, req.clientScheme);
+    if (schemeReason) return { ok: false, reason: schemeReason };
+    const playReason = orderPlayReason(req.play, req.playId, req.clientPlay);
+    if (playReason) return { ok: false, reason: playReason };
+    const tacticReason = orderTacticReason(req.tactic, req.tacticId, req.clientTactic);
+    if (tacticReason) return { ok: false, reason: tacticReason };
+    const strategyReason = orderStrategyReason(req.strategy, req.strategyId, req.clientStrategy);
+    if (strategyReason) return { ok: false, reason: strategyReason };
+    const stepReason = orderStepReason(req.step, req.stepId, req.clientStep);
+    if (stepReason) return { ok: false, reason: stepReason };
+    const stageReason = orderStageReason(req.stage, req.orderStage, req.clientStage);
+    if (stageReason) return { ok: false, reason: stageReason };
+    const phaseReason = orderPhaseReason(req.phase, req.orderPhase, req.clientPhase);
+    if (phaseReason) return { ok: false, reason: phaseReason };
+    const statusReason = orderStatusReason(req.status, req.orderStatus, req.clientStatus);
+    if (statusReason) return { ok: false, reason: statusReason };
+    const styleReason = orderStyleReason(req.style, req.orderStyle, req.clientStyle);
+    if (styleReason) return { ok: false, reason: styleReason };
+    const subjectReason = orderSubjectReason(req.subject, req.orderSubject, req.clientSubject);
+    if (subjectReason) return { ok: false, reason: subjectReason };
+    const themeReason = orderThemeReason(req.theme, req.orderTheme, req.clientTheme);
+    if (themeReason) return { ok: false, reason: themeReason };
+    const motifReason = orderMotifReason(req.motif, req.orderMotif, req.clientMotif);
+    if (motifReason) return { ok: false, reason: motifReason };
+    const patternReason = orderPatternReason(req.pattern, req.orderPattern, req.clientPattern);
+    if (patternReason) return { ok: false, reason: patternReason };
     return { ok: true };
   }
 
