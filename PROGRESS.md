@@ -1,5 +1,18 @@
 # Progress
 
+## Hour 11 (odd, 2026-11-28): order-structure metadata floor
+
+Wired `orderStructureReason` into the persistent OrderManager so a present `structure`, `orderStructure`, or `clientStructure` is refused before any adapter call, matching the order-shape pattern.
+
+- Helper in `src/lib/orders/order-structure.ts`.
+- Tests in `tests/order-structure.test.ts` cover the helper and the submit path.
+- Updated README current status, docs/ORDER_STRUCTURE_FLOOR.md, and this progress note.
+
+Default remains paper. No secrets. No live trading without server-side owner credentials.
+
+Previous floors (order-shape, order-form, etc.) remain in place.
+
+
 ## Hour 9 (odd, 2026-11-28): order-shape metadata floor
 
 Wired `orderShapeReason` into the persistent OrderManager so a present `shape`, `orderShape`, or `clientShape` is refused before any adapter call, matching the order-form pattern.
