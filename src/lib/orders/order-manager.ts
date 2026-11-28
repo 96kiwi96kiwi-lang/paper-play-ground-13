@@ -64,6 +64,7 @@ import { orderSubjectReason } from "./order-subject";
 import { orderThemeReason } from "./order-theme";
 import { orderMotifReason } from "./order-motif";
 import { orderPatternReason } from "./order-pattern";
+import { orderFormReason } from "./order-form";
 // Prior floors (order-conviction, etc.) follow the same pattern.
 
 export interface SubmitRequest {
@@ -209,6 +210,8 @@ export class OrderManager {
     if (motifReason) return { ok: false, reason: motifReason };
     const patternReason = orderPatternReason(req.pattern, req.orderPattern, req.clientPattern);
     if (patternReason) return { ok: false, reason: patternReason };
+    const formReason = orderFormReason(req.form, req.orderForm, req.clientForm);
+    if (formReason) return { ok: false, reason: formReason };
     return { ok: true };
   }
 
