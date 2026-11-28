@@ -5,23 +5,25 @@ import { OrderManager } from "@/lib/orders/order-manager";
 import type { RiskState } from "@/lib/risk";
 
 test("omitted, null, false, and blank theme aliases pass", () => {
-  expect(orderThemeReason(undefined)).toBeNull();
+  expect(orderThemeReason()).toBeNull();
+  expect(orderThemeReason(undefined, undefined, undefined)).toBeNull();
   expect(orderThemeReason(null, null, null)).toBeNull();
-  expect(orderThemeReason(false, "", "  ")).toBeNull();
+  expect(orderThemeReason(false, false, false)).toBeNull();
+  expect(orderThemeReason("", "  ", "")).toBeNull();
 });
 
 test("a present theme alias is refused and does not halt", () => {
   expect(orderThemeReason("dark")).toBe(
-    "Theme is not supported; the adapter would place a plain spot order",
-  );
-  expect(orderThemeReason(0)).toBe(
-    "Theme is not supported; the adapter would place a plain spot order",
-  );
-  expect(orderThemeReason(undefined, "ord-theme")).toBe(
     "Order theme is not supported; the adapter would place a plain spot order",
   );
-  expect(orderThemeReason(undefined, undefined, true)).toBe(
-    "Client theme is not supported; the adapter would place a plain spot order",
+  expect(orderThemeReason(1)).toBe(
+    "Order theme is not supported; the adapter would place a plain spot order",
+  );
+  expect(orderThemeReason(undefined, "light")).toBe(
+    "Order theme alias is not supported; the adapter would place a plain spot order",
+  );
+  expect(orderThemeReason(undefined, undefined, "custom")).toBe(
+    "Client theme alias is not supported; the adapter would place a plain spot order",
   );
 });
 
@@ -38,9 +40,9 @@ describe("OrderManager order-theme floor", () => {
   };
 
   it.each([
-    ["theme", "Theme is not supported; the adapter would place a plain spot order"],
-    ["orderTheme", "Order theme is not supported; the adapter would place a plain spot order"],
-    ["clientTheme", "Client theme is not supported; the adapter would place a plain spot order"],
+    ["theme", "Order theme is not supported; the adapter would place a plain spot order"],
+    ["orderTheme", "Order theme alias is not supported; the adapter would place a plain spot order"],
+    ["clientTheme", "Client theme alias is not supported; the adapter would place a plain spot order"],
   ] as const)("refuses a present %s before the adapter", async (field, reason) => {
     const placeMarketOrder = vi.fn();
     const placeLimitOrder = vi.fn();
@@ -57,7 +59,7 @@ describe("OrderManager order-theme floor", () => {
         side: "buy",
         amount: 0.01,
         type: "market",
-        [field]: "desk",
+        [field]: "dark",
       },
       riskState,
     );
