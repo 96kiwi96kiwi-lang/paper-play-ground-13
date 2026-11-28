@@ -10,7 +10,7 @@ import { createServerOrderManager } from "./create-order-manager";
 import { recordBotHeartbeat } from "./heartbeat";
 import {
   appendMarketHistory,
-  fetchCoinGeckoMarketSnapshot,
+  fetchPublicMarketSnapshot,
   type MarketQuoteSource,
 } from "./market-quotes";
 import {
@@ -47,7 +47,7 @@ let lastReason = "idle";
 let lastStaleCanceled = 0;
 let lastDecisions = 0;
 let lastOrders = 0;
-let quoteSource: MarketQuoteSource = fetchCoinGeckoMarketSnapshot;
+let quoteSource: MarketQuoteSource = fetchPublicMarketSnapshot;
 let manager: OrderManager | null = null;
 let paper: PaperExchange | null = null;
 let history = loadMarketHistory();
@@ -176,7 +176,8 @@ export async function runPaperMarketTick(now = Date.now()): Promise<PaperLoopSta
         hardStopped: result.tick.hardStopped,
       });
       console.info(
-        `[paper-loop] tick symbol=${symbol} price=${ticker.last} action=${result.tick.action}` +
+        `[paper-loop] tick symbol=${symbol} provider=${snapshot.provider} price=${ticker.last}` +
+          ` action=${result.tick.action}` +
           ` execute=${result.tick.shouldExecute} submit=${result.submit?.ok ?? false}` +
           ` reason=${result.submit?.reason ?? result.tick.reason}`,
       );
@@ -185,7 +186,8 @@ export async function runPaperMarketTick(now = Date.now()): Promise<PaperLoopSta
     lastOrders = orders;
     recordNetworkOutcome(risk, null);
     persistRiskSnapshot(risk);
-    lastReason = `market tick: ${decisions} decision(s), ${orders} accepted order(s)`;
+    lastReason =
+      `market tick: ${decisions} decision(s), ${orders} accepted order(s), provider=${snapshot.provider}`;
   } catch (error) {
     const state = risk ?? buildRiskState(runtime.manager, {});
     recordNetworkOutcome(state, error);
@@ -251,7 +253,7 @@ export function stopPaperServerLoop(reason = "stopped"): PaperLoopStatus {
 }
 
 export function setPaperQuoteSourceForTests(source: MarketQuoteSource | null): void {
-  quoteSource = source ?? fetchCoinGeckoMarketSnapshot;
+  quoteSource = source ?? fetchPublicMarketSnapshot;
 }
 
 export function resetPaperMarketRuntimeForTests(): void {
