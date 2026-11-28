@@ -71,7 +71,20 @@ describe("OrderManager order-text floor", () => {
   });
 
   it("passes when text aliases are absent and reaches the adapter", async () => {
-    const placeMarketOrder = vi.fn();
+    const now = Date.now();
+    const placeMarketOrder = vi.fn(async () => ({
+      id: "ex-text-1",
+      symbol: "BTC-USDT",
+      side: "buy" as const,
+      type: "market" as const,
+      amount: 0.01,
+      price: 2_000,
+      status: "closed",
+      filled: 0.01,
+      remaining: 0,
+      cost: 20,
+      timestamp: now,
+    }));
     const placeLimitOrder = vi.fn();
     const adapter = {
       name: "paper",
@@ -85,6 +98,8 @@ describe("OrderManager order-text floor", () => {
       side: "buy",
       type: "market",
       amount: 0.01,
+      markPrice: 2_000,
+      quotedAt: now,
     };
 
     const result = await manager.submit(intent, riskState);
