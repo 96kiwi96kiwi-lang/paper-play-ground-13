@@ -11,7 +11,7 @@ test("omitted, null, false, and blank fate aliases pass", () => {
 });
 
 test("a present fate alias is refused and does not halt", () => {
-  expect(orderFateReason("destiny")).toBe(
+  expect(orderFateReason("accumulate")).toBe(
     "Fate is not supported; the adapter would place a plain spot order",
   );
   expect(orderFateReason(0)).toBe(
@@ -57,7 +57,7 @@ describe("OrderManager order-fate floor", () => {
         side: "buy",
         amount: 0.01,
         type: "market",
-        [field]: "destiny",
+        [field]: "accumulate",
       },
       riskState,
     );

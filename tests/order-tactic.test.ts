@@ -11,13 +11,13 @@ test("omitted, null, false, and blank tactic aliases pass", () => {
 });
 
 test("a present tactic alias is refused and does not halt", () => {
-  expect(orderTacticReason("grid-play")).toBe(
+  expect(orderTacticReason("grid-tactic")).toBe(
     "Tactic is not supported; the adapter would place a plain spot order",
   );
   expect(orderTacticReason(0)).toBe(
     "Tactic is not supported; the adapter would place a plain spot order",
   );
-  expect(orderTacticReason(undefined, "tac-7")).toBe(
+  expect(orderTacticReason(undefined, "tactic-7")).toBe(
     "Tactic id is not supported; the adapter would place a plain spot order",
   );
   expect(orderTacticReason(undefined, undefined, true)).toBe(
@@ -57,7 +57,7 @@ describe("OrderManager order-tactic floor", () => {
         side: "buy",
         amount: 0.01,
         type: "market",
-        [field]: "tac-7",
+        [field]: "tactic-7",
       },
       riskState,
     );

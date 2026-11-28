@@ -11,13 +11,13 @@ test("omitted, null, false, and blank strategy aliases pass", () => {
 });
 
 test("a present strategy alias is refused and does not halt", () => {
-  expect(orderStrategyReason("grid-v1")).toBe(
+  expect(orderStrategyReason("grid-strategy")).toBe(
     "Strategy is not supported; the adapter would place a plain spot order",
   );
   expect(orderStrategyReason(0)).toBe(
     "Strategy is not supported; the adapter would place a plain spot order",
   );
-  expect(orderStrategyReason(undefined, "strat-42")).toBe(
+  expect(orderStrategyReason(undefined, "strategy-7")).toBe(
     "Strategy id is not supported; the adapter would place a plain spot order",
   );
   expect(orderStrategyReason(undefined, undefined, true)).toBe(
@@ -57,7 +57,7 @@ describe("OrderManager order-strategy floor", () => {
         side: "buy",
         amount: 0.01,
         type: "market",
-        [field]: "strat-42",
+        [field]: "strategy-7",
       },
       riskState,
     );

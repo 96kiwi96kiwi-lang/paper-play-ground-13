@@ -11,14 +11,14 @@ test("omitted, null, false, and blank step aliases pass", () => {
 });
 
 test("a present step alias is refused and does not halt", () => {
-  expect(orderStepReason("step-abc123")).toBe(
+  expect(orderStepReason("entry-step")).toBe(
     "Step is not supported; the adapter would place a plain spot order",
   );
   expect(orderStepReason(0)).toBe(
     "Step is not supported; the adapter would place a plain spot order",
   );
-  expect(orderStepReason(undefined, "ord-step")).toBe(
-    "Order step is not supported; the adapter would place a plain spot order",
+  expect(orderStepReason(undefined, "step-3")).toBe(
+    "Step id is not supported; the adapter would place a plain spot order",
   );
   expect(orderStepReason(undefined, undefined, true)).toBe(
     "Client step is not supported; the adapter would place a plain spot order",
@@ -39,7 +39,7 @@ describe("OrderManager order-step floor", () => {
 
   it.each([
     ["step", "Step is not supported; the adapter would place a plain spot order"],
-    ["orderStep", "Order step is not supported; the adapter would place a plain spot order"],
+    ["stepId", "Step id is not supported; the adapter would place a plain spot order"],
     ["clientStep", "Client step is not supported; the adapter would place a plain spot order"],
   ] as const)("refuses a present %s before the adapter", async (field, reason) => {
     const placeMarketOrder = vi.fn();
@@ -57,7 +57,7 @@ describe("OrderManager order-step floor", () => {
         side: "buy",
         amount: 0.01,
         type: "market",
-        [field]: "step-abc123",
+        [field]: "step-3",
       },
       riskState,
     );

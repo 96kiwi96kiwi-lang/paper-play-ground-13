@@ -231,6 +231,7 @@ import { orderRatingReason } from "./order-rating";
 import { orderScoreReason } from "./order-score";
 import { orderStyleReason } from "./order-style";
 import { orderThemeReason } from "./order-theme";
+import { orderMotifReason } from "./order-motif";
 import { orderUserReason } from "./order-user";
 import { orderKindReason } from "./order-kind";
 import { orderLegReason } from "./order-leg";
@@ -281,6 +282,33 @@ import { orderConfidenceReason } from "./order-confidence";
 import { orderAssuranceReason } from "./order-assurance";
 import { orderConvictionReason } from "./order-conviction";
 import { orderBeliefReason } from "./order-belief";
+import { orderOptionReason } from "./order-option";
+import { orderPreferenceReason } from "./order-preference";
+import { orderSelectionReason } from "./order-selection";
+import { orderChoiceReason } from "./order-choice";
+import { orderDecisionReason } from "./order-decision";
+import { orderJudgmentReason } from "./order-judgment";
+import { orderVerdictReason } from "./order-verdict";
+import { orderConclusionReason } from "./order-conclusion";
+import { orderOutcomeReason } from "./order-outcome";
+import { orderResultReason } from "./order-result";
+import { orderResolveReason } from "./order-resolve";
+import { orderPotencyReason } from "./order-potency";
+import { orderStrengthReason } from "./order-strength";
+import { orderMightReason } from "./order-might";
+import { orderPowerReason } from "./order-power";
+import { orderEnergyReason } from "./order-energy";
+import { orderVigorReason } from "./order-vigor";
+import { orderIntensityReason } from "./order-intensity";
+import { orderFervorReason } from "./order-fervor";
+import { orderZealReason } from "./order-zeal";
+import { orderArdorReason } from "./order-ardor";
+import { orderPassionReason } from "./order-passion";
+import { orderDevotionReason } from "./order-devotion";
+import { orderLoyaltyReason } from "./order-loyalty";
+import { orderAllegianceReason } from "./order-allegiance";
+import { orderTrustReason } from "./order-trust";
+import { orderFaithReason } from "./order-faith";
 
 export type OrderIntent = {
   symbol: string;
@@ -597,6 +625,9 @@ export type OrderIntent = {
   theme?: unknown;
   orderTheme?: unknown;
   clientTheme?: unknown;
+  motif?: unknown;
+  orderMotif?: unknown;
+  clientMotif?: unknown;
   user?: unknown;
   orderUser?: unknown;
   clientUser?: unknown;
@@ -1098,6 +1129,7 @@ export type OrderIntent = {
   orderStage?: unknown;
   clientStage?: unknown;
   step?: unknown;
+  stepId?: unknown;
   orderStep?: unknown;
   clientStep?: unknown;
   play?: unknown;
@@ -1178,6 +1210,87 @@ export type OrderIntent = {
   belief?: unknown;
   beliefId?: unknown;
   orderBelief?: unknown;
+  option?: unknown;
+  optionId?: unknown;
+  orderOption?: unknown;
+  preference?: unknown;
+  preferenceId?: unknown;
+  orderPreference?: unknown;
+  selection?: unknown;
+  selectionId?: unknown;
+  orderSelection?: unknown;
+  choice?: unknown;
+  choiceId?: unknown;
+  orderChoice?: unknown;
+  decision?: unknown;
+  decisionId?: unknown;
+  orderDecision?: unknown;
+  judgment?: unknown;
+  judgmentId?: unknown;
+  orderJudgment?: unknown;
+  verdict?: unknown;
+  verdictId?: unknown;
+  orderVerdict?: unknown;
+  conclusion?: unknown;
+  conclusionId?: unknown;
+  orderConclusion?: unknown;
+  outcome?: unknown;
+  outcomeId?: unknown;
+  orderOutcome?: unknown;
+  result?: unknown;
+  resultId?: unknown;
+  orderResult?: unknown;
+  resolve?: unknown;
+  resolveId?: unknown;
+  orderResolve?: unknown;
+  potency?: unknown;
+  potencyId?: unknown;
+  orderPotency?: unknown;
+  strength?: unknown;
+  strengthId?: unknown;
+  orderStrength?: unknown;
+  might?: unknown;
+  mightId?: unknown;
+  orderMight?: unknown;
+  power?: unknown;
+  powerId?: unknown;
+  orderPower?: unknown;
+  energy?: unknown;
+  energyId?: unknown;
+  orderEnergy?: unknown;
+  vigor?: unknown;
+  vigorId?: unknown;
+  orderVigor?: unknown;
+  intensity?: unknown;
+  intensityId?: unknown;
+  orderIntensity?: unknown;
+  fervor?: unknown;
+  fervorId?: unknown;
+  orderFervor?: unknown;
+  zeal?: unknown;
+  zealId?: unknown;
+  orderZeal?: unknown;
+  ardor?: unknown;
+  ardorId?: unknown;
+  orderArdor?: unknown;
+  passion?: unknown;
+  passionId?: unknown;
+  orderPassion?: unknown;
+  devotion?: unknown;
+  devotionId?: unknown;
+  orderDevotion?: unknown;
+  loyalty?: unknown;
+  loyaltyId?: unknown;
+  orderLoyalty?: unknown;
+  allegiance?: unknown;
+  allegianceId?: unknown;
+  orderAllegiance?: unknown;
+  trust?: unknown;
+  trustId?: unknown;
+  orderTrust?: unknown;
+  faith?: unknown;
+  faithId?: unknown;
+  orderFaith?: unknown;
 };
 
 /**
@@ -1342,9 +1455,9 @@ export class OrderManager {
 
     const stepReason = orderStepReason(
       intent.step,
-      intent.orderStep,
+      intent.stepId,
       intent.clientStep,
-    );
+    ) ?? orderStepReason(undefined, intent.orderStep, undefined);
     if (stepReason) {
       return { ok: false, reason: stepReason };
     }
@@ -1570,6 +1683,40 @@ export class OrderManager {
       return { ok: false, reason: beliefReason };
     }
 
+    const narrativeFloors: Array<string | null> = [
+      orderOptionReason(intent.option, intent.optionId, intent.orderOption),
+      orderPreferenceReason(intent.preference, intent.preferenceId, intent.orderPreference),
+      orderSelectionReason(intent.selection, intent.selectionId, intent.orderSelection),
+      orderChoiceReason(intent.choice, intent.choiceId, intent.orderChoice),
+      orderDecisionReason(intent.decision, intent.decisionId, intent.orderDecision),
+      orderJudgmentReason(intent.judgment, intent.judgmentId, intent.orderJudgment),
+      orderVerdictReason(intent.verdict, intent.verdictId, intent.orderVerdict),
+      orderConclusionReason(intent.conclusion, intent.conclusionId, intent.orderConclusion),
+      orderOutcomeReason(intent.outcome, intent.outcomeId, intent.orderOutcome),
+      orderResultReason(intent.result, intent.resultId, intent.orderResult),
+      orderResolveReason(intent.resolve, intent.resolveId, intent.orderResolve),
+      orderPotencyReason(intent.potency, intent.potencyId, intent.orderPotency),
+      orderStrengthReason(intent.strength, intent.strengthId, intent.orderStrength),
+      orderMightReason(intent.might, intent.mightId, intent.orderMight),
+      orderPowerReason(intent.power, intent.powerId, intent.orderPower),
+      orderEnergyReason(intent.energy, intent.energyId, intent.orderEnergy),
+      orderVigorReason(intent.vigor, intent.vigorId, intent.orderVigor),
+      orderIntensityReason(intent.intensity, intent.intensityId, intent.orderIntensity),
+      orderFervorReason(intent.fervor, intent.fervorId, intent.orderFervor),
+      orderZealReason(intent.zeal, intent.zealId, intent.orderZeal),
+      orderArdorReason(intent.ardor, intent.ardorId, intent.orderArdor),
+      orderPassionReason(intent.passion, intent.passionId, intent.orderPassion),
+      orderDevotionReason(intent.devotion, intent.devotionId, intent.orderDevotion),
+      orderLoyaltyReason(intent.loyalty, intent.loyaltyId, intent.orderLoyalty),
+      orderAllegianceReason(intent.allegiance, intent.allegianceId, intent.orderAllegiance),
+      orderTrustReason(intent.trust, intent.trustId, intent.orderTrust),
+      orderFaithReason(intent.faith, intent.faithId, intent.orderFaith),
+    ];
+    const narrativeFloor = narrativeFloors.find((reason): reason is string => reason !== null);
+    if (narrativeFloor) {
+      return { ok: false, reason: narrativeFloor };
+    }
+
     // Metadata floors run before quote/risk validation so unsupported intent
     // cannot be silently reinterpreted as a plain spot order.
     const account = orderAccountReason(intent.account, intent.orderAccount, intent.clientAccount);
@@ -1580,6 +1727,9 @@ export class OrderManager {
 
     const theme = orderThemeReason(intent.theme, intent.orderTheme, intent.clientTheme);
     if (theme) return this.fail(theme);
+
+    const motif = orderMotifReason(intent.motif, intent.orderMotif, intent.clientMotif);
+    if (motif) return this.fail(motif);
 
     const user = orderUserReason(intent.user, intent.orderUser, intent.clientUser);
     if (user) return this.fail(user);
