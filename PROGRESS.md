@@ -1,5 +1,17 @@
 # Progress
 
+## Hour 13 (odd, 2026-11-28): order-framework metadata floor
+
+Wired `orderFrameworkReason` into the persistent OrderManager so a present `framework`, `orderFramework`, or `clientFramework` is refused before any adapter call, matching the order-structure pattern. Removed a duplicate structure check.
+
+- Helper in `src/lib/orders/order-framework.ts`.
+- Tests in `tests/order-framework.test.ts` cover the helper and the submit path.
+- Updated README current status, docs/ORDER_FRAMEWORK_FLOOR.md, and this progress note.
+
+Default remains paper. No secrets. No live trading without server-side owner credentials.
+
+Previous floors (order-structure, order-shape, etc.) remain in place.
+
 ## Hour 11 (odd, 2026-11-28): order-structure metadata floor
 
 Wired `orderStructureReason` into the persistent OrderManager so a present `structure`, `orderStructure`, or `clientStructure` is refused before any adapter call, matching the order-shape pattern.
